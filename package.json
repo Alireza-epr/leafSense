@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "author": "Alireza Almer <alireza.almer@gmail.com>",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
