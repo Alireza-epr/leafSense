@@ -1,0 +1,142 @@
+NDVI (Normalized Difference Vegetation Index) is a value between -1 and +1 that shows how healthy and green the vegetation is.
+	High NDVI → healthy and green plants
+	Medium NDVI → normal or growing vegetation
+	Low NDVI → dry plants, weak vegetation, or bare soil
+	It is calculated using the light that plants reflect — mainly red and near-infrared (NIR) light — captured by satellites.
+
+	NIR (Near Infrared) → Plants reflect a lot of NIR light when they are healthy. ( Higher NIR > healthier )
+	Red → Plants absorb most red light for photosynthesis, so healthy plants reflect less red light. (Less Red > healthier)
+	NDVI=(NIR-Red)/(NIR+Red)​
+	
+	NDVI gives a high positive value (close to +1) if NIR is high,Red is low > vegetation is healthy
+	NDVI is near 0 if both NIR and Red are similar > there’s no vegetation or dry/bare soil
+	NDVI can be negative if Red is high,NIR is low > water or cloud  
+	
+	NDVI Quality:
+		Good quality: Clean, clear data with no cloud issues — safe to use for decisions
+		Medium quality:	Some noise or cloud, acceptable but not perfect
+		Poor quality: Cloudy, low accuracy, cannot trust the result
+	
+		depends on factors like:
+			-How clear the satellite image is (clouds, fog, atmosphere)
+			-How good the satellite sensor is
+			-Whether the NDVI was processed or raw
+---------------------------------------
+Sensor: 
+ Sentinel-2 L2A
+ Landsat 8/9 (USGS/NASA)
+ MODIS (NASA Terra/Aqua)
+ PlanetScope (Planet Labs)
+
+
+---------------------------------------
+Cloud Strategy 
+	clouds can block the view of the land and vegetation, so NDVI or other indices can be incorrect
+	A cloud strategy is how you plan to handle or remove cloudy pixels from your data to get accurate results.
+	
+	OPTIONS:
+		A)Quality Assurance (QA) layer:
+			The satellite’s built-in QA Layer already tells you which pixels are cloudy, shadowed, or clear.
+			For NDVI clear vegetation, select pixels marked as clear.
+			Examples: Scene classification layer (labels pixels as cloud, vegetation, water, etc.) or Cloud mask layer
+			Advantage: 
+				-More accurate (Built using satellite’s internal algorithms, better than guessing clouds manually.)
+				-fast (Ready to use with your NDVI calculation), 
+				-easier to implement (No need to analyze raw bands to detect clouds).
+			Example workflow:
+				Load Sentinel-2 image
+				Load its QA layer
+				Mask all cloudy or shadowed pixels
+				Calculate NDVI only on the remaining clear pixels
+		B)Simple Band Thresholds + Morphological Clean-up:
+			Use thresholds on certain bands (like B2, B3, B4, or B8) to detect clouds.
+			Apply morphological operations using image processing techniques (like removing small noisy areas) to clean the mask.
+			Advantage: Works anywhere, independent of QA layer and can tune thresholds
+			Disadvantage: Less precise, more manual work and requires trial-and-error
+			Example workflow:
+				Find pixels that are bright → likely clouds
+				Remove small mistakes → smooth the mask
+				Ignore clouds and calculate NDVI
+---------------------------------------
+AOI
+	The bounding box is just the coordinates of the corners of that rectangle.
+	lat: latitude   عرض جغرافیایی
+	lon: longitude  طول جغرافیایی
+	(max_lat, min_lon)    (max_lat, max_lon)
+        +----------------+
+        |                |
+        |     AOI        |
+        |                |
+        +----------------+
+	(min_lat, min_lon)    (min_lat, max_lon)
+	
+	- Draw a polygon around your AOI in Google Earth.
+	- Save the project or polygon.
+	- Copy feature
+	- Paste the KML file in a text editor.
+	- Use Coordinates tag: 
+		min_lon: smallest longitude value (first number in each coordinate)
+		min_lat: smallest latitude value (second number in each coordinate)
+		max_lon: largest longitude value (first number in each coordinate)
+		max_lat: largest latitude value (second number in each coordinate)		
+	
+---------------------------------------
+STAC (SpatioTemporal Asset Catalog) 
+	It’s a standard way to access satellite imagery and other geospatial data over the web.
+	A public STAC API lets you:
+		- Search for satellite images online
+		- Filter by area, date, cloud cover, or other properties
+		- Get links to download the images or use them in your app
+		
+	a)Copernicus Data Space Ecosystem STAC API
+		Collections for Sentinel-1, Sentinel-2, Landsat, etc. Supports bbox, datetime, cloudCover filters.
+		Endpoints: 
+			/search
+			/api
+			/queryables
+			/collections
+			/conformance
+		Extensions:
+			collections
+			filter
+			query
+			fields
+			sort
+						
+	b)Sentinel Hub Catalog API
+		Supports STAC-style search (POST/JSON) with bbox, datetime, collections, eo:cloud_cover etc.
+		Needs an account.
+	c)Earth Search — Element 84 STAC API
+		Supports bbox, datetime, cloud_cover.lte, collections filters.
+	
+	Key query params:
+		-bbox: [min_lon, min_lat, max_lon, max_lat]
+---------------------------------------
+Projection: How coordinates are represented on a map. 
+	1. Web Mercator (EPSG:3857)
+		This is a projection for displaying maps on the web.
+		Coordinates are shown in degrees of latitude and longitude.
+		Feature: Fast for loading and zooming maps, but distorts areas near the poles.
+		Use: Only for visualizing maps in a browser or web app.
+		Works with tiles, so zooming and panning are fast.
+			- Tiles are small square pieces of a large map or satellite image.
+				Without tiles → the browser tries to load a huge image → very slow.
+				With tiles → the image is cut into 256×256 px squares → only visible squares are loaded → fast.
+		Example:
+			If we have a map of Iran in Web Mercator, you can see Tehran and Shiraz correctly, but Greenland will appear much larger than it really is.
+
+	2. UTM (Universal Transverse Mercator)
+		This is also a projection that converts the curved Earth onto a flat map.
+		Coordinates are in meters (Easting/Northing).
+		Feature: Accurate for calculating area, distance, and NDVI, with minimal distortion within each zone.
+		Use: For satellite data analysis and real-world calculations.
+		Example:
+			If we have a farm in Shiraz and measure its area using UTM coordinates, we get the true area in square meters, unlike Web Mercator, which is only for display.
+	
+---------------------------------------
+“Time series response” refers to how quickly the app can show the data for a selected area over time.
+
+---------------------------------------
+CWV stands for Cloud Water Vapor
+CWV “good” is just saying: “Only use data when cloud conditions are acceptable for accurate plant monitoring.”
+
