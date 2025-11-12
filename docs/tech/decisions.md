@@ -18,3 +18,40 @@ Ensuring React components render correctly.
 
 - Playwright, for end-to-end (E2E) tests.
 Simulating real user workflows in the browser.
+
+## URL Parameters 
+The URL parameters include AOI, date range, cloud cover threshold, selected band combination, and spectral index.
+
+Parameter definitions:
+
+- bbox: defines the bounding box of the, [min_lon, min_lat, max_lon, max_lat] 
+- startTime: start of the selected date range, yyyy-mm-ddThh:mm:ssZ 
+- endTime: end of the selected date range, yyyy-mm-ddThh:mm:ssZ
+- cloud: maximum cloud cover percentage, integer 
+- band: selected spectral bands, array of strings
+- index: selected spectral index, string
+
+Example:
+?bbox=[51.2,35.6,51.5,35.8]&startTime=2025-01-01T00:00:00Z&endTime=2025-10-31T23:59:59Z&cloud=10&band=[B8,B4]&index=ndvi
+
+
+## Performance Budgets
+To ensure the app loads quickly and provides a smooth user experience, the following performance budgets are set:
+- Initial bundle size: ≤ 300 KB
+The main JavaScript bundle should stay under 300 KB to minimize initial load time.
+
+- External map/style tiles:
+Map tiles and styles (MapLibre layers, satellite imagery) will be loaded from external servers rather than bundled with the app.
+
+Goal: Fast initial loading (<2.5s) and responsive map interaction.
+
+## Accessibility Goals
+- Ensure logical keyboard navigation and tab order.
+- Use correct ARIA roles and attributes for assistive technologies.
+- Maintain visible focus and clear highlighting for elements when navigating via keyboard.
+- Text and UI elements maintain sufficient contrast for readability.
+- Form and input errors are communicated clearly via text and ARIA alerts.
+- Supports browser zoom and font resizing without breaking layout.
+- Images, charts, and icons include descriptive alt text or labels for screen readers.
+
+Goal: Ensure the app is usable and navigable for all users, including those relying on assistive technologies.
