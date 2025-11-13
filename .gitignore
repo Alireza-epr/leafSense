@@ -26,3 +26,6 @@ yarn-error.log*
 *.pdf
 *.xlsx
 *.txt
+
+# Test 
+/test-results
