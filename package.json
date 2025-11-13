@@ -9,7 +9,6 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "jest",
-    "test:components": "jest --config jest.config.js",
     "e2e": "playwright test",
     "lint": "eslint 'src/**/*.{ts,tsx,js,jsx}'",
     "format": "prettier --write 'src/**/*.{ts,tsx,js,jsx,json,md}'",
