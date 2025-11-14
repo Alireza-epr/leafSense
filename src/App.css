@@ -4,7 +4,22 @@ body {
 }
 
 .app-wrapper {
-  background-color: beige;
+  position: relative;
   width: 100vw;
   height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
+
+.app-header {
+  width: 100%;
+  flex: 1 1 1px;
+  background-color: lightcyan;
+}
+
+.app-main {
+  width: 100%;
+  flex: 9 1 1px;
+  display: flex;
+}
+

@@ -55,3 +55,6 @@ This repository uses **GitHub Actions** to automatically:
 - Jest + RTL + Playwright  
 - GitHub Actions CI/CD  
 
+## Demo
+
+![Demo](./demo.gif)

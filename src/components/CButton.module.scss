@@ -1,0 +1,12 @@
+.wrapper {
+    padding: 16px;
+    margin: 16px;
+    border: 1px solid white;
+    border-radius: 16px;
+    background-color: aquamarine;
+    &:hover {
+        background-color: aliceblue;
+        cursor: pointer;
+    }
+}
+

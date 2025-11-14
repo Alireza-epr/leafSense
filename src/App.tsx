@@ -1,11 +1,17 @@
-import './App.css'
+import "@/App.css"
+import Map from "@/components/Map"
+import Sidebar from "@/components/Sidebar"
 
-function App() {
+const App = () => {
   
   return (
     <>
       <div className='app-wrapper'>
-          <h1>Earth Light Curve</h1>
+        <header className='app-header'></header>
+        <main className='app-main'>
+          <Sidebar />
+          <Map />
+        </main>
       </div>
     </>
   )

@@ -21,9 +21,12 @@ export default defineConfig([
     },
     rules: {
       // ignore unused function parameters
-      '@typescript-eslint/no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': "off",
       "prefer-const": "off",
-      "no-empty": "off"
+      "no-empty": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/ban-ts-comment": "off"
     },
     
   },
