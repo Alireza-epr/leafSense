@@ -1,8 +1,9 @@
-import sidebarStyles from "@/components/Sidebar.module.scss"
-import CButton from "@/components/CButton"
-import { useMapStore } from "@/store/mapStore"
+import sidebarStyles from "./Sidebar.module.scss"
+import CButton from "../components/CButton"
+import { useMapStore } from "../store/mapStore"
 import { useEffect, useState } from "react"
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
+import { parseURL, serializeURL } from "../utils/url"
 
 const Sidebar = () => {
 
@@ -78,9 +79,14 @@ const Sidebar = () => {
       params.set("endDate", endDate)
     }
 
-    window.history.replaceState(null, '', `?${params.toString()}`)
+    /* console.log("roi")
+    console.log(roi)
+    const serializedURL = serializeURL(roi, startDate, endDate)
+    window.history.replaceState( null, '', serializedURL) */
+
+    window.history.replaceState( null, '', `?${params.toString()}`)
     console.log("URL state updated")
-  }, [roi, startDate, endDate])
+  }, [roi])
 
 
   return (

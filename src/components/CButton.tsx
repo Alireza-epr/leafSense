@@ -1,4 +1,4 @@
-import buttonStyles from "@/components/CButton.module.scss"
+import buttonStyles from "./CButton.module.scss"
 
 export interface ICButtonProps {
     title: string,

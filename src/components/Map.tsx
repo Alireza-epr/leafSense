@@ -1,9 +1,9 @@
-import mapStyle from '@/components/Map.module.scss'
+import mapStyle from './Map.module.scss'
 import { useRef, useEffect, useCallback } from 'react';
 import maplibregl, { LngLat } from 'maplibre-gl';
 import { Map as MapLibre } from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { useMapStore } from '@/store/mapStore';
+import { useMapStore } from '../store/mapStore';
 import type { Feature, FeatureCollection, Polygon } from 'geojson'
 
 const Map = () => {
@@ -176,7 +176,8 @@ const Map = () => {
         <div 
             className={` ${mapStyle.wrapper}`}
             style={{width: "100%",height: "100%"}}
-            ref={mapContainer}    
+            ref={mapContainer}
+            data-testid="map-container"
         />            
     )
 }
