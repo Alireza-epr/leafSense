@@ -26,4 +26,4 @@ Thanks for your interest in contributing! Please follow these steps.
 1. Create a new branch: `git checkout -b feature/my-feature`
 2. Commit your changes
 3. Push the branch: `git push origin feature/my-feature`
-4. Open a Pull Request targeting `main`
+4. Open a Pull Request targeting `master`
