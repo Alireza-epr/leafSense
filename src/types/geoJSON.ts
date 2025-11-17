@@ -1,5 +1,5 @@
 // Geometry Interfaces
-export type TGeoJSONGeometryType = 
+export type TGeoJSONGeometryType =
   | "Point"
   | "LineString"
   | "Polygon"
@@ -25,7 +25,7 @@ export interface ILineStringGeometry extends IGeometry {
 
 export interface IPolygonGeometry extends IGeometry {
   type: "Polygon";
-  coordinates: [ [number, number][] ]; // array of rings
+  coordinates: [[number, number][]]; // array of rings
 }
 
 // Feature Interface
@@ -34,7 +34,6 @@ export interface IFeature<G extends IGeometry = IGeometry, P = any> {
   geometry: G;
   properties?: P; // optional metadata
 }
-
 
 // FeatureCollection Interface
 export interface FeatureCollection<G extends IGeometry = IGeometry, P = any> {
