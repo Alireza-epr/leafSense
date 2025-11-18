@@ -57,7 +57,7 @@ Protocol: POST
 Key Endpoints:
 - collections
 - conformance
-- search
+- search: offers more flexibility compared to the query extension
 - queryables
 
 Query Parameters (via /search):
@@ -120,7 +120,42 @@ https://stac.dataspace.copernicus.eu/v1/search
                         "property": "datetime"
                     },
                     {
-                        "timestamp": "2021-04-08T04:39:23Z"
+                        "timestamp": "2025-08-19T00:00:00Z"
+                    }
+                ]
+            },
+            {
+                "op": "s_contains",
+                "args": [
+                    {
+                        "property": "geometry"
+                    },
+                    {
+                        "type": "Polygon",
+                        "coordinates": [
+                            [
+                                [
+                                    6.980803263345194,
+                                    51.10990285774977
+                                ],
+                                [
+                                    7.683914901863773,
+                                    51.10389656882401
+                                ],
+                                [
+                                    7.675943114578587,
+                                    50.8760849480924
+                                ],
+                                [
+                                    6.9728314760600085,
+                                    50.88815585282626
+                                ],
+                                [
+                                    6.980803263345194,
+                                    51.10990285774977
+                                ]
+                            ]
+                        ]
                     }
                 ]
             }
