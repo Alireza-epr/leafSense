@@ -1,7 +1,12 @@
 import sidebarStyles from "./Sidebar.module.scss";
 import CButton from "../components/CButton";
+import Section from "./Section";
 import { EMarkerType, TMarker, useMapStore } from "../store/mapStore";
 import { useEffect, useState } from "react";
+import DateInput from "./DateInput";
+import RangeInput from "./RangeInput";
+import Coordinates from "./Coordinates";
+
 
 const Sidebar = () => {
   const marker = useMapStore((state) => state.marker);
@@ -12,6 +17,16 @@ const Sidebar = () => {
 
   const showChart = useMapStore((state)=> state.showChart)
   const setShowChart = useMapStore((state)=> state.setShowChart)
+
+  const startDate = useMapStore((state) => state.startDate)
+  const setStartDate = useMapStore((state) => state.setStartDate)
+  
+  const endDate = useMapStore((state) => state.endDate)
+  const setEndDate = useMapStore((state) => state.setEndDate)
+
+  const cloudCover = useMapStore((state) => state.cloudCover)
+  const setCloudCover = useMapStore((state) => state.setCloudCover)
+
 
   const handlePointClick = () => {
     setMarker((prev)=>{
@@ -61,46 +76,91 @@ const Sidebar = () => {
   }
 
   const handleClearPolygon = () => {
-    setMarkers( (prev)=> {
-      prev.forEach( m => {
-        if(m.type === EMarkerType.polygon){
-          m.marker.remove()
-        } 
-      })
-      return prev.filter( m => m.type !== EMarkerType.polygon )
-    })
+
+    setMarkers(prev => {
+      const toRemove = prev.filter(m => m.type === EMarkerType.polygon);
+      toRemove.forEach(m => m.marker.remove());
+
+      return prev.filter(m => m.type !== EMarkerType.polygon);
+    });
   }
 
   const handleSetStaticChart = () => {
     setShowChart(!showChart);
   };
 
+  const handleStartDateChange = (a_Date: string) => {
+    setStartDate(a_Date)  
+  }
+
+  const handleEndDateChange = (a_Date: string) => {
+    setEndDate(a_Date)  
+  }
+
+  const handleRangeChange = (a_Range: string) => {
+    setCloudCover(a_Range)  
+  }
   return (
     <div className={` ${sidebarStyles.wrapper}`}>
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
-        <CButton
-          title={!marker.point ? "Enable Marker" : "Disable Marker"}
-          onButtonClick={handlePointClick}
-        />
-        <CButton
-          title={"Clear Points"}
-          onButtonClick={handleClearPoint}
-          disable={markers.filter( m => m.type == EMarkerType.point ).length == 0}
-        />
-        <CButton
-          title={!marker.polygon ? "Enable ROI" : "Disable ROI"}
-          onButtonClick={handlePolygonClick}
-        />
-        <CButton
-          title={"Clear Polygon"}
-          onButtonClick={handleClearPolygon}
-          disable={markers.filter( m => m.type == EMarkerType.polygon ).length < 4}
-        />
-        <CButton
-          title={!showChart ? "Static Chart" : "Hide Chart"}
-          onButtonClick={handleSetStaticChart}
-          disable={markers.filter( m => m.type == EMarkerType.polygon ).length < 4}
-        />
+        <Section title="Drawing">
+          <div className={` ${sidebarStyles.buttonRowWrapper}`}>
+            <CButton
+              title={!marker.point ? "Enable Marker" : "Disable Marker"}
+              onButtonClick={handlePointClick}
+            />
+            <CButton
+              title={"Clear Markers"}
+              onButtonClick={handleClearPoint}
+              disable={markers.filter( m => m.type == EMarkerType.point ).length == 0}
+            />
+          </div>
+          <div className={` ${sidebarStyles.buttonRowWrapper}`}>
+            <CButton
+              title={!marker.polygon ? "Enable ROI" : "Disable ROI"}
+              onButtonClick={handlePolygonClick}
+            />
+            <CButton
+              title={"Clear ROI"}
+              onButtonClick={handleClearPolygon}
+              disable={markers.filter( m => m.type == EMarkerType.polygon ).length < 4}
+            />
+          </div>
+        </Section>
+
+        <Section title="Start Date">
+          <DateInput
+            value={startDate}
+            onDateChange={handleStartDateChange}
+          />
+        </Section>
+
+        <Section title="End Date">
+          <DateInput
+            value={endDate}
+            onDateChange={handleEndDateChange}
+          />
+        </Section>
+
+        <Section title={`Cloud Cover - ${cloudCover}%`}>
+          <RangeInput 
+            value={cloudCover}
+            onRangeChange={handleRangeChange}
+          />
+        </Section>
+
+        <Section title="ROI Coordinates">
+          <Coordinates />
+        </Section>
+
+        <Section title="Chart">
+          <CButton
+            title={!showChart ? "Static Chart" : "Hide Chart"}
+            onButtonClick={handleSetStaticChart}
+            disable={markers.filter( m => m.type == EMarkerType.polygon ).length < 4}
+          />
+        </Section>
+        
       </div>
     </div>
   );

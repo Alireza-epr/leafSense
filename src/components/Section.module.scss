@@ -1,0 +1,16 @@
+.wrapper {
+    display: flex;
+    padding: 16px;
+    flex-direction: column;
+    gap: 16px;
+    border-radius: 16px;
+    border: 1px solid grey;
+    background-color: lightcyan;
+}
+
+.contentWrapper {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+}

@@ -3,9 +3,11 @@
     //margin: 16px 0;
     border: 1px solid white;
     border-radius: 16px;
-    background-color: aquamarine;
+    background-color: darkcyan;
+    color: white;
+    flex: 1 1 0px;
     &:hover {
-        background-color: aliceblue;
+        background-color: lightseagreen;
         cursor: pointer;
     }
 }

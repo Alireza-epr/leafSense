@@ -3,7 +3,7 @@ import { useRef, useEffect, useCallback } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { EMarkerType, useMapStore } from "../store/mapStore";
+import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
 import type { Feature, FeatureCollection, Polygon } from "geojson";
 import { useFilterSTAC } from "@/hooks/apiHook";
 import {
@@ -36,12 +36,14 @@ const Map = () => {
   const marker = useMapStore((state) => state.marker);
   const startDate = useMapStore((state) => state.startDate);
   const endDate = useMapStore((state) => state.endDate);
+  const cloudCover = useMapStore((state) => state.cloudCover);
   const markers = useMapStore((state) => state.markers);
   const showChart = useMapStore((state) => state.showChart);
 
   const setMarkers = useMapStore((state) => state.setMarkers);
   const setStartDate = useMapStore((state) => state.setStartDate);
   const setEndDate = useMapStore((state) => state.setEndDate);
+  const setCloudCover = useMapStore((state) => state.setCloudCover);
   
   
   const mapContainer = useRef<HTMLDivElement>(null);
@@ -96,6 +98,63 @@ const Map = () => {
       // Remove polygon layer
       removePolygonLayer()
     }
+  }
+
+  const drawPolygon = (a_PolygonMarkers: IMarker[] ) => {
+    const polygonCoords = a_PolygonMarkers.map( m => {
+      const lngLat = m.marker.getLngLat()
+      return [lngLat.lng, lngLat.lat]
+    })
+    
+    const geojson: Feature<Polygon> = {
+      type: "Feature",
+      geometry: {
+        type: "Polygon",
+        coordinates: [polygonCoords], // note: array of arrays
+      },
+      properties: {},
+    };
+    
+    removePolygonLayer()
+    
+    mapObject.current!.addSource("polygon", {
+      type: "geojson",
+      data: geojson,
+    });
+
+    mapObject.current!.addLayer({
+      id: "polygon",
+      type: "fill",
+      source: "polygon",
+      paint: {
+        "fill-color": "#088",
+        "fill-opacity": 0.5,
+      },
+    });
+
+  }
+
+  const addMarkersToMap = () => {
+    setMarkers( (prev) => {
+      const updated: IMarker[] = []
+
+      for(const marker of prev){
+        if(marker.marker._map){
+          updated.push(marker)
+          continue
+        }
+
+        const newMarkerWithMap = new maplibregl.Marker()
+          .setLngLat( marker.marker.getLngLat() )
+          .addTo(mapObject.current!)
+        
+        updated.push({
+          type: marker.type,
+          marker: newMarkerWithMap
+        })
+      }
+      return updated
+    })
   }
 
   // Loading Map
@@ -173,6 +232,11 @@ const Map = () => {
   useEffect(() => {
     if(!mapObject.current) return
 
+    if(markers.length !== 0 && markers.some( m => !m.marker._map )){    
+      addMarkersToMap()
+      return
+    }
+    
     const polygonMarkers = markers.filter( m => m.type == EMarkerType.polygon )
 
     if(polygonMarkers.length === 0){
@@ -197,37 +261,8 @@ const Map = () => {
     }
 
     console.log("start drawing polygon")
-    
-    const polygonCoords = polygonMarkers.map( m => {
-      const lngLat = m.marker.getLngLat()
-      return [lngLat.lng, lngLat.lat]
-    })
-    
-    const geojson: Feature<Polygon> = {
-      type: "Feature",
-      geometry: {
-        type: "Polygon",
-        coordinates: [polygonCoords], // note: array of arrays
-      },
-      properties: {},
-    };
-    
-    removePolygonLayer()
-    
-    mapObject.current.addSource("polygon", {
-      type: "geojson",
-      data: geojson,
-    });
-
-    mapObject.current.addLayer({
-      id: "polygon",
-      type: "fill",
-      source: "polygon",
-      paint: {
-        "fill-color": "#088",
-        "fill-opacity": 0.5,
-      },
-    });
+    console.log(markers)
+    drawPolygon(polygonMarkers)
 
   }, [markers])
 
@@ -238,6 +273,7 @@ const Map = () => {
     const polygonCoordsParam = params.get("roi");
     const startDateParam = params.get("startDate");
     const endDateParam = params.get("endDate");
+    const cloudParam = params.get("cloud");
 
     if (polygonCoordsParam) {
       let polygonCoords: [number, number][] = JSON.parse(polygonCoordsParam);
@@ -269,6 +305,9 @@ const Map = () => {
     if (endDateParam) {
       setEndDate(endDateParam);
     }
+    if (cloudParam) {
+      setCloudCover(cloudParam);
+    }
   }, []);
 
   // Write URLParams
@@ -291,10 +330,13 @@ const Map = () => {
     if (endDate) {
       params.set("endDate", endDate);
     }
+    if(cloudCover){
+      params.set("cloud", cloudCover);
+    }
 
     window.history.replaceState(null, "", `?${params.toString()}`);
 
-  }, [markers, startDate, endDate]);
+  }, [markers, startDate, endDate, cloudCover]);
 
   const sampleData = [
     { date: "2025-01-01", ndvi: 0.4 },

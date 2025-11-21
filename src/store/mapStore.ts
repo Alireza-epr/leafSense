@@ -1,3 +1,4 @@
+import { getLocaleISOString } from "../utils/dateUtils";
 import { Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
@@ -18,6 +19,7 @@ export interface IMapStoreStates {
   markers: IMarker[]
   startDate: string;
   endDate: string;
+  cloudCover: string
   showChart: boolean
 }
 
@@ -27,6 +29,7 @@ export interface IMapStoreActions {
   setMarkers: (a_Markers: IMarker[] | ((prev: IMarker[]) => IMarker[])) => void;
   setStartDate: (a_Start: string | ((prev: string) => string)) => void;
   setEndDate: (a_End: string | ((prev: string) => string)) => void;
+  setCloudCover: (a_CloudCover: string | ((a_Prev: string) => string)) => void
   setShowChart: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
 }
 
@@ -40,8 +43,9 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         [EMarkerType.polygon]: false,
       } as TMarker,
       markers: [] as IMarker[],
-      startDate: "",
-      endDate: "",
+      startDate: getLocaleISOString(new Date()), // 2025-10-31T14:43:33
+      endDate: getLocaleISOString(new Date()), // 2025-10-31T14:43:33
+      cloudCover: "10",
       showChart: false,
     },
     (set) => ({
@@ -64,6 +68,11 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       setEndDate: (a_End: string | ((a_Prev: string) => string)) =>
         set((state) => ({
           endDate: typeof a_End === "function" ? a_End(state.endDate) : a_End,
+        })),
+      
+      setCloudCover: (a_CloudCover: string | ((a_Prev: string) => string)) =>
+        set((state) => ({
+          cloudCover: typeof a_CloudCover === "function" ? a_CloudCover(state.cloudCover) : a_CloudCover,
         })),
 
       setShowChart: (a_Value: boolean | ((prev: boolean) => boolean)) =>

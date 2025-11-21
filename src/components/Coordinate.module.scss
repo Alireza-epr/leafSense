@@ -1,0 +1,33 @@
+.wrapper {
+    flex: 1 1 0px;
+    display: flex;
+    gap: 16px;
+    flex-direction: row;
+    
+}
+
+.contentWrapper {
+    flex: 10 1 0px;
+    height: 100%;
+    display: flex;
+    gap: 16px;
+}
+
+.counter {
+    flex: 1 1 0px;
+    align-self: center;
+    display: flex;
+    justify-content: flex-end; 
+}
+
+.value {
+    flex: 1 1 0px;
+    display: flex;
+}
+
+input[type="number"] {
+    //height: 100%;
+    flex: 1 1 0px;
+    border-radius: 16px;
+    padding: 1vh;
+}
