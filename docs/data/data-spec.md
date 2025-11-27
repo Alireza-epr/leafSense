@@ -85,13 +85,24 @@ Ref:
 - https://stac.dataspace.copernicus.eu/v1/collections/sentinel-2-l2a/queryables 
 - https://geojson.org/schema/Feature.json
 
+## Note: Since the Copernicus STAC API returns raw JP2000 data, the following API is used instead, as it provides the data directly in TIFF format.
+
+API Name: Microsoft Planetary Computer
+
+Base URL: https://planetarycomputer.microsoft.com/api/stac/v1
+
+Protocol: POST
+
+Endpoints: /search
+
 ```js
-https://stac.dataspace.copernicus.eu/v1/search
+https://planetarycomputer.microsoft.com/api/stac/v1/search
 
 {
     "collections": [
         "sentinel-2-l2a"
     ],
+    "limit": 20,
     "filter": {
         "op": "and",
         "args": [
@@ -151,21 +162,6 @@ https://stac.dataspace.copernicus.eu/v1/search
                 ]
             }
         ]
-    }
-}
-```
-
-```js
-https://stac.dataspace.copernicus.eu/v1/search
-
-{
-    "collections": [
-        "sentinel-2-l2a"
-    ],
-    "query": {
-        "eo:cloud_cover": {
-            "lt": 15
-        }
     }
 }
 ```
