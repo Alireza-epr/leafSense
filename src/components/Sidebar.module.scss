@@ -3,18 +3,24 @@
   background-color: lightseagreen;
   position: relative;
   padding: 1.5vh;
+  height: 100%;
+  max-height: 100%;
+  scrollbar-color:green lightseagreen;
+  overflow-y: scroll;
+  display: flex;
+  flex-direction: column;
 }
 
 .buttonsWrapper {
-  //background-color: lightcyan;
+  flex: 1 1 0px;
   display: flex;
-  gap: 16px;
+  gap: 2%;
   flex-direction: column;
-  height: 100%;
-  border-radius: 16px ;
+  border-radius: 16px;
 }
 
 .buttonRowWrapper {
   display: flex;
   width: 100%;
+  flex: 1 1 0px;
 }

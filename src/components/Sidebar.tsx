@@ -147,10 +147,6 @@ const Sidebar = () => {
           <RangeInput value={cloudCover} onRangeChange={handleRangeChange} />
         </Section>
 
-        <Section title="ROI Coordinates" disabled={fetchFeatures}>
-          <Coordinates />
-        </Section>
-
         <Section title="Chart">
           <CButton
             title={!fetchFeatures ? "Show Chart" : "Hide Chart"}
@@ -159,6 +155,10 @@ const Sidebar = () => {
               markers.filter((m) => m.type == EMarkerType.polygon).length < 4
             }
           />
+        </Section>
+
+        <Section title="ROI Coordinates" disabled={fetchFeatures}>
+          <Coordinates />
         </Section>
       </div>
     </div>
