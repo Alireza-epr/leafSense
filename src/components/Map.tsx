@@ -57,6 +57,7 @@ const Map = () => {
   const temporalOp = useMapStore((state) => state.temporalOp);
   const spatialOp = useMapStore((state) => state.spatialOp);
   const limit = useMapStore((state) => state.limit);
+  const showROI = useMapStore((state) => state.showROI);
 
   const setTokenCollection = useMapStore((state) => state.setTokenCollection);
   const setMarkers = useMapStore((state) => state.setMarkers);
@@ -64,6 +65,7 @@ const Map = () => {
   const setEndDate = useMapStore((state) => state.setEndDate);
   const setCloudCover = useMapStore((state) => state.setCloudCover);
   const setShowChart = useMapStore((state) => state.setShowChart);
+  const setShowROI = useMapStore((state) => state.setShowROI);
   const setShowError = useMapStore((state) => state.setShowError);
   const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
   const setSamples = useMapStore((state) => state.setSamples);
@@ -244,6 +246,24 @@ const Map = () => {
     setFetchFeatures(false);
     showMap();
   };
+
+  const handleFlyToROI = (a_Zoom: number) => {
+    const coordinates = getCoordinatesFromMarkers()
+    mapObject.current!.fitBounds([
+      coordinates[0],
+      coordinates[1],
+    ], {zoom: a_Zoom});
+  } 
+
+  const handleRightClick = (a_Event: MouseEvent) => {
+    a_Event.preventDefault()
+    if(a_Event.ctrlKey){
+      setShowROI(true)
+    } else {
+      setShowROI(false)
+    }
+  }
+
   // Loading Map
   useEffect(() => {
     if (mapObject.current || !mapContainer.current) return;
@@ -284,8 +304,11 @@ const Map = () => {
 
     mapObject.current = map;
 
+    mapContainer.current.addEventListener( "click" , handleRightClick )
+
     return () => {
       // By component unmounting
+      mapContainer.current?.removeEventListener( "click" , handleRightClick )
       mapObject.current?.remove();
       mapObject.current = null;
     };
@@ -356,6 +379,16 @@ const Map = () => {
     //console.log(markers);
     drawPolygon(polygonMarkers);
   }, [markers]);
+
+  // Show ROI
+  /* useEffect(()=>{
+    if(showROI){
+      console.log("markers")
+      console.log(markers)
+      //drawPolygon(markers)
+    }
+  }
+  ,[showROI]) */
 
   // Read URLParams
   useEffect(() => {
@@ -562,6 +595,18 @@ const Map = () => {
 
   return (
     <div className={` ${mapStyle.wrapper}`}>
+      {
+        markers.filter((m) => m.type == EMarkerType.polygon).length === 4
+        ?
+          <div 
+            className={` ${mapStyle.flyTo}`} 
+            onClick={()=>handleFlyToROI(mapObject.current!.getZoom())}
+          >
+            <img src="./src/assets/images/marker-fly.svg" alt="marker-fly" className={` ${mapStyle.flyToImage}`} />
+          </div>
+        :
+          <></>
+      }
       <div
         className={` ${mapStyle.mapWrapper}`}
         style={{ width: "100%", height: "100%" }}

@@ -41,6 +41,7 @@ export interface IMapStoreStates {
   doneFeature: number;
   temporalOp: TTemporalComparison;
   spatialOp: TSpatialComparison;
+  showROI: boolean
 }
 
 export interface IMapStoreActions {
@@ -52,6 +53,7 @@ export interface IMapStoreActions {
   setCloudCover: (a_CloudCover: string | ((a_Prev: string) => string)) => void;
   setSnowCover: (a_SnowCover: string | ((a_Prev: string) => string)) => void;
   setShowChart: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
+  setShowROI: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setShowError: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setFetchFeatures: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setGlobalLoading: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
@@ -106,6 +108,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       showError: false,
       globalLoading: false,
       doneFeature: 1,
+      showROI: false,
       //NDVI
       samples: [] as INDVISample[],
     },
@@ -184,6 +187,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           showChart:
             typeof a_Value === "function" ? a_Value(state.showChart) : a_Value,
+        })),
+      
+      setShowROI: (a_Value: boolean | ((prev: boolean) => boolean)) =>
+        set((state) => ({
+          showROI:
+            typeof a_Value === "function" ? a_Value(state.showROI) : a_Value,
         })),
 
       setShowError: (a_Value: boolean | ((prev: boolean) => boolean)) =>

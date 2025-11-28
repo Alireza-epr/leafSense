@@ -16,7 +16,7 @@ const Sidebar = () => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
 
-  const showChart = useMapStore((state) => state.showChart);
+  const showROI = useMapStore((state) => state.showROI);
   const setShowChart = useMapStore((state) => state.setShowChart);
 
   const fetchFeatures = useMapStore((state) => state.fetchFeatures);
@@ -133,10 +133,6 @@ const Sidebar = () => {
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
         <Section title="Drawing" disabled={fetchFeatures}>
           <div className={` ${sidebarStyles.buttonRowWrapper}`}>
-            {/* <CButton
-              title={!marker.point ? "Enable Marker" : "Disable Marker"}
-              onButtonClick={handlePointClick}
-            /> */}
             <CButton
               title={"Marker"}
               active={marker.polygon}

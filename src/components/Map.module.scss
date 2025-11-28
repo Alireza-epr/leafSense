@@ -24,3 +24,31 @@
 .error {
   font-weight: bold;
 }
+
+.flyTo {
+  z-index: 2;
+  position: absolute;
+  top: 2%;
+  left: 2%;
+  width: 5%;
+  height: 5%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 2rem;
+  border: 1px solid white;
+  border-radius: 16px;
+  background-color: darkcyan;
+  color: white;
+  flex: 1 1 0px;
+  &:hover {
+      background-color: lightseagreen;
+      cursor: pointer;
+  }
+
+}
+
+.flyToImage {
+  width: 100%;
+  height: 100%;
+}
