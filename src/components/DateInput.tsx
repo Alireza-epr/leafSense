@@ -21,7 +21,7 @@ const DateInput = (props: IDateInput) => {
         type="datetime-local"
         value={props.value}
         onChange={(v) => onDateChange(v)}
-        min="2024-01-01T00:00"
+        min="2017-01-01T00:00"
         max={getLocaleISOString(new Date())}
         disabled={props.disabled}
         className={` ${dateInputStyles.input}`}

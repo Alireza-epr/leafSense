@@ -1,5 +1,5 @@
 import mapStyle from "./Map.module.scss";
-import { useRef, useEffect, useCallback } from "react";
+import { useRef, useEffect, useCallback, use, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -14,48 +14,64 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { ESTACCollections, ISTACFilterRequest, TCloudCoverFilter, TComparisonOperators, TDateTimeFilter, TLogicalOperators, TSpatialComparison, TSpatialFilter, TTemporalComparison } from "../types/apiTypes";
+import {
+  ESTACCollections,
+  ISTACFilterRequest,
+  TCloudCoverFilter,
+  TComparisonOperators,
+  TDateTimeFilter,
+  TLogicalOperators,
+  TSnowCoverFilter,
+  TSpatialComparison,
+  TSpatialFilter,
+  TTemporalComparison,
+} from "../types/apiTypes";
 import Loading from "./Loading";
 import { ELoadingSize } from "../types/generalTypes";
-import { getReflectanceConverter } from "../utils/calculationUtils";
+import { useNDVI } from "../hooks/ndviHook";
+import Chart from "./Chart";
+import { useTokenCollection } from "../hooks/collectionHook";
+
+//import { getNDVI } from "../utils/calculationUtils";
 
 const Map = () => {
-  const { response, error, isLoading, fetchData } = useFilterSTAC()
-
-  useEffect( () => {
-    if(response){
-      console.log("response numbers")
-      console.log(response?.numberReturned) 
-      if(response.features.length > 0){
-        response.features.forEach( (f, index) => {
-          console.log("Feature "+(index+1))
-          console.log("B08 :")
-          console.log(f.assets["B08_10m"])
-          console.log("B04 :")
-          console.log(f.assets["B04_10m"])
-        })
-      }
-    }
-  }, [response])
-  useEffect( () => {
-    if(error){
-      console.log("error")
-      console.log(error)
-    }
-  }, [error])
+  const { getFeatures } = useFilterSTAC();
+  const { getTokenCollection } = useTokenCollection();
+  const { getNDVI } = useNDVI();
 
   const marker = useMapStore((state) => state.marker);
   const startDate = useMapStore((state) => state.startDate);
   const endDate = useMapStore((state) => state.endDate);
   const cloudCover = useMapStore((state) => state.cloudCover);
+  const snowCover = useMapStore((state) => state.snowCover);
   const markers = useMapStore((state) => state.markers);
   const showChart = useMapStore((state) => state.showChart);
+  const showError = useMapStore((state) => state.showError);
+  const fetchFeatures = useMapStore((state) => state.fetchFeatures);
+  const globalLoading = useMapStore((state) => state.globalLoading);
+  const samples = useMapStore((state) => state.samples);
+  const responseFeatures = useMapStore((state) => state.responseFeatures);
+  const errorFeatures = useMapStore((state) => state.errorFeatures);
+  const tokenCollection = useMapStore((state) => state.tokenCollection);
+  const doneFeature = useMapStore((state) => state.doneFeature);
+  const temporalOp = useMapStore((state) => state.temporalOp);
+  const spatialOp = useMapStore((state) => state.spatialOp);
+  const limit = useMapStore((state) => state.limit);
+  const showROI = useMapStore((state) => state.showROI);
 
+  const setTokenCollection = useMapStore((state) => state.setTokenCollection);
   const setMarkers = useMapStore((state) => state.setMarkers);
   const setStartDate = useMapStore((state) => state.setStartDate);
   const setEndDate = useMapStore((state) => state.setEndDate);
   const setCloudCover = useMapStore((state) => state.setCloudCover);
   const setShowChart = useMapStore((state) => state.setShowChart);
+  const setShowROI = useMapStore((state) => state.setShowROI);
+  const setShowError = useMapStore((state) => state.setShowError);
+  const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
+  const setSamples = useMapStore((state) => state.setSamples);
+  const setGlobalLoading = useMapStore((state) => state.setGlobalLoading);
+  const setResponseFeatures = useMapStore((state) => state.setResponseFeatures);
+  const setErrorFeatures = useMapStore((state) => state.setErrorFeatures);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapObject = useRef<MapLibre | null>(null);
@@ -141,8 +157,8 @@ const Map = () => {
 
     removePolygonLayer();
 
-    if(!mapObject.current!.getStyle()){
-      return
+    if (!mapObject.current!.getStyle()) {
+      return;
     }
 
     mapObject.current!.addSource("polygon", {
@@ -184,17 +200,68 @@ const Map = () => {
     });
   };
 
-  const getCoordinatesFromMarkers = () : [number, number][] => {
-
-    let coordinates: [number, number][] = markers.map( m => {
-      const lng = m.marker.getLngLat().lng
-      const lat = m.marker.getLngLat().lat
-      return [lng, lat]
-    })
+  const getCoordinatesFromMarkers = (): [number, number][] => {
+    let coordinates: [number, number][] = markers.map((m) => {
+      const lng = m.marker.getLngLat().lng;
+      const lat = m.marker.getLngLat().lat;
+      return [lng, lat];
+    });
     // Close the polygon
-    coordinates.push(coordinates[0])
+    coordinates.push(coordinates[0]);
 
-    return coordinates
+    return coordinates;
+  };
+
+  const showMap = () => {
+    setShowError(false);
+    setShowChart(false);
+    setGlobalLoading(false);
+  };
+
+  const showLoadingModal = () => {
+    setShowError(false);
+    setShowChart(false);
+    setGlobalLoading(true);
+  };
+
+  const showChartModal = () => {
+    setShowError(false);
+    setShowChart(true);
+    setGlobalLoading(false);
+  };
+
+  const showErrorModal = () => {
+    setShowError(true);
+    setShowChart(false);
+    setGlobalLoading(false);
+  };
+
+  const resetStates = () => {
+    setSamples([]);
+    setResponseFeatures(null);
+    setErrorFeatures(null);
+  };
+
+  const handleCloseChart = () => {
+    setFetchFeatures(false);
+    showMap();
+  };
+
+  const handleFlyToROI = (a_Zoom: number) => {
+    const coordinates = getCoordinatesFromMarkers()
+    mapObject.current!.fitBounds([
+      coordinates[0],
+      coordinates[1],
+    ], {zoom: a_Zoom});
+  } 
+
+  const handleRightClick = (a_Event: MouseEvent) => {
+    a_Event.preventDefault()
+    if(a_Event.ctrlKey){
+      setShowROI(true)
+    } else {
+      setShowROI(false)
+    }
   }
 
   // Loading Map
@@ -237,8 +304,11 @@ const Map = () => {
 
     mapObject.current = map;
 
+    mapContainer.current.addEventListener( "click" , handleRightClick )
+
     return () => {
       // By component unmounting
+      mapContainer.current?.removeEventListener( "click" , handleRightClick )
       mapObject.current?.remove();
       mapObject.current = null;
     };
@@ -279,14 +349,14 @@ const Map = () => {
     const polygonMarkers = markers.filter((m) => m.type == EMarkerType.polygon);
 
     if (polygonMarkers.length === 0) {
-      setShowChart(false)
+      setShowChart(false);
       removePolygonLayer();
       return;
     }
 
     if (polygonMarkers.length < 4) {
-      console.log("not enough polygon points");
-      setShowChart(false)
+      //console.log("not enough polygon points");
+      setShowChart(false);
       return;
     }
 
@@ -294,7 +364,7 @@ const Map = () => {
       const newPolygonMarker = polygonMarkers[polygonMarkers.length - 1].marker;
       const lngLat = newPolygonMarker.getLngLat();
 
-      console.log("removing polygon");
+      //console.log("removing polygon");
       removePolygon();
 
       addMarker(
@@ -305,10 +375,20 @@ const Map = () => {
       return;
     }
 
-    console.log("start drawing polygon");
-    console.log(markers);
+    //console.log("start drawing polygon");
+    //console.log(markers);
     drawPolygon(polygonMarkers);
   }, [markers]);
+
+  // Show ROI
+  /* useEffect(()=>{
+    if(showROI){
+      console.log("markers")
+      console.log(markers)
+      //drawPolygon(markers)
+    }
+  }
+  ,[showROI]) */
 
   // Read URLParams
   useEffect(() => {
@@ -380,15 +460,12 @@ const Map = () => {
     window.history.replaceState(null, "", `?${params.toString()}`);
   }, [markers, startDate, endDate, cloudCover]);
 
-  const sampleData = [
-    { date: "2025-01-01", ndvi: 0.4 },
-    { date: "2025-02-01", ndvi: 0.5 },
-    { date: "2025-03-01", ndvi: 0.55 },
-  ];
+  // Get NDVI for STAC Items
 
-  useEffect(()=>{
-    if(showChart){
-      const cloudCoverFilter : TCloudCoverFilter = {
+  // 1. Get Features
+  useEffect(() => {
+    if (fetchFeatures) {
+      const cloudCoverFilter: TCloudCoverFilter = {
         op: "<=",
         args: [
           {
@@ -396,7 +473,16 @@ const Map = () => {
           },
           Number(cloudCover),
         ],
-      }
+      };
+      const snowCoverFilter: TSnowCoverFilter = {
+        op: "<=",
+        args: [
+          {
+            property: "s2:snow_ice_percentage",
+          },
+          Number(snowCover),
+        ],
+      };
       const datetimeFilter: TDateTimeFilter = {
         op: "t_during",
         args: [
@@ -407,39 +493,120 @@ const Map = () => {
             interval: [startDate, endDate],
           },
         ],
-      }
+      };
       const geometryFilter: TSpatialFilter = {
-        op: "s_contains",
+        op: spatialOp,
         args: [
           {
             property: "geometry",
           },
           {
             type: "Polygon",
-            coordinates: [
-              getCoordinatesFromMarkers(),
-            ],
+            coordinates: [getCoordinatesFromMarkers()],
           },
         ],
+      };
+
+      let temporalFilter = ''
+
+      switch(temporalOp){
+        case "t_during":
+          temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/${endDate.substring(0, endDate.indexOf("T"))}`
+          break;
+        case "t_after":
+          temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/`
+          break;
+        case "t_before":
+          temporalFilter = `/${endDate.substring(0, endDate.indexOf("T"))}`
+          break;
       }
 
       const postBody: ISTACFilterRequest = {
         collections: [ESTACCollections.Sentinel2l2a],
         filter: {
           op: "and",
-          args: [
-            cloudCoverFilter,
-            datetimeFilter,
-            geometryFilter,
-          ],
+          args: [cloudCoverFilter, snowCoverFilter, geometryFilter],
         },
+        datetime: temporalFilter,
+        limit: Number(limit)
       };
-      fetchData(postBody)
+      console.log("Request")
+      console.log(postBody)
+      showLoadingModal();
+      resetStates();
+      getFeatures(postBody);
+    } else {
+      resetStates();
+      showMap();
     }
-  },[showChart])
+  }, [fetchFeatures]);
+
+  useEffect(() => {
+    if (errorFeatures) {
+      console.error("Failed to get features");
+      console.error(errorFeatures);
+      //resetStates();
+      showErrorModal();
+    }
+  }, [errorFeatures]);
+
+  // 2. Get Token
+  useEffect(() => {
+    if (responseFeatures) {
+      console.log("Features")
+      console.log(responseFeatures.features)
+      if(responseFeatures.features.length !== 0){
+        getTokenCollection();
+      } else {
+        showErrorModal()
+      }
+    }
+  }, [responseFeatures]);
+
+  // 3. Calculate NDVI
+  useEffect(() => {
+    if (tokenCollection) {
+      if (responseFeatures) {
+        //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
+        if (responseFeatures.features.length > 0) {
+          getNDVI(responseFeatures.features, getCoordinatesFromMarkers());
+        }
+      }
+    } else {
+      resetStates();
+      //showErrorModal()
+    }
+  }, [tokenCollection]);
+
+  // 4. Show Chart
+  useEffect(() => {
+    if (samples.length !== 0) {
+      if (samples.some((s) => !s.NDVI)) {
+        showErrorModal();
+      } else {
+        showChartModal();
+      }
+    } else {
+      if (!globalLoading) {
+        showMap();
+      }
+    }
+  }, [samples]);
 
   return (
     <div className={` ${mapStyle.wrapper}`}>
+      {
+        markers.filter((m) => m.type == EMarkerType.polygon).length === 4
+        ?
+          <div 
+            className={` ${mapStyle.flyTo}`} 
+            onClick={()=>handleFlyToROI(mapObject.current!.getZoom())}
+          >
+            <img src="./src/assets/images/marker-fly.svg" alt="marker-fly" className={` ${mapStyle.flyToImage}`} />
+          </div>
+        :
+          <></>
+      }
       <div
         className={` ${mapStyle.mapWrapper}`}
         style={{ width: "100%", height: "100%" }}
@@ -447,29 +614,58 @@ const Map = () => {
         data-testid="map-container"
       />
       {showChart ? (
-        <div className={` ${mapStyle.staticChart}`}>
-          { 
-            isLoading
-            ?
-              <Loading 
-                size={ELoadingSize.md}
-                marginVertical={"1vh"}
+        <Chart onClose={handleCloseChart}>
+          <ResponsiveContainer width="100%" height="100%">
+            {/* resize automatically */}
+            {/* array of objects */}
+            <LineChart data={samples}>
+              <XAxis
+                dataKey={"id"}
+                stroke="white"
+                tickFormatter={(id) =>
+                  samples.find((d) => d.id === id)!.datetime.substring(0, 10)
+                }
               />
-            :
-              <ResponsiveContainer width="100%" height="100%">
-                {/* resize automatically */}
-                {/* array of objects */}
-                <LineChart data={sampleData}>
-                  <XAxis dataKey="date" />
-                  {/* Y automatically scale to fit the data */}
-                  <YAxis />
-                  {/* popup tooltip by hovering */}
-                  <Tooltip />
-                  <Line type="linear" dataKey="ndvi" stroke="#2ecc71" />
-                </LineChart>
-              </ResponsiveContainer>
-          }
-        </div>
+              {/* Y automatically scale to fit the data */}
+              <YAxis stroke="white" />
+              {/* popup tooltip by hovering */}
+              <Tooltip />
+              <Line type="linear" dataKey="NDVI" stroke="#2ecc71" />
+            </LineChart>
+          </ResponsiveContainer>
+        </Chart>
+      ) : (
+        <></>
+      )}
+      {showError ? (
+        <Chart onClose={handleCloseChart}>
+          <div className={` ${mapStyle.errorWrapper}`}>
+            <div className={` ${mapStyle.error}`}>
+              {
+                responseFeatures && responseFeatures.features && responseFeatures?.features.length == 0
+                ?
+                "No STAC Item found!"
+                :
+                "Problem by getting NDVI samples!"
+              }
+            </div>
+          </div>
+        </Chart>
+      ) : (
+        <></>
+      )}
+      {globalLoading ? (
+        <Chart onClose={handleCloseChart}>
+          <Loading
+            text={
+              responseFeatures?.features.length
+                ? `${doneFeature}/${responseFeatures?.features.length} `
+                : "N/A"
+            }
+            size={ELoadingSize.md}
+            marginVertical={"1vh"}
+          />
+        </Chart>
       ) : (
         <></>
       )}

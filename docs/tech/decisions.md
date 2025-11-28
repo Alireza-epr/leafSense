@@ -28,11 +28,9 @@ Parameter definitions:
 - startDate: start of the selected date range, yyyy-mm-ddThh:mm:ssZ 
 - endDate: end of the selected date range, yyyy-mm-ddThh:mm:ssZ
 - cloud: maximum cloud cover percentage, integer 
-- band: selected spectral bands, array of strings
-- index: selected spectral index, string
 
 Example:
-?roi=[[51.2,35.6],[51.5,35.6],[51.5,35.8],[51.2,35.8]]&startDate=2025-01-01T00:00:00Z&endDate=2025-10-31T23:59:59Z&cloud=10&band=[B8,B4]&index=ndvi
+?roi=[[51.2,35.6],[51.5,35.6],[51.5,35.8],[51.2,35.8]]&startDate=2025-01-01T00:00:00Z&endDate=2025-10-31T23:59:59Z&cloud=10
 
 
 ## Performance Budgets

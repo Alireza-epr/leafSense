@@ -4,10 +4,10 @@ import { ECoordinate } from "@/types/coordinateTypes";
 
 export interface ICoordinateProps {
   lngLat: [number, number];
-  id: number;
+  id: number | string;
   disabled?: boolean;
-  onCoordinateChange: (
-    id: number,
+  onCoordinateChange?: (
+    id: number | string,
     coordinate: ECoordinate,
     value: string,
   ) => void;
@@ -18,7 +18,7 @@ const Coordinate = (props: ICoordinateProps) => {
     a_Value: React.ChangeEvent<HTMLInputElement>,
     a_Coordinate: ECoordinate,
   ) => {
-    if (!props.disabled) {
+    if (!props.disabled && props.onCoordinateChange) {
       props.onCoordinateChange(props.id, a_Coordinate, a_Value.target.value);
     }
   };
@@ -34,6 +34,7 @@ const Coordinate = (props: ICoordinateProps) => {
             placeholder={ECoordinate.longitude}
             value={props.lngLat[0]}
             onChange={(ev) => onCoordinateChange(ev, ECoordinate.longitude)}
+            readOnly
           />
         </div>
       </div>
@@ -45,6 +46,7 @@ const Coordinate = (props: ICoordinateProps) => {
             placeholder={ECoordinate.latitude}
             onChange={(ev) => onCoordinateChange(ev, ECoordinate.latitude)}
             value={props.lngLat[1]}
+            readOnly
           />
         </div>
       </div>

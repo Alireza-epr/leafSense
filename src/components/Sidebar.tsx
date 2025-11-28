@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import DateInput from "./DateInput";
 import RangeInput from "./RangeInput";
 import Coordinates from "./Coordinates";
+import CSelect from "./CSelect";
+import { spatialItems, temporalItems, TSpatialComparison } from "@/types/apiTypes";
 
 const Sidebar = () => {
   const marker = useMapStore((state) => state.marker);
@@ -14,8 +16,11 @@ const Sidebar = () => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
 
-  const showChart = useMapStore((state) => state.showChart);
+  const showROI = useMapStore((state) => state.showROI);
   const setShowChart = useMapStore((state) => state.setShowChart);
+
+  const fetchFeatures = useMapStore((state) => state.fetchFeatures);
+  const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
 
   const startDate = useMapStore((state) => state.startDate);
   const setStartDate = useMapStore((state) => state.setStartDate);
@@ -25,6 +30,16 @@ const Sidebar = () => {
 
   const cloudCover = useMapStore((state) => state.cloudCover);
   const setCloudCover = useMapStore((state) => state.setCloudCover);
+
+  const snowCover = useMapStore((state) => state.snowCover);
+  const setSnowCover = useMapStore((state) => state.setSnowCover);
+
+  const limit = useMapStore((state) => state.limit);
+  const setLimit = useMapStore((state) => state.setLimit);
+
+  const setTemporalOp = useMapStore((state) => state.setTemporalOp);
+  const setSpatialOp = useMapStore((state) => state.setSpatialOp);
+
 
   const handlePointClick = () => {
     setMarker((prev) => {
@@ -65,11 +80,9 @@ const Sidebar = () => {
   const handleClearPoint = () => {
     setMarkers((prev) => {
       prev.forEach((m) => {
-        if (m.type === EMarkerType.point) {
-          m.marker.remove();
-        }
+        m.marker.remove();
       });
-      return prev.filter((m) => m.type !== EMarkerType.point);
+      return [];
     });
   };
 
@@ -82,8 +95,8 @@ const Sidebar = () => {
     });
   };
 
-  const handleSetStaticChart = () => {
-    setShowChart(!showChart);
+  const handleSetFetchFeatures = () => {
+    setFetchFeatures(!fetchFeatures);
   };
 
   const handleStartDateChange = (a_Date: string) => {
@@ -94,65 +107,106 @@ const Sidebar = () => {
     setEndDate(a_Date);
   };
 
-  const handleRangeChange = (a_Range: string) => {
+  const handleCloudCoverChange = (a_Range: string) => {
     setCloudCover(a_Range);
   };
+
+  const handleSnowCoverChange = (a_Range: string) => {
+    setSnowCover(a_Range);
+  };
+
+  const handleLimitChange = (a_Range: string) => {
+    setLimit(a_Range);
+  };
+
+  const handleSpatialClick = (a_Selected: string) => {
+    setSpatialOp(spatialItems.find( i => i.title == a_Selected )!.value)
+  }
+
+  const handleTemporalClick = (a_Selected: string) => {
+    setTemporalOp(temporalItems.find( i => i.title == a_Selected )!.value)
+  }
+
+  
   return (
     <div className={` ${sidebarStyles.wrapper}`}>
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
-        <Section title="Drawing">
+        <Section title="Drawing" disabled={fetchFeatures}>
           <div className={` ${sidebarStyles.buttonRowWrapper}`}>
             <CButton
-              title={!marker.point ? "Enable Marker" : "Disable Marker"}
-              onButtonClick={handlePointClick}
+              title={"Marker"}
+              active={marker.polygon}
+              onButtonClick={handlePolygonClick}
+              icon="marker-add"
             />
             <CButton
               title={"Clear Markers"}
               onButtonClick={handleClearPoint}
               disable={
-                markers.filter((m) => m.type == EMarkerType.point).length == 0
+                markers.length == 0
               }
-            />
-          </div>
-          <div className={` ${sidebarStyles.buttonRowWrapper}`}>
-            <CButton
-              title={!marker.polygon ? "Enable ROI" : "Disable ROI"}
-              onButtonClick={handlePolygonClick}
-            />
-            <CButton
-              title={"Clear ROI"}
-              onButtonClick={handleClearPolygon}
-              disable={
-                markers.filter((m) => m.type == EMarkerType.polygon).length < 4
-              }
+              icon="marker-clear"
             />
           </div>
         </Section>
 
-        <Section title="Start Date">
+        <Section title="Start Date" disabled={fetchFeatures}>
           <DateInput value={startDate} onDateChange={handleStartDateChange} />
         </Section>
 
-        <Section title="End Date">
+        <Section title="End Date" disabled={fetchFeatures}>
           <DateInput value={endDate} onDateChange={handleEndDateChange} />
         </Section>
 
-        <Section title={`Cloud Cover - ${cloudCover}%`}>
-          <RangeInput value={cloudCover} onRangeChange={handleRangeChange} />
+        <Section
+          title={`Max Cloud Cover - ${cloudCover}%`}
+          disabled={fetchFeatures}
+        >
+          <RangeInput value={cloudCover} onRangeChange={handleCloudCoverChange} />
         </Section>
 
-        <Section title="ROI Coordinates">
-          <Coordinates />
+        <Section
+          title={`Max Snow Cover - ${snowCover}%`}
+          disabled={fetchFeatures}
+        >
+          <RangeInput value={snowCover} onRangeChange={handleSnowCoverChange} />
         </Section>
 
-        <Section title="Chart">
+        <Section
+          title={`Limit - ${limit}`}
+          disabled={fetchFeatures}
+        >
+          <RangeInput value={limit} onRangeChange={handleLimitChange} max={50}/>
+        </Section>
+
+        <Section 
+          title="Chart"
+        >
+          <CSelect 
+            name="Temporal"
+            disabled={fetchFeatures}
+            options={temporalItems.map( i => i.title )}
+            onSelectClick={handleTemporalClick}
+          />
+
+          <CSelect 
+            name="Spatial"
+            disabled={fetchFeatures}
+            options={spatialItems.map( i => i.title )}
+            onSelectClick={handleSpatialClick}
+          />
+
           <CButton
-            title={!showChart ? "Static Chart" : "Hide Chart"}
-            onButtonClick={handleSetStaticChart}
+            title={!fetchFeatures ? "Show Chart" : "Hide Chart"}
+            onButtonClick={handleSetFetchFeatures}
             disable={
               markers.filter((m) => m.type == EMarkerType.polygon).length < 4
             }
           />
+        </Section>
+
+        <Section title="ROI" disabled={fetchFeatures}>
+          <Coordinates />
         </Section>
       </div>
     </div>
