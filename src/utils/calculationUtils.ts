@@ -208,3 +208,37 @@ export const isGoodPixel = (sclValue: number) => {
   return noBad.has(sclValue)
 }
 
+const meterToDegreeOffsets = (a_Lat: number, a_Meters = 5) => {
+  // Earth radius approximation
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = 111320 * Math.cos(a_Lat * Math.PI / 180);
+
+  const dy = a_Meters / metersPerDegLat;
+  const dx = a_Meters / metersPerDegLng;
+
+  return { dx, dy };
+}
+
+
+export const getLngLatsFromMarker = (a_LngLat: maplibregl.LngLat): [number, number][]=> {
+  
+  /* 
+  ( lng - dx , lat + dy ) ----> ( lng + dx , lat + dy )
+      ^                         |
+      |     (lng , lat)         |
+      |                         v
+  ( lng - dx , lat - dy ) <---- ( lng + dx , lat - dy ) 
+  */
+  const { lng, lat } = a_LngLat
+  const { dx, dy} = meterToDegreeOffsets(a_LngLat.lat) 
+
+  const lngLats: [number, number][] = [
+    [lng - dx , lat + dy],
+    [lng + dx , lat + dy],
+    [lng + dx , lat - dy],
+    [lng - dx , lat - dy]
+  ]
+
+  return lngLats
+
+}

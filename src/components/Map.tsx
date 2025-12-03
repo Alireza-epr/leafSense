@@ -27,6 +27,7 @@ import Loading from "./Loading";
 import { ELoadingSize } from "../types/generalTypes";
 import Chart from "./Chart";
 import { debounce, throttle } from "../utils/apiUtils";
+import { getLngLatsFromMarker } from "../utils/calculationUtils";
 
 let start: number, end: number
 
@@ -112,8 +113,23 @@ const Map = () => {
     }
   };
 
+  const markersRef = useRef(markers)
+
   const handlePolygonMarker = (a_Event: maplibregl.MapMouseEvent) => {
-    if (mapObject.current) {
+    if(a_Event.originalEvent.button === 2){
+      removePolygon()
+
+      const lngLats = getLngLatsFromMarker(a_Event.lngLat)
+      lngLats.forEach( lngLat => {
+        if(!mapObject.current) return
+        addMarker(
+          lngLat,
+          mapObject.current,
+          EMarkerType.polygon
+        )
+      })
+
+    } else if (a_Event.originalEvent.button == 0 && mapObject.current) {
       addMarker(
         [a_Event.lngLat.lng, a_Event.lngLat.lat],
         mapObject.current,
@@ -153,7 +169,7 @@ const Map = () => {
   const removePolygon = () => {
     if (mapObject.current) {
       // Remove polygon points
-      markers.forEach((m) => {
+      markersRef.current.forEach((m) => {
         if (m.type === EMarkerType.polygon) {
           m.marker.remove();
         }
@@ -317,14 +333,6 @@ const Map = () => {
     ], {zoom: a_Zoom});
   } 
 
-  const handleRightClick = (a_Event: MouseEvent) => {
-    a_Event.preventDefault()
-    if(a_Event.ctrlKey){
-      setShowROI(true)
-    } else {
-      setShowROI(false)
-    }
-  }
 
   // Loading Map
   useEffect(() => {
@@ -366,11 +374,10 @@ const Map = () => {
 
     mapObject.current = map;
 
-    mapContainer.current.addEventListener( "click" , handleRightClick )
+    window.addEventListener( "contextmenu" , (ev) => {ev.preventDefault()})
 
     return () => {
       // By component unmounting
-      mapContainer.current?.removeEventListener( "click" , handleRightClick )
       mapObject.current?.remove();
       mapObject.current = null;
     };
@@ -380,29 +387,21 @@ const Map = () => {
   useEffect(() => {
     if (!mapObject.current) return;
 
-    if (marker.point) {
-      // Arrow function causes the function reference to change
-      mapObject.current.on("click", handlePointMarker);
-    } else {
-      mapObject.current.off("click", handlePointMarker);
-    }
-
     if (marker.polygon) {
-      mapObject.current.on("click", handlePolygonMarker);
+      mapObject.current.on("mousedown", handlePolygonMarker);
     } else {
-      mapObject.current.off("click", handlePolygonMarker);
+      mapObject.current.off("mousedown", handlePolygonMarker);
     }
 
     return () => {
-      mapObject.current?.off("click", handlePointMarker);
-      mapObject.current?.off("click", handlePolygonMarker);
+      mapObject.current?.off("mousedown", handlePolygonMarker);
     };
   }, [marker]);
 
   // Handle Polygon Drawing
   useEffect(() => {
     if (!mapObject.current) return;
-
+    markersRef.current = markers
     if (markers.length !== 0 && markers.some((m) => !m.marker._map)) {
       addMarkersToMap();
       return;
