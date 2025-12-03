@@ -14,6 +14,7 @@ export enum ESTACURLS {
 export enum EStacBands {
   nir = "B08",
   red = "B04",
+  scl = "SCL"
 }
 
 export enum ESTACCollections {
@@ -159,11 +160,17 @@ export interface ISTACFilter {
   args: (TCloudCoverFilter | TSnowCoverFilter | TDateTimeFilter | TIdFilter | TSpatialFilter)[];
 }
 
+export interface ISTACFilterSort {
+  field: string,
+  direction: "asc" | "desc"
+}
 export interface ISTACFilterRequest {
   collections: [ESTACCollections];
   filter?: ISTACFilter;
   datetime?: string;
-  limit?: number
+  limit?: number;
+  token?: string,
+  sortby?: ISTACFilterSort[] 
 }
 
 export interface ISTACResponseLink {
@@ -310,11 +317,19 @@ export interface StacAsset {
 }
 
 // STAC link
+export enum EStacLinkRel {
+  root= "root",
+  self= "self",
+  next= "next",
+  previous= "previous"
+}
 export interface StacLink {
   href: string;
-  rel: string;
+  rel: EStacLinkRel;
   type?: string;
   title?: string;
+  method?: string;
+  body?: ISTACFilterRequest
 }
 
 export interface ITokenCollection {

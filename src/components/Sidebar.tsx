@@ -173,7 +173,7 @@ const Sidebar = () => {
         </Section>
 
         <Section
-          title={`Limit - ${limit}`}
+          title={`Page Limit - ${limit}`}
           disabled={fetchFeatures}
         >
           <RangeInput value={limit} onRangeChange={handleLimitChange} max={50}/>

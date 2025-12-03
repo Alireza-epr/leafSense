@@ -42,9 +42,6 @@ export const readBandCOG = async (
   a_ItemBBOX: [number, number, number, number],
 ) => {
   //console.log(new Date(Date.now()).toISOString()+ " fromURL start")
-  if (a_Url.length == 0) {
-    return null;
-  }
   const tiff = await fromUrl(a_Url);
   //console.log(new Date(Date.now()).toISOString()+ " getImage start")
   const image = await tiff.getImage();
@@ -55,7 +52,7 @@ export const readBandCOG = async (
     image.getWidth(),
     image.getHeight(),
   );
-  const [raster] = await image.readRasters({ window });
+  const raster = await image.readRasters({ window });
   //console.log(new Date(Date.now()).toISOString()+ " readRasters end")
   return raster;
 };
@@ -91,14 +88,20 @@ export const toFloat32Array = (a_Arr: TypedArray): Float32Array => {
 export const computeFeatureNDVI = (
   a_Red: TypedArray,
   a_Nir: TypedArray,
+  a_SCL: TypedArray,
 ): Float32Array => {
   const r = toFloat32Array(a_Red);
   const n = toFloat32Array(a_Nir);
+  const scl = a_SCL;
 
   const ndvi = new Float32Array(r.length);
 
   for (let i = 0; i < r.length; i++) {
-    ndvi[i] = (n[i] - r[i]) / (n[i] + r[i]);
+    if(isGoodPixel(scl[i])){
+      ndvi[i] = (n[i] - r[i]) / (n[i] + r[i]);
+    } else {
+      ndvi[i] = NaN
+    }
   }
 
   return ndvi;
@@ -163,3 +166,45 @@ export const validateImportedROI = (a_JSON: any) => {
     return { valid: true };
 };
  
+export const upscaleSCL = (scl: number | TypedArray, sclWidth: number, sclHeight: number, targetWidth: number, targetHeight: number) => {
+  const out = new Uint8Array(targetWidth * targetHeight);
+
+  // Compute scale ratios between target (red) and source (scl)
+  const scaleX = targetWidth / sclWidth;    // e.g., 2/1 = 2
+  const scaleY = targetHeight / sclHeight;  // e.g., 3/2 = 1.5
+
+  for (let y = 0; y < targetHeight; y++) {
+    // Map high-res row back to low-res SCL row (nearest neighbor)
+    // Example: red rows 0,1,2 → scl rows 0,1,1
+    const srcY = Math.min(Math.floor(y / scaleY), sclHeight - 1);
+
+    for (let x = 0; x < targetWidth; x++) {
+      // Map high-res column back to low-res SCL column
+      // Example: red cols 0,1 → scl col 0
+      const srcX = Math.min(Math.floor(x / scaleX), sclWidth - 1);
+
+      // Index in the source SCL array
+      const srcIndex = srcY * sclWidth + srcX;
+
+      // Index in the output array
+      const dstIndex = y * targetWidth + x;
+
+      // Copy nearest SCL pixel
+      out[dstIndex] = scl[srcIndex];
+    }
+  }
+
+  return out;
+}
+
+export const isGoodPixel = (sclValue: number) => {
+  
+  const bad = new Set([3,6,9]);
+  //3 - CLOUD_SHADOWS
+  //6 - WATER
+  //9 - CLOUD_HIGH_PROBABILITY
+  return !bad.has(sclValue); 
+  const noBad = new Set([0,1,2,3,4,5,6,8,9,10,11]);
+  return noBad.has(sclValue)
+}
+

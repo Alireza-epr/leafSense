@@ -5,7 +5,7 @@ import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
 import type { Feature, FeatureCollection, Polygon } from "geojson";
-import { useFilterSTAC } from "../hooks/apiHook";
+import { useFilterSTAC, useNDVI, useTokenCollection } from "../lib/stac";
 import {
   LineChart,
   Line,
@@ -16,23 +16,19 @@ import {
 } from "recharts";
 import {
   ESTACCollections,
+  EStacLinkRel,
   ISTACFilterRequest,
   TCloudCoverFilter,
-  TComparisonOperators,
   TDateTimeFilter,
-  TLogicalOperators,
   TSnowCoverFilter,
-  TSpatialComparison,
   TSpatialFilter,
-  TTemporalComparison,
 } from "../types/apiTypes";
 import Loading from "./Loading";
 import { ELoadingSize } from "../types/generalTypes";
-import { useNDVI } from "../hooks/ndviHook";
 import Chart from "./Chart";
-import { useTokenCollection } from "../hooks/collectionHook";
+import { debounce, throttle } from "../utils/apiUtils";
 
-//import { getNDVI } from "../utils/calculationUtils";
+let start: number, end: number
 
 const Map = () => {
   const { getFeatures } = useFilterSTAC();
@@ -57,9 +53,11 @@ const Map = () => {
   const temporalOp = useMapStore((state) => state.temporalOp);
   const spatialOp = useMapStore((state) => state.spatialOp);
   const limit = useMapStore((state) => state.limit);
-  const showROI = useMapStore((state) => state.showROI);
-
-  const setTokenCollection = useMapStore((state) => state.setTokenCollection);
+  const nextPage = useMapStore((state) => state.nextPage);
+  const previousPage = useMapStore((state) => state.previousPage);
+   
+  const setNextPage = useMapStore((state) => state.setNextPage);
+  const setPreviousPage = useMapStore((state) => state.setPreviousPage);
   const setMarkers = useMapStore((state) => state.setMarkers);
   const setStartDate = useMapStore((state) => state.setStartDate);
   const setEndDate = useMapStore((state) => state.setEndDate);
@@ -75,6 +73,33 @@ const Map = () => {
 
   const mapContainer = useRef<HTMLDivElement>(null);
   const mapObject = useRef<MapLibre | null>(null);
+
+  const [ latency, setLatency ] = useState<number>()
+
+  // Create a stable debounced function that always calls the latest getFeatures:
+  // - useRef stores the current getFeatures so we can access the latest version even if it changes each render
+  // - useEffect updates the ref whenever getFeatures changes
+  // - useCallback wraps the debounced function so its reference stays stable across renders - the timer stays intact, preserving debounce behavior
+  const getFeaturesRef = useRef(getFeatures);
+
+  useEffect(() => {
+    getFeaturesRef.current = getFeatures;
+  }, [getFeatures]);
+
+  const debouncedGetFeatures = useCallback(
+    debounce((postBody) => getFeaturesRef.current(postBody), 300),
+    []
+  );
+
+  const throttledGetFeatures = useCallback(
+    throttle((postBody) => getFeaturesRef.current(postBody), 10000),
+    []
+  );
+
+  const debouncedThrottledGetFeatures = throttle(
+    debounce((postBody) => getFeaturesRef.current(postBody), 300),
+    1000
+  );
 
   const handlePointMarker = (a_Event: maplibregl.MapMouseEvent) => {
     if (mapObject.current) {
@@ -215,6 +240,7 @@ const Map = () => {
   const showMap = () => {
     setShowError(false);
     setShowChart(false);
+    setFetchFeatures(false)
     setGlobalLoading(false);
   };
 
@@ -246,6 +272,42 @@ const Map = () => {
     setFetchFeatures(false);
     showMap();
   };
+
+  const handleNextPageChart = async () => {
+    if(nextPage && nextPage.body){
+      const postBody: ISTACFilterRequest = {
+        sortby: [{
+          field: "properties.datetime", 
+          direction: "asc" 
+        }],
+        ...nextPage.body
+      }
+      
+      console.log("Next Request")
+      console.log(postBody)
+      showLoadingModal();
+      resetStates();
+      await getFeatures(postBody);
+    }
+  }
+
+  const handlePreviousPageChart = async () => {
+    if(previousPage && previousPage.body){
+      const postBody: ISTACFilterRequest = {
+        sortby: [{
+          field: "properties.datetime", 
+          direction: "asc" 
+        }],
+        ...previousPage.body
+      }
+      
+      console.log("Previous Request")
+      console.log(postBody)
+      showLoadingModal();
+      resetStates();
+      await getFeatures(postBody);
+    }
+  }
 
   const handleFlyToROI = (a_Zoom: number) => {
     const coordinates = getCoordinatesFromMarkers()
@@ -349,14 +411,16 @@ const Map = () => {
     const polygonMarkers = markers.filter((m) => m.type == EMarkerType.polygon);
 
     if (polygonMarkers.length === 0) {
-      setShowChart(false);
+      //setShowChart(false);
+      showMap()
       removePolygonLayer();
       return;
     }
 
     if (polygonMarkers.length < 4) {
       //console.log("not enough polygon points");
-      setShowChart(false);
+      //setShowChart(false);
+      showMap()
       return;
     }
 
@@ -522,6 +586,10 @@ const Map = () => {
       }
 
       const postBody: ISTACFilterRequest = {
+        sortby: [{
+          field: "properties.datetime", 
+          direction: "asc" 
+        }],
         collections: [ESTACCollections.Sentinel2l2a],
         filter: {
           op: "and",
@@ -534,7 +602,8 @@ const Map = () => {
       console.log(postBody)
       showLoadingModal();
       resetStates();
-      getFeatures(postBody);
+      start = Date.now()
+      debouncedGetFeatures(postBody);
     } else {
       resetStates();
       showMap();
@@ -546,6 +615,8 @@ const Map = () => {
       console.error("Failed to get features");
       console.error(errorFeatures);
       //resetStates();
+      setNextPage(null)
+      setPreviousPage(null)
       showErrorModal();
     }
   }, [errorFeatures]);
@@ -553,8 +624,18 @@ const Map = () => {
   // 2. Get Token
   useEffect(() => {
     if (responseFeatures) {
-      console.log("Features")
-      console.log(responseFeatures.features)
+      const nextLink = responseFeatures.links?.find( l => l.rel == EStacLinkRel.next )
+      const previousLink = responseFeatures.links?.find( l => l.rel == EStacLinkRel.previous )
+      if(nextLink){
+        setNextPage(nextLink)
+      } else {
+        setNextPage(null)
+      }
+      if(previousLink){
+        setPreviousPage(previousLink)
+      } else {
+        setPreviousPage(null)
+      }
       if(responseFeatures.features.length !== 0){
         getTokenCollection();
       } else {
@@ -581,10 +662,12 @@ const Map = () => {
   // 4. Show Chart
   useEffect(() => {
     if (samples.length !== 0) {
-      if (samples.some((s) => !s.NDVI)) {
+      if (samples.every((s) => !s.NDVI)) {
         showErrorModal();
       } else {
         showChartModal();
+        end = Date.now()
+        setLatency( end - start )
       }
     } else {
       if (!globalLoading) {
@@ -614,7 +697,13 @@ const Map = () => {
         data-testid="map-container"
       />
       {showChart ? (
-        <Chart onClose={handleCloseChart}>
+        <Chart 
+          onClose={handleCloseChart} 
+          onNext={handleNextPageChart} 
+          onPrevious={handlePreviousPageChart}
+          items={responseFeatures?.features.length ?? 0}
+          latency={latency}
+        >
           <ResponsiveContainer width="100%" height="100%">
             {/* resize automatically */}
             {/* array of objects */}
@@ -655,7 +744,11 @@ const Map = () => {
         <></>
       )}
       {globalLoading ? (
-        <Chart onClose={handleCloseChart}>
+        <Chart 
+          onClose={handleCloseChart} 
+          onNext={handleNextPageChart} 
+          onPrevious={handlePreviousPageChart}
+        >
           <Loading
             text={
               responseFeatures?.features.length

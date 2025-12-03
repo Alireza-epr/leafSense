@@ -1,9 +1,9 @@
-import { EPastTime } from "@/types/generalTypes";
+import { EPastTime } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
-import { IStacSearchResponse, ITokenCollection, spatialItems, temporalItems, TSpatialComparison, TTemporalComparison } from "@/types/apiTypes";
+import { StacLink, IStacSearchResponse, ITokenCollection, spatialItems, temporalItems, TSpatialComparison, TTemporalComparison } from "../types/apiTypes";
 
 export enum EMarkerType {
   point = "point",
@@ -41,7 +41,9 @@ export interface IMapStoreStates {
   doneFeature: number;
   temporalOp: TTemporalComparison;
   spatialOp: TSpatialComparison;
-  showROI: boolean
+  showROI: boolean;
+  nextPage: StacLink | null
+  previousPage: StacLink | null
 }
 
 export interface IMapStoreActions {
@@ -77,6 +79,14 @@ export interface IMapStoreActions {
   setLimit: (a_Value: string | ((prev: string) => string)) => void;
   setTemporalOp: (a_Start: TTemporalComparison | ((prev: TTemporalComparison) => TTemporalComparison)) => void;
   setSpatialOp: (a_Start: TSpatialComparison | ((prev: TSpatialComparison) => TSpatialComparison)) => void;
+  setPreviousPage: (
+    a_Link: 
+      | (StacLink | null)
+      | ((prev: StacLink | null) => StacLink | null)) => void
+  setNextPage: (
+    a_Link: 
+      | (StacLink | null)
+      | ((prev: StacLink | null) => StacLink | null)) => void
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -109,6 +119,8 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       globalLoading: false,
       doneFeature: 1,
       showROI: false,
+      nextPage: null as StacLink | null,
+      previousPage: null as StacLink | null,
       //NDVI
       samples: [] as INDVISample[],
     },
@@ -138,6 +150,22 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
             typeof a_Value === "function"
               ? a_Value(state.tokenCollection)
               : a_Value,
+        })),
+
+      setPreviousPage: (a_Link) =>
+        set((state) => ({
+          previousPage:
+            typeof a_Link === "function"
+              ? a_Link(state.previousPage)
+              : a_Link,
+        })),
+      
+      setNextPage: (a_Link) =>
+        set((state) => ({
+          nextPage:
+            typeof a_Link === "function"
+              ? a_Link(state.nextPage)
+              : a_Link,
         })),
 
       setStartDate: (a_Start: string | ((a_Prev: string) => string)) =>

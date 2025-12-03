@@ -39,6 +39,33 @@ Reasons for choosing QA Layer:
 Sentinel-2 L2A provides a built-in QA layer to identify clouds, shadows, water, and clear pixels, ensuring accurate NDVI calculations.
 This ensures that only clear pixels are used for vegetation analysis, improving reliability.
 
+## Masking (Cloud, Shadow, Water) with SCL
+
+We use the Sentinel-2 L2A `SCL` (Scene Classification Layer) asset to filter out invalid pixels.  
+This raster contains one class code per pixel: clouds, shadows, snow, vegetation, water, etc.
+
+Masked classes:
+|  Value | Class Name               | Meaning                             |
+| -----: | ------------------------ | ----------------------------------- |
+|  **0** | NO_DATA                  | Invalid data / outside image        |
+|  **1** | SATURATED_OR_DEFECTIVE   | Sensor saturated or defective pixel |
+|  **2** | DARK_FEATURES            | Shadows or very dark surfaces       |
+|  **3** | CLOUD_SHADOWS            | Cloud shadows                       |
+|  **4** | VEGETATION               | Healthy vegetation                  |
+|  **5** | NOT_VEGETATED            | Soil / rocks / built-up             |
+|  **6** | WATER                    | Water bodies                        |
+|  **7** | UNCLASSIFIED             | No classification available         |
+|  **8** | CLOUD_MEDIUM_PROBABILITY | Possible clouds (medium confidence) |
+|  **9** | CLOUD_HIGH_PROBABILITY   | Highly probable clouds              |
+| **10** | THIN_CIRRUS              | High thin cirrus clouds             |
+| **11** | SNOW                     | Snow or ice                         |
+
+
+Notes:
+- SCL has 20m resolution > NDVI bands (10m) may need upsampling or downsampling.
+- If SCL is missing for an item, we skip masking.
+
+
 ## AOIs
 
 | **Name**                        | **Rationale**                                                                      | **Bounding Box (lat/lon)** | **Screenshot**                                       |
