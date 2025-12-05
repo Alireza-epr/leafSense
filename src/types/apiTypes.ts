@@ -14,7 +14,7 @@ export enum ESTACURLS {
 export enum EStacBands {
   nir = "B08",
   red = "B04",
-  scl = "SCL"
+  scl = "SCL",
 }
 
 export enum ESTACCollections {
@@ -35,9 +35,9 @@ export type TSpatialComparison =
   | "s_overlaps"
   | "s_touches";
 
-export interface ISpatialItem { 
-  title: string; 
-  value: TSpatialComparison 
+export interface ISpatialItem {
+  title: string;
+  value: TSpatialComparison;
 }
 export const spatialItems: ISpatialItem[] = [
   { title: "Contains", value: "s_contains" },
@@ -49,8 +49,6 @@ export const spatialItems: ISpatialItem[] = [
   { title: "Overlaps", value: "s_overlaps" },
   { title: "Touches", value: "s_touches" },
 ];
-
-
 
 export type TTemporalComparison =
   | "t_starts"
@@ -69,10 +67,9 @@ export type TTemporalComparison =
   | "t_contains"
   | "t_after";
 
-
 export interface ITemporalItem {
-  title: string,
-  value: TTemporalComparison
+  title: string;
+  value: TTemporalComparison;
 }
 export const temporalItems: ITemporalItem[] = [
   { title: "During", value: "t_during" },
@@ -157,20 +154,26 @@ export interface ISTACFilterOP {
 
 export interface ISTACFilter {
   op: TLogicalOperators;
-  args: (TCloudCoverFilter | TSnowCoverFilter | TDateTimeFilter | TIdFilter | TSpatialFilter)[];
+  args: (
+    | TCloudCoverFilter
+    | TSnowCoverFilter
+    | TDateTimeFilter
+    | TIdFilter
+    | TSpatialFilter
+  )[];
 }
 
 export interface ISTACFilterSort {
-  field: string,
-  direction: "asc" | "desc"
+  field: string;
+  direction: "asc" | "desc";
 }
 export interface ISTACFilterRequest {
   collections: [ESTACCollections];
   filter?: ISTACFilter;
   datetime?: string;
   limit?: number;
-  token?: string,
-  sortby?: ISTACFilterSort[] 
+  token?: string;
+  sortby?: ISTACFilterSort[];
 }
 
 export interface ISTACResponseLink {
@@ -318,10 +321,10 @@ export interface StacAsset {
 
 // STAC link
 export enum EStacLinkRel {
-  root= "root",
-  self= "self",
-  next= "next",
-  previous= "previous"
+  root = "root",
+  self = "self",
+  next = "next",
+  previous = "previous",
 }
 export interface StacLink {
   href: string;
@@ -329,7 +332,7 @@ export interface StacLink {
   type?: string;
   title?: string;
   method?: string;
-  body?: ISTACFilterRequest
+  body?: ISTACFilterRequest;
 }
 
 export interface ITokenCollection {

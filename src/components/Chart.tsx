@@ -7,8 +7,8 @@ export interface IChartProps {
   onClose: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
-  items?: number
-  latency?: number
+  items?: number;
+  latency?: number;
 }
 
 const Chart = (props: IChartProps) => {
@@ -54,17 +54,31 @@ const Chart = (props: IChartProps) => {
         X
       </div>
       <div className={` ${chartStyles.children}`}>
-        { previousPage && props.onPrevious &&
-          <div className={`${chartStyles.arrow} ${chartStyles.previous}`} onClick={props.onPrevious}>
-            <img src="/images/prev-page.svg" alt="previous-page" title="Previous Page" />
+        {previousPage && props.onPrevious && (
+          <div
+            className={`${chartStyles.arrow} ${chartStyles.previous}`}
+            onClick={props.onPrevious}
+          >
+            <img
+              src="/images/prev-page.svg"
+              alt="previous-page"
+              title="Previous Page"
+            />
           </div>
-        }  
+        )}
         {props.children}
-        { nextPage && props.onNext &&
-          <div className={`${chartStyles.arrow} ${chartStyles.next}`} onClick={props.onNext}>
-            <img src="/images/next-page.svg" alt="next-page" title="Next Page" />
+        {nextPage && props.onNext && (
+          <div
+            className={`${chartStyles.arrow} ${chartStyles.next}`}
+            onClick={props.onNext}
+          >
+            <img
+              src="/images/next-page.svg"
+              alt="next-page"
+              title="Next Page"
+            />
           </div>
-        }
+        )}
       </div>
       <div className={` ${chartStyles.footer}`}>
         <div className={` ${chartStyles.footerItem}`}>
@@ -81,12 +95,20 @@ const Chart = (props: IChartProps) => {
         </div>
         <div className={` ${chartStyles.footerItem}`}>
           <div className={` ${chartStyles.footerItemTitle}`}>Latency</div>
-          <div className={` ${chartStyles.footerItemValue}`}> {props.latency ? props.latency.toFixed(1) : '-' } ms </div>
+          <div className={` ${chartStyles.footerItemValue}`}>
+            {" "}
+            {props.latency ? props.latency.toFixed(1) : "-"} ms{" "}
+          </div>
         </div>
         <div className={` ${chartStyles.footerItem}`}>
           <div className={` ${chartStyles.footerItemTitle}`}>Scene(s)</div>
-          <div className={` ${chartStyles.footerItemValue}`}>Valid: {samples.length !== 0 ? samples.length : '-'}  </div>
-          <div className={` ${chartStyles.footerItemValue}`}>Not valid: {notValidSamples.length !== 0 ? notValidSamples.length : '-'}</div>
+          <div className={` ${chartStyles.footerItemValue}`}>
+            Valid: {samples.length !== 0 ? samples.length : "-"}{" "}
+          </div>
+          <div className={` ${chartStyles.footerItemValue}`}>
+            Not valid:{" "}
+            {notValidSamples.length !== 0 ? notValidSamples.length : "-"}
+          </div>
         </div>
       </div>
     </div>

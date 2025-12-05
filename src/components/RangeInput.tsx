@@ -5,8 +5,8 @@ export interface IRangeInput {
   value: string;
   disabled?: boolean;
   onRangeChange: (a_Date: string) => void;
-  min?: number
-  max?: number
+  min?: number;
+  max?: number;
 }
 
 const RangeInput = (props: IRangeInput) => {

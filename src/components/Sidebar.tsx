@@ -7,7 +7,11 @@ import DateInput from "./DateInput";
 import RangeInput from "./RangeInput";
 import Coordinates from "./Coordinates";
 import CSelect from "./CSelect";
-import { spatialItems, temporalItems, TSpatialComparison } from "@/types/apiTypes";
+import {
+  spatialItems,
+  temporalItems,
+  TSpatialComparison,
+} from "@/types/apiTypes";
 
 const Sidebar = () => {
   const marker = useMapStore((state) => state.marker);
@@ -39,7 +43,6 @@ const Sidebar = () => {
 
   const setTemporalOp = useMapStore((state) => state.setTemporalOp);
   const setSpatialOp = useMapStore((state) => state.setSpatialOp);
-
 
   const handlePointClick = () => {
     setMarker((prev) => {
@@ -120,14 +123,13 @@ const Sidebar = () => {
   };
 
   const handleSpatialClick = (a_Selected: string) => {
-    setSpatialOp(spatialItems.find( i => i.title == a_Selected )!.value)
-  }
+    setSpatialOp(spatialItems.find((i) => i.title == a_Selected)!.value);
+  };
 
   const handleTemporalClick = (a_Selected: string) => {
-    setTemporalOp(temporalItems.find( i => i.title == a_Selected )!.value)
-  }
+    setTemporalOp(temporalItems.find((i) => i.title == a_Selected)!.value);
+  };
 
-  
   return (
     <div className={` ${sidebarStyles.wrapper}`}>
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
@@ -142,9 +144,7 @@ const Sidebar = () => {
             <CButton
               title={"Clear Markers"}
               onButtonClick={handleClearPoint}
-              disable={
-                markers.length == 0
-              }
+              disable={markers.length == 0}
               icon="marker-clear"
             />
           </div>
@@ -162,7 +162,10 @@ const Sidebar = () => {
           title={`Max Cloud Cover - ${cloudCover}%`}
           disabled={fetchFeatures}
         >
-          <RangeInput value={cloudCover} onRangeChange={handleCloudCoverChange} />
+          <RangeInput
+            value={cloudCover}
+            onRangeChange={handleCloudCoverChange}
+          />
         </Section>
 
         <Section
@@ -172,27 +175,26 @@ const Sidebar = () => {
           <RangeInput value={snowCover} onRangeChange={handleSnowCoverChange} />
         </Section>
 
-        <Section
-          title={`Page Limit - ${limit}`}
-          disabled={fetchFeatures}
-        >
-          <RangeInput value={limit} onRangeChange={handleLimitChange} max={50}/>
+        <Section title={`Page Limit - ${limit}`} disabled={fetchFeatures}>
+          <RangeInput
+            value={limit}
+            onRangeChange={handleLimitChange}
+            max={50}
+          />
         </Section>
 
-        <Section 
-          title="Chart"
-        >
-          <CSelect 
+        <Section title="Chart">
+          <CSelect
             name="Temporal"
             disabled={fetchFeatures}
-            options={temporalItems.map( i => i.title )}
+            options={temporalItems.map((i) => i.title)}
             onSelectClick={handleTemporalClick}
           />
 
-          <CSelect 
+          <CSelect
             name="Spatial"
             disabled={fetchFeatures}
-            options={spatialItems.map( i => i.title )}
+            options={spatialItems.map((i) => i.title)}
             onSelectClick={handleSpatialClick}
           />
 

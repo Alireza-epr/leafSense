@@ -2,49 +2,46 @@ import { useMapStore } from "@/store/mapStore";
 import {
   ESTACURLS,
   ISTACFilterRequest,
-  EStacBands, 
+  EStacBands,
   IStacItem,
-  ESTACCollections 
+  ESTACCollections,
 } from "../types/apiTypes";
 import { CacheHandler } from "@/utils/apiUtils";
 import {
   computeFeatureNDVI,
   getMeanNDVI,
   readBandCOG,
-  getFeatureToken, 
+  getFeatureToken,
   isTokenExpired,
-  upscaleSCL
+  upscaleSCL,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
-
 
 const cache = new CacheHandler();
 
 export const useFilterSTAC = () => {
-
   const setResponseFeatures = useMapStore((state) => state.setResponseFeatures);
   const setErrorFeatures = useMapStore((state) => state.setErrorFeatures);
 
   const getFeatures = async (a_STACRequest: ISTACFilterRequest) => {
-
-    if(cache.getCache(a_STACRequest)){
-      const respJSON = cache.getCache(a_STACRequest)
-      console.log("Cached Features")
-      console.log(respJSON)
+    if (cache.getCache(a_STACRequest)) {
+      const respJSON = cache.getCache(a_STACRequest);
+      console.log("Cached Features");
+      console.log(respJSON);
       setResponseFeatures(respJSON);
-      return
-    } 
+      return;
+    }
 
-    // Retry: If the STAC request fails (network error, 500, 503, 429), 
+    // Retry: If the STAC request fails (network error, 500, 503, 429),
     // automatically try again a few times instead of failing immediately.
 
-    // Backoff: After each failed attempt, wait longer before retrying 
+    // Backoff: After each failed attempt, wait longer before retrying
     // (e.g., 200ms → 400ms → 800ms). Prevents hammering the server.
 
     //console.log(new Date(Date.now()).toISOString()+" Get STAC Items")
-    const retry = 5
-    let delay = 200
-    for(let i=0; i <= retry;i++ ){
+    const retry = 5;
+    let delay = 200;
+    for (let i = 0; i <= retry; i++) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Get STAC Items: try"+ (i+1))
         const resp = await fetch(ESTACURLS.searchURL, {
@@ -54,27 +51,26 @@ export const useFilterSTAC = () => {
           },
           body: JSON.stringify(a_STACRequest),
         });
-        
+
         if (!resp.ok) {
           throw new Error("[useFilterSTAC] Response not ok");
         }
 
         const respJSON = await resp.json();
-        console.log("Features")
-        console.log(respJSON)
-        cache.setCache(a_STACRequest, respJSON)
+        console.log("Features");
+        console.log(respJSON);
+        cache.setCache(a_STACRequest, respJSON);
         setResponseFeatures(respJSON);
-        return
+        return;
       } catch (err: any) {
-        if(i == retry - 1) {
+        if (i == retry - 1) {
           setErrorFeatures(err); //give up
-          throw err
+          throw err;
         }
-        await new Promise((resolve) => setTimeout(resolve, delay))
-        delay *= 2
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        delay *= 2;
       }
     }
-    
   };
 
   return {
@@ -113,16 +109,16 @@ export const useNDVI = () => {
     for (const feature of a_Features) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
-        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}`
-        if(cache.getCache(cacheKey)){
-          console.log("Cached NDVI")
-          const cachedFeature = cache.getCache(cacheKey)
-          console.log(cachedFeature)
+        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}`;
+        if (cache.getCache(cacheKey)) {
+          console.log("Cached NDVI");
+          const cachedFeature = cache.getCache(cacheKey);
+          console.log(cachedFeature);
           meanNDVIs.push(cachedFeature);
           ++countId;
           setDoneFeature((prev) => ++prev);
-          continue
-        } 
+          continue;
+        }
 
         for (const bandKey of bandKeys) {
           const bandAsset = feature.assets[bandKey];
@@ -133,7 +129,7 @@ export const useNDVI = () => {
             continue;
           }
           const bandSignedURL = `${bandURL}?${tokenCollection?.token}`;
-          if(bandSignedURL.length == 0){
+          if (bandSignedURL.length == 0) {
             console.error(`${bandKey}: SignedURL not defined`);
             continue;
           }
@@ -154,18 +150,22 @@ export const useNDVI = () => {
         ...
 
         */
-        const nirRaster = rasters.find((r) => r.band == EStacBands.nir)?.raster
-        const redRaster = rasters.find((r) => r.band == EStacBands.red)?.raster
-        const SCLRaster = rasters.find((r) => r.band == EStacBands.scl)?.raster
+        const nirRaster = rasters.find((r) => r.band == EStacBands.nir)?.raster;
+        const redRaster = rasters.find((r) => r.band == EStacBands.red)?.raster;
+        const SCLRaster = rasters.find((r) => r.band == EStacBands.scl)?.raster;
         if (nirRaster && redRaster && SCLRaster) {
           let upscaledSCL: Uint8Array<ArrayBuffer> = upscaleSCL(
-            SCLRaster[0], 
+            SCLRaster[0],
             SCLRaster.width,
             SCLRaster.height,
             redRaster.width,
-            redRaster.height
-          )
-          const featureNDVI = computeFeatureNDVI(redRaster[0] as TypedArray, nirRaster[0] as TypedArray, upscaledSCL as TypedArray);
+            redRaster.height,
+          );
+          const featureNDVI = computeFeatureNDVI(
+            redRaster[0] as TypedArray,
+            nirRaster[0] as TypedArray,
+            upscaledSCL as TypedArray,
+          );
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
           const featureMeanNDVI = getMeanNDVI(
             featureNDVI,
@@ -173,13 +173,12 @@ export const useNDVI = () => {
           );
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
 
-
-          cache.setCache(cacheKey,{ ...featureMeanNDVI, id: countId })
+          cache.setCache(cacheKey, { ...featureMeanNDVI, id: countId });
           meanNDVIs.push({ ...featureMeanNDVI, id: countId });
         } else {
-          throw new Error("Scene rejected: rasters are undefined")
+          throw new Error("Scene rejected: rasters are undefined");
         }
-        
+
         ++countId;
         setDoneFeature((prev) => ++prev);
       } catch (error: any) {
@@ -191,16 +190,16 @@ export const useNDVI = () => {
         console.error(error);
         ++countId;
         setDoneFeature((prev) => ++prev);
-        continue    
+        continue;
       }
-    } 
-    const validSamples = meanNDVIs.filter( m => m.NDVI )
-    const notValidSamples = meanNDVIs.filter( m => !m.NDVI )
-    setNotValidSamples(notValidSamples)
-    if(validSamples.length > 0){
+    }
+    const validSamples = meanNDVIs.filter((m) => m.NDVI);
+    const notValidSamples = meanNDVIs.filter((m) => !m.NDVI);
+    setNotValidSamples(notValidSamples);
+    if (validSamples.length > 0) {
       setSamples(validSamples);
     } else {
-      setErrorNDVI(new Error("No valid scene"))
+      setErrorNDVI(new Error("No valid scene"));
     }
   };
 

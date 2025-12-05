@@ -7,7 +7,7 @@ import { LngLat, now } from "maplibre-gl";
 import { ECoordinate } from "../types/coordinateTypes";
 import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
 import maplibregl from "maplibre-gl";
-import {validateImportedROI} from "../utils/calculationUtils"
+import { validateImportedROI } from "../utils/calculationUtils";
 import { getLocaleISOString } from "@/utils/dateUtils";
 
 export interface ICoordinate {
@@ -16,7 +16,7 @@ export interface ICoordinate {
 }
 
 export interface IImportedROI {
-  coordinates: [number, number][]
+  coordinates: [number, number][];
 }
 
 const Coordinates = () => {
@@ -53,44 +53,46 @@ const Coordinates = () => {
   };
 
   const handleSelectFile = (a_JSON: Record<string, any>) => {
-    const isImportedROIValid = validateImportedROI(a_JSON)
+    const isImportedROIValid = validateImportedROI(a_JSON);
 
-    if(!isImportedROIValid.valid){
-      console.error("Failed importing ROI: "+isImportedROIValid.message)
-      return
+    if (!isImportedROIValid.valid) {
+      console.error("Failed importing ROI: " + isImportedROIValid.message);
+      return;
     }
 
-    const importedCoordinates :ICoordinate[] = (a_JSON as IImportedROI).coordinates.map((coordinate, index) => {
-        return {
-          id: `imported_${index+1}`,
-          lngLat: coordinate
-        }
-    }) 
+    const importedCoordinates: ICoordinate[] = (
+      a_JSON as IImportedROI
+    ).coordinates.map((coordinate, index) => {
+      return {
+        id: `imported_${index + 1}`,
+        lngLat: coordinate,
+      };
+    });
 
-    handleDrawROI(importedCoordinates)
-
-  }
+    handleDrawROI(importedCoordinates);
+  };
 
   const handleDownloadCoordinates = () => {
     const exportedROI = {
-      coordinates: markers.map(m => [m.marker.getLngLat().lng, m.marker.getLngLat().lat])
-    }
-    
+      coordinates: markers.map((m) => [
+        m.marker.getLngLat().lng,
+        m.marker.getLngLat().lat,
+      ]),
+    };
 
-    const link = document.createElement("a")
-    link.download = `exportedROI_${getLocaleISOString(new Date(Date.now()))}.json`
-    
-    const blob = new Blob(
-        [JSON.stringify(exportedROI, null, 2)],
-        { type: "application/json" }
-    );
+    const link = document.createElement("a");
+    link.download = `exportedROI_${getLocaleISOString(new Date(Date.now()))}.json`;
+
+    const blob = new Blob([JSON.stringify(exportedROI, null, 2)], {
+      type: "application/json",
+    });
     const url = URL.createObjectURL(blob);
-    link.href = url
+    link.href = url;
 
-    link.click()
+    link.click();
 
     URL.revokeObjectURL(url);
-  }
+  };
   return (
     <div className={` ${coordinatesStyles.wrapper}`}>
       <BrowseButton
@@ -105,21 +107,21 @@ const Coordinates = () => {
           "    [lng3, lat3],",
           "    [lng4, lat4]",
           "  ]",
-          "}"
+          "}",
         ]}
       />
-      <CButton 
+      <CButton
         onButtonClick={handleDownloadCoordinates}
         disable={markers.length == 0}
         title="Export ROI"
       />
       {markers.map((m, index) => (
         <Coordinate
-          lngLat={[m.marker.getLngLat().lng,m.marker.getLngLat().lat]}
+          lngLat={[m.marker.getLngLat().lng, m.marker.getLngLat().lat]}
           key={index}
           id={index + 1}
         />
-      ))}      
+      ))}
     </div>
   );
 };
