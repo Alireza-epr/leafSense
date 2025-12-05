@@ -36,6 +36,7 @@ export interface IMapStoreStates {
   startDate: string;
   endDate: string;
   cloudCover: string;
+  coverageThreshold : string;
   snowCover: string;
   limit: string;
   showChart: boolean;
@@ -64,6 +65,7 @@ export interface IMapStoreActions {
   setEndDate: (a_End: string | ((prev: string) => string)) => void;
   setCloudCover: (a_CloudCover: string | ((a_Prev: string) => string)) => void;
   setSnowCover: (a_SnowCover: string | ((a_Prev: string) => string)) => void;
+  setCoverageThreshold : (a_Value: string | ((a_Prev: string) => string)) => void;
   setShowChart: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setShowROI: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setShowError: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
@@ -128,6 +130,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       endDate: getLocaleISOString(new Date()), // 2025-10-31T14:43:33
       cloudCover: "30",
       snowCover: "50",
+      coverageThreshold: "70",
       limit: "20",
       spatialOp: spatialItems[0].value,
       temporalOp: temporalItems[0].value,
@@ -226,6 +229,14 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
             typeof a_SnowCover === "function"
               ? a_SnowCover(state.snowCover)
               : a_SnowCover,
+        })),
+      
+      setCoverageThreshold: (a_Value) =>
+        set((state) => ({
+          coverageThreshold:
+            typeof a_Value === "function"
+              ? a_Value(state.coverageThreshold)
+              : a_Value,
         })),
 
       setShowChart: (a_Value: boolean | ((prev: boolean) => boolean)) =>

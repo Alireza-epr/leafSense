@@ -20,8 +20,8 @@ const Sidebar = () => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
 
-  const showROI = useMapStore((state) => state.showROI);
-  const setShowChart = useMapStore((state) => state.setShowChart);
+  const coverageThreshold = useMapStore((state) => state.coverageThreshold);
+  const setCoverageThreshold = useMapStore((state) => state.setCoverageThreshold);
 
   const fetchFeatures = useMapStore((state) => state.fetchFeatures);
   const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
@@ -114,6 +114,10 @@ const Sidebar = () => {
     setCloudCover(a_Range);
   };
 
+  const handleCoverageThresholdChange = (a_Range: string) => {
+    setCoverageThreshold(a_Range);
+  };
+
   const handleSnowCoverChange = (a_Range: string) => {
     setSnowCover(a_Range);
   };
@@ -173,6 +177,13 @@ const Sidebar = () => {
           disabled={fetchFeatures}
         >
           <RangeInput value={snowCover} onRangeChange={handleSnowCoverChange} />
+        </Section>
+
+        <Section
+          title={`Min Coverage Threshold  - ${coverageThreshold}%`}
+          disabled={fetchFeatures}
+        >
+          <RangeInput value={coverageThreshold} onRangeChange={handleCoverageThresholdChange} />
         </Section>
 
         <Section title={`Page Limit - ${limit}`} disabled={fetchFeatures}>

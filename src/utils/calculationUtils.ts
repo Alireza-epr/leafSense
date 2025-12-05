@@ -150,6 +150,7 @@ export const computeFeatureNDVI = (
   a_Red: TypedArray,
   a_Nir: TypedArray,
   a_SCL: TypedArray,
+  a_CoverageThreshold: number
 ): Float32Array => {
   const r = toFloat32Array(a_Red);
   const n = toFloat32Array(a_Nir);
@@ -170,7 +171,7 @@ export const computeFeatureNDVI = (
     }
   }
   const validPixelsPercentage = (validPixels / len) * 100;
-  const coverageThreshold = 0.7;
+  const coverageThreshold = a_CoverageThreshold;
   if (validPixelsPercentage < coverageThreshold) {
     throw new Error(
       `Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`,

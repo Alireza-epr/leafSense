@@ -41,6 +41,7 @@ const Map = () => {
   const endDate = useMapStore((state) => state.endDate);
   const cloudCover = useMapStore((state) => state.cloudCover);
   const snowCover = useMapStore((state) => state.snowCover);
+  const coverageThreshold = useMapStore((state) => state.coverageThreshold);
   const markers = useMapStore((state) => state.markers);
   const showChart = useMapStore((state) => state.showChart);
   const showError = useMapStore((state) => state.showError);
@@ -656,7 +657,7 @@ const Map = () => {
       if (responseFeatures) {
         //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
         if (responseFeatures.features.length > 0) {
-          getNDVI(responseFeatures.features, getCoordinatesFromMarkers());
+          getNDVI(responseFeatures.features, getCoordinatesFromMarkers(), Number(coverageThreshold));
         }
       }
     } else {
