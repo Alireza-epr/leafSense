@@ -4,13 +4,13 @@ const Header = () => {
   return (
     <div className={` ${headerStyle.wrapper}`}>
       <div className={` ${headerStyle.headerItem}`}>
-        <img src="./src/assets/images/leaf.svg" alt="LeafSense" title="LeafSense" />
+        <img src="/images/leaf.svg" alt="LeafSense" title="LeafSense" />
       </div>
       <div className={` ${headerStyle.headerItem}`}>
         LeafSense
       </div>
       <div className={` ${headerStyle.headerItem}`}>
-        <img src="./src/assets/images/history.svg" alt="History" title="History" />
+        <img src="/images/history.svg" alt="History" title="History" />
       </div>
     </div>
   );

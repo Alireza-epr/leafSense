@@ -696,7 +696,7 @@ const Map = () => {
             className={` ${mapStyle.flyTo}`} 
             onClick={()=>handleFlyToROI(mapObject.current!.getZoom())}
           >
-            <img src="./src/assets/images/marker-fly.svg" alt="marker-fly" className={` ${mapStyle.flyToImage}`} />
+            <img src="/images/marker-fly.svg" alt="marker-fly" className={` ${mapStyle.flyToImage}`} />
           </div>
         :
           <></>

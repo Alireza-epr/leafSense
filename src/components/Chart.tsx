@@ -56,13 +56,13 @@ const Chart = (props: IChartProps) => {
       <div className={` ${chartStyles.children}`}>
         { previousPage && props.onPrevious &&
           <div className={`${chartStyles.arrow} ${chartStyles.previous}`} onClick={props.onPrevious}>
-            <img src="./src/assets/images/prev-page.svg" alt="previous-page" title="Previous Page" />
+            <img src="/images/prev-page.svg" alt="previous-page" title="Previous Page" />
           </div>
         }  
         {props.children}
         { nextPage && props.onNext &&
           <div className={`${chartStyles.arrow} ${chartStyles.next}`} onClick={props.onNext}>
-            <img src="./src/assets/images/next-page.svg" alt="next-page" title="Next Page" />
+            <img src="/images/next-page.svg" alt="next-page" title="Next Page" />
           </div>
         }
       </div>

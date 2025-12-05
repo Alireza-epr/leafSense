@@ -30,7 +30,7 @@ const CButton = (props: ICButtonProps) => {
       { props.icon && props.icon.length > 0
         ?
         <div className={` ${buttonStyles.imageWrapper}`}>
-          <img src={`./src/assets/images/${props.icon}.svg`} alt={props.icon} className={` ${buttonStyles.image}`}/>
+          <img src={`/images/${props.icon}.svg`} alt={props.icon} className={` ${buttonStyles.image}`}/>
         </div>
         :
         <></>
