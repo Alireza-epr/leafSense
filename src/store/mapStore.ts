@@ -1,4 +1,4 @@
-import { EPastTime } from "../types/generalTypes";
+import { EPastTime, ESampleFilter } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
@@ -55,6 +55,7 @@ export interface IMapStoreStates {
   showROI: boolean;
   nextPage: StacLink | null;
   previousPage: StacLink | null;
+  sampleFilter: ESampleFilter
 }
 
 export interface IMapStoreActions {
@@ -111,6 +112,11 @@ export interface IMapStoreActions {
   setNextPage: (
     a_Link: (StacLink | null) | ((prev: StacLink | null) => StacLink | null),
   ) => void;
+  setSampleFilter: (
+    a_Filter:
+      | ESampleFilter
+      | ((prev: ESampleFilter) => ESampleFilter),
+  ) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -149,6 +155,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       previousPage: null as StacLink | null,
       //NDVI
       samples: [] as INDVISample[],
+      sampleFilter: ESampleFilter.none,
       notValidSamples: [] as INDVISample[],
     },
     (set) => ({
@@ -323,6 +330,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           spatialOp:
             typeof a_Value === "function" ? a_Value(state.spatialOp) : a_Value,
+        })),
+
+      setSampleFilter: (a_Value) =>
+        set((state) => ({
+          sampleFilter:
+            typeof a_Value === "function" ? a_Value(state.sampleFilter) : a_Value,
         })),
     }),
   ),

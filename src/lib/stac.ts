@@ -16,6 +16,7 @@ import {
   upscaleSCL,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
+import { INDVIItem } from "@/types/generalTypes";
 
 const cache = new CacheHandler();
 
@@ -89,7 +90,7 @@ export const useNDVI = () => {
   const getNDVI = async (
     a_Features: IStacItem[],
     a_Coordinates: [number, number][],
-    a_CoverageThreshold: number
+    a_NDVIItem: INDVIItem
   ) => {
     const bandKeys = [EStacBands.nir, EStacBands.red, EStacBands.scl];
     const rasters: { band: EStacBands; raster: ReadRasterResult | null }[] =
@@ -110,7 +111,7 @@ export const useNDVI = () => {
     for (const feature of a_Features) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
-        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${a_CoverageThreshold}`;
+        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIItem)}`;
         if (cache.getCache(cacheKey)) {
           console.log("Cached NDVI");
           const cachedFeature = cache.getCache(cacheKey);
@@ -166,7 +167,7 @@ export const useNDVI = () => {
             redRaster[0] as TypedArray,
             nirRaster[0] as TypedArray,
             upscaledSCL as TypedArray,
-            a_CoverageThreshold
+            a_NDVIItem
           );
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
           const featureMeanNDVI = getMeanNDVI(

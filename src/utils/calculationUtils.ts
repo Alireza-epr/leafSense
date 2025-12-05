@@ -1,4 +1,5 @@
 import { ESTACURLS, ITokenCollection } from "@/types/apiTypes";
+import { ESampleFilter, INDVIItem } from "@/types/generalTypes";
 import GeoTIFF, { fromUrl, GeoTIFFImage, TypedArray } from "geotiff";
 import proj4 from "proj4";
 
@@ -150,7 +151,7 @@ export const computeFeatureNDVI = (
   a_Red: TypedArray,
   a_Nir: TypedArray,
   a_SCL: TypedArray,
-  a_CoverageThreshold: number
+  a_NDVIItem: INDVIItem
 ): Float32Array => {
   const r = toFloat32Array(a_Red);
   const n = toFloat32Array(a_Nir);
@@ -171,14 +172,30 @@ export const computeFeatureNDVI = (
     }
   }
   const validPixelsPercentage = (validPixels / len) * 100;
-  const coverageThreshold = a_CoverageThreshold;
+  const coverageThreshold = a_NDVIItem.coverageThreshold;
   if (validPixelsPercentage < coverageThreshold) {
     throw new Error(
       `Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`,
     );
   }
 
-  return ndvi;
+  let filteredNDVI : {
+    ndvi: Float32Array<ArrayBuffer>;
+    fraction: string;
+  }
+  switch(a_NDVIItem.filter){
+    case ESampleFilter.IQR:
+      filteredNDVI = rejectOutliersIQR(ndvi)
+      break;
+    case ESampleFilter.zScore:
+      filteredNDVI = rejectOutliersZScore(ndvi)
+      break;
+    default: filteredNDVI = {ndvi, fraction: "100%"}
+  }
+
+  console.log(filteredNDVI)
+
+  return filteredNDVI.ndvi;
 };
 
 export const getMeanNDVI = (
@@ -322,3 +339,46 @@ export const getLngLatsFromMarker = (
 
   return lngLats;
 };
+
+export const rejectOutliersIQR = (a_NDVI: Float32Array ) => {
+  const validSortedNDVI = Array.from(a_NDVI).filter(v => !isNaN(v)).sort((a, b) => a - b);
+
+  const q1Index = Math.floor(0.25 * validSortedNDVI.length)
+  const q3Index = Math.floor(0.75 * validSortedNDVI.length)
+  const q1 = validSortedNDVI[q1Index]
+  const q3 = validSortedNDVI[q3Index]
+  const IQR = q3 - q1
+  const lowIQR = q1 - (1.5*IQR)
+  const highIQR = q3 + (1.5*IQR)
+  const filteredNDVI  = a_NDVI.filter( ndvi => ndvi >= lowIQR && ndvi <= highIQR )
+  
+  const fractionValid = `${((filteredNDVI.length / a_NDVI.length)*100).toFixed(2)}%`;
+
+  return {
+    ndvi: new Float32Array(filteredNDVI),
+    fraction: fractionValid
+  } 
+}
+
+export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
+  const validNDVI = Array.from(a_NDVI).filter(v => !isNaN(v));
+
+  if (validNDVI.length === 0) {
+    return { ndvi: new Float32Array(), fraction: "0%" };
+  }
+
+  const mean = validNDVI.reduce((sum, val) => sum + val, 0) / validNDVI.length;
+
+  const variance = validNDVI.reduce((sum, val) => sum + (val - mean) ** 2, 0) / validNDVI.length;
+  const stdDev = Math.sqrt(variance);
+
+  const filteredNDVI = validNDVI.filter(ndvi => Math.abs(ndvi - mean) <= a_Threshold * stdDev);
+
+  const fractionValid = `${((filteredNDVI.length / a_NDVI.length)*100).toFixed(2)}%`;
+
+  return { 
+    ndvi: new Float32Array(filteredNDVI), 
+    fraction: fractionValid 
+  };
+};
+

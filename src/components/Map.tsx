@@ -24,7 +24,7 @@ import {
   TSpatialFilter,
 } from "../types/apiTypes";
 import Loading from "./Loading";
-import { ELoadingSize } from "../types/generalTypes";
+import { ELoadingSize, INDVIItem } from "../types/generalTypes";
 import Chart from "./Chart";
 import { debounce, throttle } from "../utils/apiUtils";
 import { getLngLatsFromMarker } from "../utils/calculationUtils";
@@ -58,6 +58,7 @@ const Map = () => {
   const limit = useMapStore((state) => state.limit);
   const nextPage = useMapStore((state) => state.nextPage);
   const previousPage = useMapStore((state) => state.previousPage);
+  const sampleFilter = useMapStore((state) => state.sampleFilter);
 
   const setNextPage = useMapStore((state) => state.setNextPage);
   const setPreviousPage = useMapStore((state) => state.setPreviousPage);
@@ -657,7 +658,11 @@ const Map = () => {
       if (responseFeatures) {
         //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
         if (responseFeatures.features.length > 0) {
-          getNDVI(responseFeatures.features, getCoordinatesFromMarkers(), Number(coverageThreshold));
+          const NDVIItem : INDVIItem = {
+            filter: sampleFilter,
+            coverageThreshold: Number(coverageThreshold)
+          }
+          getNDVI(responseFeatures.features, getCoordinatesFromMarkers(), NDVIItem);
         }
       }
     } else {

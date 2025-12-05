@@ -65,7 +65,10 @@ const BrowseButton = (props: IBrowseButtonProps) => {
     <div
       className={` ${browseButtonStyle.wrapper}`}
       style={{
-        backgroundColor: loading ? "rgb(28, 215, 206)" : "",
+        backgroundColor: props.disabled
+          ? "grey"
+          : loading ? "rgb(28, 215, 206)" : "",
+        color: props.disabled ? "darkgray" : "",
       }}
     >
       <div onClick={onSelectFile}>

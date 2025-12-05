@@ -12,6 +12,7 @@ import {
   temporalItems,
   TSpatialComparison,
 } from "@/types/apiTypes";
+import { ESampleFilter } from "../types/generalTypes";
 
 const Sidebar = () => {
   const marker = useMapStore((state) => state.marker);
@@ -43,6 +44,9 @@ const Sidebar = () => {
 
   const setTemporalOp = useMapStore((state) => state.setTemporalOp);
   const setSpatialOp = useMapStore((state) => state.setSpatialOp);
+
+  const sampleFilter = useMapStore((state) => state.sampleFilter);
+  const setSampleFilter = useMapStore((state) => state.setSampleFilter);
 
   const handlePointClick = () => {
     setMarker((prev) => {
@@ -134,6 +138,10 @@ const Sidebar = () => {
     setTemporalOp(temporalItems.find((i) => i.title == a_Selected)!.value);
   };
 
+  const handleSampleFilter = (a_Type: ESampleFilter) => {
+    setSampleFilter(a_Type)
+  }
+
   return (
     <div className={` ${sidebarStyles.wrapper}`}>
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
@@ -144,55 +152,84 @@ const Sidebar = () => {
               active={marker.polygon}
               onButtonClick={handlePolygonClick}
               icon="marker-add"
+              disable={fetchFeatures}
             />
             <CButton
               title={"Clear Markers"}
               onButtonClick={handleClearPoint}
-              disable={markers.length == 0}
+              disable={markers.length == 0 || fetchFeatures}
               icon="marker-clear"
             />
           </div>
         </Section>
+        
+        <Section title="STAC" disabled={fetchFeatures}>
 
-        <Section title="Start Date" disabled={fetchFeatures}>
-          <DateInput value={startDate} onDateChange={handleStartDateChange} />
+          <Section title="Start Date" disabled={fetchFeatures}>
+            <DateInput value={startDate} onDateChange={handleStartDateChange} />
+          </Section>
+
+          <Section title="End Date" disabled={fetchFeatures}>
+            <DateInput value={endDate} onDateChange={handleEndDateChange} />
+          </Section>
+
+          <Section
+            title={`Max Cloud Cover - ${cloudCover}%`}
+            disabled={fetchFeatures}
+          >
+            <RangeInput
+              value={cloudCover}
+              onRangeChange={handleCloudCoverChange}
+            />
+          </Section>
+
+          <Section
+            title={`Max Snow Cover - ${snowCover}%`}
+            disabled={fetchFeatures}
+          >
+            <RangeInput value={snowCover} onRangeChange={handleSnowCoverChange} />
+          </Section>
+
+          <Section title={`Page Limit - ${limit}`} disabled={fetchFeatures}>
+            <RangeInput
+              value={limit}
+              onRangeChange={handleLimitChange}
+              max={50}
+            />
+          </Section>
+
         </Section>
 
-        <Section title="End Date" disabled={fetchFeatures}>
-          <DateInput value={endDate} onDateChange={handleEndDateChange} />
+        <Section title="NDVI" disabled={fetchFeatures}>
+          <Section title={`Min Coverage Threshold  - ${coverageThreshold}%`} disabled={fetchFeatures} >
+            <RangeInput value={coverageThreshold} onRangeChange={handleCoverageThresholdChange} />
+          </Section>
+          <Section title="Filter" disabled={fetchFeatures}>
+            <div className={` ${sidebarStyles.buttonRowWrapper}`}>
+              <CButton
+                title={"No filter"}
+                onButtonClick={() => handleSampleFilter(ESampleFilter.none)}
+                active={sampleFilter == ESampleFilter.none}
+                disable={fetchFeatures}
+              />
+              <CButton
+                title={"Z-Score"}
+                onButtonClick={() => handleSampleFilter(ESampleFilter.zScore)}
+                active={sampleFilter == ESampleFilter.zScore}
+                disable={fetchFeatures}
+              />
+              <CButton
+                title={"IQR"}
+                onButtonClick={() => handleSampleFilter(ESampleFilter.IQR)}
+                active={sampleFilter == ESampleFilter.IQR}
+                disable={fetchFeatures}
+              />
+            </div>
+            
+            
+          </Section>
         </Section>
-
-        <Section
-          title={`Max Cloud Cover - ${cloudCover}%`}
-          disabled={fetchFeatures}
-        >
-          <RangeInput
-            value={cloudCover}
-            onRangeChange={handleCloudCoverChange}
-          />
-        </Section>
-
-        <Section
-          title={`Max Snow Cover - ${snowCover}%`}
-          disabled={fetchFeatures}
-        >
-          <RangeInput value={snowCover} onRangeChange={handleSnowCoverChange} />
-        </Section>
-
-        <Section
-          title={`Min Coverage Threshold  - ${coverageThreshold}%`}
-          disabled={fetchFeatures}
-        >
-          <RangeInput value={coverageThreshold} onRangeChange={handleCoverageThresholdChange} />
-        </Section>
-
-        <Section title={`Page Limit - ${limit}`} disabled={fetchFeatures}>
-          <RangeInput
-            value={limit}
-            onRangeChange={handleLimitChange}
-            max={50}
-          />
-        </Section>
+        
 
         <Section title="Chart">
           <CSelect
@@ -219,7 +256,7 @@ const Sidebar = () => {
         </Section>
 
         <Section title="ROI" disabled={fetchFeatures}>
-          <Coordinates />
+          <Coordinates disable={fetchFeatures} />
         </Section>
       </div>
     </div>

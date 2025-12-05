@@ -60,36 +60,6 @@
     gap: 1.5vh
 }
 
-.footerItem {
-    border: 1px solid white;
-    flex: 1 1 0px;
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    border-radius: 16px;
-    color: white;
-    font-size: 1.1rem;
-    justify-content: center;
-    align-items: center;
-    min-width: 0;
-}
-
-.footerItemTitle {
-    flex: 1 1 0px;
-    font-weight: bold;
-    display: flex;
-    justify-content: center;
-    align-items: center;    
-}
-
-.footerItemValue {
-    flex: 1 1 0px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 50%;
-}
-
 .arrow {
     position: absolute;
     width: 7%;

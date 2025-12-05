@@ -19,7 +19,11 @@ export interface IImportedROI {
   coordinates: [number, number][];
 }
 
-const Coordinates = () => {
+export interface ICoordinatesProps {
+  disable: boolean
+}
+
+const Coordinates = (props: ICoordinatesProps) => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
 
@@ -109,10 +113,11 @@ const Coordinates = () => {
           "  ]",
           "}",
         ]}
+        disabled={props.disable}
       />
       <CButton
         onButtonClick={handleDownloadCoordinates}
-        disable={markers.length == 0}
+        disable={markers.length == 0 || props.disable}
         title="Export ROI"
       />
       {markers.map((m, index) => (

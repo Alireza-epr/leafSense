@@ -1,6 +1,7 @@
 import { useMapStore } from "@/store/mapStore";
 import chartStyles from "./Chart.module.scss";
 import { useEffect, useState } from "react";
+import ChartFooterItem from "./ChartFooterItem";
 
 export interface IChartProps {
   children: React.ReactNode;
@@ -48,6 +49,10 @@ const Chart = (props: IChartProps) => {
     }
   }, [samples]);
 
+  const getValidity = () => {
+    return props.items ? `${samples.length}/${( props.items )}` : '-'
+  }
+
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.close}`} onClick={props.onClose}>
@@ -81,35 +86,11 @@ const Chart = (props: IChartProps) => {
         )}
       </div>
       <div className={` ${chartStyles.footer}`}>
-        <div className={` ${chartStyles.footerItem}`}>
-          <div className={` ${chartStyles.footerItemTitle}`}>Max NDVI</div>
-          <div className={` ${chartStyles.footerItemValue}`}>{maxNDVI}</div>
-        </div>
-        <div className={` ${chartStyles.footerItem}`}>
-          <div className={` ${chartStyles.footerItemTitle}`}>Mean NDVI</div>
-          <div className={` ${chartStyles.footerItemValue}`}>{meanNDVI}</div>
-        </div>
-        <div className={` ${chartStyles.footerItem}`}>
-          <div className={` ${chartStyles.footerItemTitle}`}>Min NDVI</div>
-          <div className={` ${chartStyles.footerItemValue}`}>{minNDVI}</div>
-        </div>
-        <div className={` ${chartStyles.footerItem}`}>
-          <div className={` ${chartStyles.footerItemTitle}`}>Latency</div>
-          <div className={` ${chartStyles.footerItemValue}`}>
-            {" "}
-            {props.latency ? props.latency.toFixed(1) : "-"} ms{" "}
-          </div>
-        </div>
-        <div className={` ${chartStyles.footerItem}`}>
-          <div className={` ${chartStyles.footerItemTitle}`}>Scene(s)</div>
-          <div className={` ${chartStyles.footerItemValue}`}>
-            Valid: {samples.length !== 0 ? samples.length : "-"}{" "}
-          </div>
-          <div className={` ${chartStyles.footerItemValue}`}>
-            Not valid:{" "}
-            {notValidSamples.length !== 0 ? notValidSamples.length : "-"}
-          </div>
-        </div>
+        <ChartFooterItem title="Max NDVI" value={maxNDVI} />
+        <ChartFooterItem title="Mean NDVI" value={meanNDVI} />
+        <ChartFooterItem title="Min NDVI" value={minNDVI} />
+        <ChartFooterItem title="Latency" value={props.latency ? `${props.latency.toFixed(1)} ms` : "-"} />
+        <ChartFooterItem title="Validity" value={getValidity()} />
       </div>
     </div>
   );
