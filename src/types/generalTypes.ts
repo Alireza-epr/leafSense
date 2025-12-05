@@ -13,3 +13,14 @@ export enum ELoadingSize {
   md = "md",
   lg = "lg",
 }
+
+export enum ESampleFilter {
+  none= "none",
+  zScore= "z-score",
+  IQR= "IQR"
+}
+
+export interface INDVIItem {
+  filter: ESampleFilter,
+  coverageThreshold: number
+}

@@ -1,4 +1,5 @@
 import { ESTACURLS, ITokenCollection } from "@/types/apiTypes";
+import { ESampleFilter, INDVIItem } from "@/types/generalTypes";
 import GeoTIFF, { fromUrl, GeoTIFFImage, TypedArray } from "geotiff";
 import proj4 from "proj4";
 
@@ -53,11 +54,8 @@ export const readBandCOG = async (
     image.getWidth(),
     image.getHeight(),
   ); */
-  
-  const window = lngLatToPixel(
-    a_Coordinates,
-    image
-  );
+
+  const window = lngLatToPixel(a_Coordinates, image);
   const raster = await image.readRasters({ window });
   //console.log(new Date(Date.now()).toISOString()+ " readRasters end")
   return raster;
@@ -90,7 +88,7 @@ export const lngLatToPixel2 = (
 
 export const lngLatToPixel = (
   a_ROILngLat: [number, number][],
-  a_Image: GeoTIFFImage
+  a_Image: GeoTIFFImage,
 ) => {
   // 1. MapLibre gives coordinates in WGS84 / EPSG:4326 (lon/lat in degrees).
   // 2. GeoTIFF (e.g., Sentinel-2) is projected in UTM / EPSG:32632 (meters)
@@ -127,15 +125,14 @@ export const lngLatToPixel = (
   const y1 = Math.max(...ys);
 
   return [x0, y0, x1, y1];
-
-}
+};
 
 export const pixelToLngLat = (
   x: number,
   y: number,
   bbox: [number, number, number, number],
   width: number,
-  height: number
+  height: number,
 ) => {
   const [minLon, minLat, maxLon, maxLat] = bbox;
 
@@ -154,33 +151,51 @@ export const computeFeatureNDVI = (
   a_Red: TypedArray,
   a_Nir: TypedArray,
   a_SCL: TypedArray,
+  a_NDVIItem: INDVIItem
 ): Float32Array => {
   const r = toFloat32Array(a_Red);
   const n = toFloat32Array(a_Nir);
   const scl = a_SCL;
-  let len = r.length
+  let len = r.length;
   const ndvi = new Float32Array(len);
 
-  let validPixels = 0
-  let notValidPixels = 0
-  
+  let validPixels = 0;
+  let notValidPixels = 0;
+
   for (let i = 0; i < len; i++) {
-    if(isGoodPixel(scl[i])){
-      ++validPixels
+    if (isGoodPixel(scl[i])) {
+      ++validPixels;
       ndvi[i] = (n[i] - r[i]) / (n[i] + r[i]);
     } else {
-      ++notValidPixels
-      ndvi[i] = NaN
+      ++notValidPixels;
+      ndvi[i] = NaN;
     }
   }
-  const validPixelsPercentage =( validPixels / len ) * 100
-  const coverageThreshold = 0.7
-  if(validPixelsPercentage < coverageThreshold){
-    throw new Error(`Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`)
+  const validPixelsPercentage = (validPixels / len) * 100;
+  const coverageThreshold = a_NDVIItem.coverageThreshold;
+  if (validPixelsPercentage < coverageThreshold) {
+    throw new Error(
+      `Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`,
+    );
   }
-  
 
-  return ndvi;
+  let filteredNDVI : {
+    ndvi: Float32Array<ArrayBuffer>;
+    fraction: string;
+  }
+  switch(a_NDVIItem.filter){
+    case ESampleFilter.IQR:
+      filteredNDVI = rejectOutliersIQR(ndvi)
+      break;
+    case ESampleFilter.zScore:
+      filteredNDVI = rejectOutliersZScore(ndvi)
+      break;
+    default: filteredNDVI = {ndvi, fraction: "100%"}
+  }
+
+  console.log(filteredNDVI)
+
+  return filteredNDVI.ndvi;
 };
 
 export const getMeanNDVI = (
@@ -192,7 +207,7 @@ export const getMeanNDVI = (
 
   for (const n of a_NDVI) {
     if (!isNaN(n) && isFinite(n)) {
-      sum += n; 
+      sum += n;
       ++count;
     }
   }
@@ -205,49 +220,55 @@ export const getMeanNDVI = (
 };
 
 export const validateImportedROI = (a_JSON: any) => {
-    // 1. Must contain "coordinates"
-    if (!a_JSON || !a_JSON.coordinates) {
-        return { valid: false, message: "Missing 'coordinates' key" };
+  // 1. Must contain "coordinates"
+  if (!a_JSON || !a_JSON.coordinates) {
+    return { valid: false, message: "Missing 'coordinates' key" };
+  }
+
+  const coords = a_JSON.coordinates;
+
+  // 2. coordinates must be an array
+  if (!Array.isArray(coords)) {
+    return { valid: false, message: "'coordinates' must be an array" };
+  }
+
+  // 3. Validate each coordinate pair
+  for (let i = 0; i < coords.length; i++) {
+    const pair = coords[i];
+
+    if (
+      !Array.isArray(pair) ||
+      pair.length !== 2 ||
+      typeof pair[0] !== "number" ||
+      typeof pair[1] !== "number"
+    ) {
+      return {
+        valid: false,
+        message: `Invalid coordinate at index ${i}. Expected [number, number].`,
+      };
     }
+  }
 
-    const coords = a_JSON.coordinates;
+  // 4. Ensure at least 4 coordinate points
+  if (coords.length < 4) {
+    return { valid: false, message: "Minimum 4 coordinates required" };
+  }
 
-    // 2. coordinates must be an array
-    if (!Array.isArray(coords)) {
-        return { valid: false, message: "'coordinates' must be an array" };
-    }
-
-    // 3. Validate each coordinate pair
-    for (let i = 0; i < coords.length; i++) {
-        const pair = coords[i];
-
-        if (
-            !Array.isArray(pair) ||
-            pair.length !== 2 ||
-            typeof pair[0] !== "number" ||
-            typeof pair[1] !== "number"
-        ) {
-            return {
-                valid: false,
-                message: `Invalid coordinate at index ${i}. Expected [number, number].`
-            };
-        }
-    }
-
-    // 4. Ensure at least 4 coordinate points
-    if (coords.length < 4) {
-        return { valid: false, message: "Minimum 4 coordinates required" };
-    }
-
-    return { valid: true };
+  return { valid: true };
 };
- 
-export const upscaleSCL = (scl: number | TypedArray, sclWidth: number, sclHeight: number, targetWidth: number, targetHeight: number) => {
+
+export const upscaleSCL = (
+  scl: number | TypedArray,
+  sclWidth: number,
+  sclHeight: number,
+  targetWidth: number,
+  targetHeight: number,
+) => {
   const out = new Uint8Array(targetWidth * targetHeight);
 
   // Compute scale ratios between target (red) and source (scl)
-  const scaleX = targetWidth / sclWidth;    // e.g., 2/1 = 2
-  const scaleY = targetHeight / sclHeight;  // e.g., 3/2 = 1.5
+  const scaleX = targetWidth / sclWidth; // e.g., 2/1 = 2
+  const scaleY = targetHeight / sclHeight; // e.g., 3/2 = 1.5
 
   for (let y = 0; y < targetHeight; y++) {
     // Map high-res row back to low-res SCL row (nearest neighbor)
@@ -271,35 +292,34 @@ export const upscaleSCL = (scl: number | TypedArray, sclWidth: number, sclHeight
   }
 
   return out;
-}
+};
 
 export const isGoodPixel = (sclValue: number) => {
-  
-  const bad = new Set([3,6,8,9,10]);
+  const bad = new Set([3, 6, 8, 9, 10]);
   //3 - CLOUD_SHADOWS
   //6 - WATER
   //8 - CLOUD_MEDIUM_PROBABILITY
   //9 - CLOUD_HIGH_PROBABILITY
   //10 - THIN_CIRRUS
-  return !bad.has(sclValue); 
-  const noBad = new Set([0,1,2,3,4,5,6,8,9,10,11]);
-  return noBad.has(sclValue)
-}
+  return !bad.has(sclValue);
+  const noBad = new Set([0, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11]);
+  return noBad.has(sclValue);
+};
 
 const meterToDegreeOffsets = (a_Lat: number, a_Meters = 5) => {
   // Earth radius approximation
   const metersPerDegLat = 111320;
-  const metersPerDegLng = 111320 * Math.cos(a_Lat * Math.PI / 180);
+  const metersPerDegLng = 111320 * Math.cos((a_Lat * Math.PI) / 180);
 
   const dy = a_Meters / metersPerDegLat;
   const dx = a_Meters / metersPerDegLng;
 
   return { dx, dy };
-}
+};
 
-
-export const getLngLatsFromMarker = (a_LngLat: maplibregl.LngLat): [number, number][]=> {
-  
+export const getLngLatsFromMarker = (
+  a_LngLat: maplibregl.LngLat,
+): [number, number][] => {
   /* 
   ( lng - dx , lat + dy ) ----> ( lng + dx , lat + dy )
       ^                         |
@@ -307,16 +327,58 @@ export const getLngLatsFromMarker = (a_LngLat: maplibregl.LngLat): [number, numb
       |                         v
   ( lng - dx , lat - dy ) <---- ( lng + dx , lat - dy ) 
   */
-  const { lng, lat } = a_LngLat
-  const { dx, dy} = meterToDegreeOffsets(a_LngLat.lat) 
+  const { lng, lat } = a_LngLat;
+  const { dx, dy } = meterToDegreeOffsets(a_LngLat.lat);
 
   const lngLats: [number, number][] = [
-    [lng - dx , lat + dy],
-    [lng + dx , lat + dy],
-    [lng + dx , lat - dy],
-    [lng - dx , lat - dy]
-  ]
+    [lng - dx, lat + dy],
+    [lng + dx, lat + dy],
+    [lng + dx, lat - dy],
+    [lng - dx, lat - dy],
+  ];
 
-  return lngLats
+  return lngLats;
+};
 
+export const rejectOutliersIQR = (a_NDVI: Float32Array ) => {
+  const validSortedNDVI = Array.from(a_NDVI).filter(v => !isNaN(v)).sort((a, b) => a - b);
+
+  const q1Index = Math.floor(0.25 * validSortedNDVI.length)
+  const q3Index = Math.floor(0.75 * validSortedNDVI.length)
+  const q1 = validSortedNDVI[q1Index]
+  const q3 = validSortedNDVI[q3Index]
+  const IQR = q3 - q1
+  const lowIQR = q1 - (1.5*IQR)
+  const highIQR = q3 + (1.5*IQR)
+  const filteredNDVI  = a_NDVI.filter( ndvi => ndvi >= lowIQR && ndvi <= highIQR )
+  
+  const fractionValid = `${((filteredNDVI.length / a_NDVI.length)*100).toFixed(2)}%`;
+
+  return {
+    ndvi: new Float32Array(filteredNDVI),
+    fraction: fractionValid
+  } 
 }
+
+export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
+  const validNDVI = Array.from(a_NDVI).filter(v => !isNaN(v));
+
+  if (validNDVI.length === 0) {
+    return { ndvi: new Float32Array(), fraction: "0%" };
+  }
+
+  const mean = validNDVI.reduce((sum, val) => sum + val, 0) / validNDVI.length;
+
+  const variance = validNDVI.reduce((sum, val) => sum + (val - mean) ** 2, 0) / validNDVI.length;
+  const stdDev = Math.sqrt(variance);
+
+  const filteredNDVI = validNDVI.filter(ndvi => Math.abs(ndvi - mean) <= a_Threshold * stdDev);
+
+  const fractionValid = `${((filteredNDVI.length / a_NDVI.length)*100).toFixed(2)}%`;
+
+  return { 
+    ndvi: new Float32Array(filteredNDVI), 
+    fraction: fractionValid 
+  };
+};
+

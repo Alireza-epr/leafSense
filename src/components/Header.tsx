@@ -6,9 +6,7 @@ const Header = () => {
       <div className={` ${headerStyle.headerItem}`}>
         <img src="/images/leaf.svg" alt="LeafSense" title="LeafSense" />
       </div>
-      <div className={` ${headerStyle.headerItem}`}>
-        LeafSense
-      </div>
+      <div className={` ${headerStyle.headerItem}`}>LeafSense</div>
       <div className={` ${headerStyle.headerItem}`}>
         <img src="/images/history.svg" alt="History" title="History" />
       </div>

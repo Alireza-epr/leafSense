@@ -6,7 +6,7 @@ export interface ICButtonProps {
   active?: boolean;
   onButtonClick: () => void;
   disable?: boolean;
-  icon?: string
+  icon?: string;
 }
 const CButton = (props: ICButtonProps) => {
   const handleButtonClick = () => {
@@ -22,19 +22,26 @@ const CButton = (props: ICButtonProps) => {
       className={` ${buttonStyles.wrapper}`}
       onClick={handleButtonClick}
       style={{
-        backgroundColor: props.disable ? "grey" : props.active ? "rgb(28, 215, 206)" : "",
+        backgroundColor: props.disable
+          ? "grey"
+          : props.active
+            ? "rgb(28, 215, 206)"
+            : "",
         color: props.disable ? "darkgray" : "",
       }}
     >
       <div className={` ${buttonStyles.button}`}>{props.title}</div>
-      { props.icon && props.icon.length > 0
-        ?
+      {props.icon && props.icon.length > 0 ? (
         <div className={` ${buttonStyles.imageWrapper}`}>
-          <img src={`/images/${props.icon}.svg`} alt={props.icon} className={` ${buttonStyles.image}`}/>
+          <img
+            src={`/images/${props.icon}.svg`}
+            alt={props.icon}
+            className={` ${buttonStyles.image}`}
+          />
         </div>
-        :
+      ) : (
         <></>
-      }
+      )}
     </div>
   );
 };
