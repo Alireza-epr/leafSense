@@ -295,7 +295,9 @@ export const upscaleSCL = (
 };
 
 export const isGoodPixel = (sclValue: number) => {
-  const bad = new Set([3, 6, 8, 9, 10]);
+  const bad = new Set([0, 1, 3, 6, 8, 9, 10]);
+  //0 - NO_DATA
+  //1 - SATURATED_OR_DEFECTIVE
   //3 - CLOUD_SHADOWS
   //6 - WATER
   //8 - CLOUD_MEDIUM_PROBABILITY

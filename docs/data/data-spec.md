@@ -61,8 +61,8 @@ Masked classes:
 | **11** | SNOW                     | Snow or ice                         |
 
 ### SCL classes and handling
-- 0  NO_DATA                         → KEEP
-- 1  SATURATED_OR_DEFECTIVE          → KEEP
+- 0  NO_DATA                         → EXCLUDE
+- 1  SATURATED_OR_DEFECTIVE          → EXCLUDE
 - 2  DARK_FEATURES                   → KEEP
 - 3  CLOUD_SHADOWS                   → EXCLUDE
 - 4  VEGETATION                      → KEEP
