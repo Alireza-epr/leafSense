@@ -22,10 +22,17 @@ export interface IMarker {
   marker: Marker;
 }
 
+export type TPercentage = `${number | string}%`
+
 export interface INDVISample {
   id: number;
   datetime: string;
-  NDVI: number | null;
+  meanNDVI: number | null;
+  medianNDVI: number | null
+  n_valid: number;
+  valid_fraction: TPercentage | "N/A";
+  filter: ESampleFilter
+  filter_fraction: TPercentage | "N/A";
 }
 
 export type TMarker = Record<EMarkerType, boolean>;

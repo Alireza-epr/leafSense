@@ -20,7 +20,7 @@ export enum ESampleFilter {
   IQR= "IQR"
 }
 
-export interface INDVIItem {
+export interface INDVIPanel {
   filter: ESampleFilter,
   coverageThreshold: number
 }

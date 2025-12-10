@@ -28,14 +28,14 @@ const Chart = (props: IChartProps) => {
       let sum = 0;
       let count = 0;
       for (const s of samples) {
-        if (s.NDVI) {
-          if (s.NDVI > max) {
-            max = s.NDVI;
+        if (s.meanNDVI) {
+          if (s.meanNDVI > max) {
+            max = s.meanNDVI;
           }
-          if (s.NDVI < min) {
-            min = s.NDVI;
+          if (s.meanNDVI < min) {
+            min = s.meanNDVI;
           }
-          sum += s.NDVI;
+          sum += s.meanNDVI;
           ++count;
         }
       }

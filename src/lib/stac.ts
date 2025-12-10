@@ -1,4 +1,4 @@
-import { useMapStore } from "@/store/mapStore";
+import { INDVISample, useMapStore } from "@/store/mapStore";
 import {
   ESTACURLS,
   ISTACFilterRequest,
@@ -8,15 +8,13 @@ import {
 } from "../types/apiTypes";
 import { CacheHandler } from "@/utils/apiUtils";
 import {
-  computeFeatureNDVI,
-  getMeanNDVI,
   readBandCOG,
   getFeatureToken,
   isTokenExpired,
-  upscaleSCL,
+  getNDVISample,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
-import { INDVIItem } from "@/types/generalTypes";
+import { INDVIPanel } from "@/types/generalTypes";
 
 const cache = new CacheHandler();
 
@@ -90,7 +88,7 @@ export const useNDVI = () => {
   const getNDVI = async (
     a_Features: IStacItem[],
     a_Coordinates: [number, number][],
-    a_NDVIItem: INDVIItem
+    a_NDVIPanel: INDVIPanel
   ) => {
     const bandKeys = [EStacBands.nir, EStacBands.red, EStacBands.scl];
     const rasters: { band: EStacBands; raster: ReadRasterResult | null }[] =
@@ -100,23 +98,19 @@ export const useNDVI = () => {
           raster: null,
         };
       });
-    let meanNDVIs: {
-      id: number;
-      datetime: string;
-      NDVI: number | null;
-    }[] = [];
+    let ndviSamples: INDVISample[] = [];
     let countId = 1;
 
     setDoneFeature(1);
     for (const feature of a_Features) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
-        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIItem)}`;
+        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
         if (cache.getCache(cacheKey)) {
           console.log("Cached NDVI");
           const cachedFeature = cache.getCache(cacheKey);
           console.log(cachedFeature);
-          meanNDVIs.push(cachedFeature);
+          ndviSamples.push(cachedFeature);
           ++countId;
           setDoneFeature((prev) => ++prev);
           continue;
@@ -156,28 +150,20 @@ export const useNDVI = () => {
         const redRaster = rasters.find((r) => r.band == EStacBands.red)?.raster;
         const SCLRaster = rasters.find((r) => r.band == EStacBands.scl)?.raster;
         if (nirRaster && redRaster && SCLRaster) {
-          let upscaledSCL: Uint8Array<ArrayBuffer> = upscaleSCL(
-            SCLRaster[0],
-            SCLRaster.width,
-            SCLRaster.height,
-            redRaster.width,
-            redRaster.height,
-          );
-          const featureNDVI = computeFeatureNDVI(
-            redRaster[0] as TypedArray,
-            nirRaster[0] as TypedArray,
-            upscaledSCL as TypedArray,
-            a_NDVIItem
-          );
+          
+          const ndviSample = getNDVISample(
+            countId,
+            redRaster, 
+            nirRaster, 
+            SCLRaster, 
+            a_NDVIPanel, 
+            feature.properties.datetime
+          )  
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
-          const featureMeanNDVI = getMeanNDVI(
-            featureNDVI,
-            feature.properties.datetime,
-          );
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
 
-          cache.setCache(cacheKey, { ...featureMeanNDVI, id: countId });
-          meanNDVIs.push({ ...featureMeanNDVI, id: countId });
+          cache.setCache(cacheKey, ndviSample);
+          ndviSamples.push(ndviSample);
         } else {
           throw new Error("Scene rejected: rasters are undefined");
         }
@@ -185,19 +171,25 @@ export const useNDVI = () => {
         ++countId;
         setDoneFeature((prev) => ++prev);
       } catch (error: any) {
-        meanNDVIs.push({
+        const ndviSampleNotValid: INDVISample = {
           id: countId,
-          NDVI: null,
           datetime: feature.properties.datetime,
-        });
+          meanNDVI: null,
+          medianNDVI: null,
+          filter: a_NDVIPanel.filter,
+          filter_fraction: "N/A",
+          n_valid: 0,
+          valid_fraction: "N/A"
+        }
+        ndviSamples.push(ndviSampleNotValid);
         console.error(error);
         ++countId;
         setDoneFeature((prev) => ++prev);
         continue;
       }
     }
-    const validSamples = meanNDVIs.filter((m) => m.NDVI);
-    const notValidSamples = meanNDVIs.filter((m) => !m.NDVI);
+    const validSamples = ndviSamples.filter((m) => m.meanNDVI);
+    const notValidSamples = ndviSamples.filter((m) => !m.meanNDVI);
     setNotValidSamples(notValidSamples);
     if (validSamples.length > 0) {
       setSamples(validSamples);

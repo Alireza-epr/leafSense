@@ -24,10 +24,11 @@ import {
   TSpatialFilter,
 } from "../types/apiTypes";
 import Loading from "./Loading";
-import { ELoadingSize, INDVIItem } from "../types/generalTypes";
+import { ELoadingSize, INDVIPanel } from "../types/generalTypes";
 import Chart from "./Chart";
 import { debounce, throttle } from "../utils/apiUtils";
 import { getLngLatsFromMarker } from "../utils/calculationUtils";
+import CustomTooltip from "./CustomTooltip";
 
 let start: number, end: number;
 
@@ -658,7 +659,7 @@ const Map = () => {
       if (responseFeatures) {
         //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
         if (responseFeatures.features.length > 0) {
-          const NDVIItem : INDVIItem = {
+          const NDVIItem : INDVIPanel = {
             filter: sampleFilter,
             coverageThreshold: Number(coverageThreshold)
           }
@@ -684,7 +685,7 @@ const Map = () => {
   // 4. Show Chart
   useEffect(() => {
     if (samples.length !== 0) {
-      if (samples.every((s) => !s.NDVI)) {
+      if (samples.every((s) => !s.meanNDVI)) {
         showErrorModal();
       } else {
         showChartModal();
@@ -742,8 +743,8 @@ const Map = () => {
               {/* Y automatically scale to fit the data */}
               <YAxis stroke="white" />
               {/* popup tooltip by hovering */}
-              <Tooltip />
-              <Line type="linear" dataKey="NDVI" stroke="#2ecc71" />
+              <Tooltip content={CustomTooltip}/>
+              <Line type="linear" dataKey="meanNDVI" stroke="#2ecc71" />
             </LineChart>
           </ResponsiveContainer>
         </Chart>
