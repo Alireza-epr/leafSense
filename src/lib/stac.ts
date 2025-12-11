@@ -1,12 +1,12 @@
-import { INDVISample, useMapStore } from "@/store/mapStore";
+import { INDVISample, useMapStore } from "../store/mapStore";
 import {
   ESTACURLS,
   ISTACFilterRequest,
-  EStacBands,
+  EStacAssetsKey,
   IStacItem,
   ESTACCollections,
 } from "../types/apiTypes";
-import { CacheHandler } from "@/utils/apiUtils";
+import { CacheHandler } from "../utils/apiUtils";
 import {
   readBandCOG,
   getFeatureToken,
@@ -14,7 +14,7 @@ import {
   getNDVISample,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
-import { INDVIPanel } from "@/types/generalTypes";
+import { INDVIPanel } from "../types/generalTypes";
 
 const cache = new CacheHandler();
 
@@ -90,8 +90,8 @@ export const useNDVI = () => {
     a_Coordinates: [number, number][],
     a_NDVIPanel: INDVIPanel
   ) => {
-    const bandKeys = [EStacBands.nir, EStacBands.red, EStacBands.scl];
-    const rasters: { band: EStacBands; raster: ReadRasterResult | null }[] =
+    const bandKeys = [EStacAssetsKey.nir, EStacAssetsKey.red, EStacAssetsKey.scl];
+    const rasters: { band: EStacAssetsKey; raster: ReadRasterResult | null }[] =
       bandKeys.map((b) => {
         return {
           band: b,
@@ -146,9 +146,9 @@ export const useNDVI = () => {
         ...
 
         */
-        const nirRaster = rasters.find((r) => r.band == EStacBands.nir)?.raster;
-        const redRaster = rasters.find((r) => r.band == EStacBands.red)?.raster;
-        const SCLRaster = rasters.find((r) => r.band == EStacBands.scl)?.raster;
+        const nirRaster = rasters.find((r) => r.band == EStacAssetsKey.nir)?.raster;
+        const redRaster = rasters.find((r) => r.band == EStacAssetsKey.red)?.raster;
+        const SCLRaster = rasters.find((r) => r.band == EStacAssetsKey.scl)?.raster;
         if (nirRaster && redRaster && SCLRaster) {
           
           const ndviSample = getNDVISample(
@@ -157,7 +157,7 @@ export const useNDVI = () => {
             nirRaster, 
             SCLRaster, 
             a_NDVIPanel, 
-            feature.properties.datetime
+            feature
           )  
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
@@ -174,15 +174,17 @@ export const useNDVI = () => {
         const ndviSampleNotValid: INDVISample = {
           id: countId,
           datetime: feature.properties.datetime,
+          preview: feature.assets.rendered_preview.href,
+          ndviArray: error.cause.ndviArray ?? null,
           meanNDVI: null,
           medianNDVI: null,
           filter: a_NDVIPanel.filter,
           filter_fraction: "N/A",
           n_valid: 0,
-          valid_fraction: "N/A"
+          valid_fraction: error.cause.valid_fraction ?? "N/A"
         }
         ndviSamples.push(ndviSampleNotValid);
-        console.error(error);
+        //console.error(error);
         ++countId;
         setDoneFeature((prev) => ++prev);
         continue;

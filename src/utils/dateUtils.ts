@@ -1,4 +1,4 @@
-import { EPastTime, IPastTime } from "@/types/generalTypes";
+import { EPastTime, IPastTime } from "../types/generalTypes";
 
 export const getLocaleISOString = (a_Date: Date, a_Past?: IPastTime) => {
   let pastMS = 0;
@@ -32,5 +32,9 @@ export const getLocaleISOString = (a_Date: Date, a_Past?: IPastTime) => {
     year: "numeric",
   });
 
-  return `${localeDateISO}T${localeTimeISO}`;
+  return `${localeDateISO}_${localeTimeISO}`;
 };
+
+export const getDatetime = (a_Datetime: string) => {
+    return a_Datetime.replace( "T" , " " ).substring( 0 , a_Datetime.indexOf(".") )
+}

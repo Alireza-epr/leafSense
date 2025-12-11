@@ -27,6 +27,8 @@ export type TPercentage = `${number | string}%`
 export interface INDVISample {
   id: number;
   datetime: string;
+  preview: string
+  ndviArray: Float32Array<ArrayBuffer> | null
   meanNDVI: number | null;
   medianNDVI: number | null
   n_valid: number;

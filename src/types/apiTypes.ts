@@ -11,10 +11,11 @@ export enum ESTACURLS {
   featureJSONURL = "https://geojson.org/schema/Feature.json",
 }
 
-export enum EStacBands {
+export enum EStacAssetsKey {
   nir = "B08",
   red = "B04",
   scl = "SCL",
+  rendered_preview = "rendered_preview"
 }
 
 export enum ESTACCollections {
@@ -304,9 +305,7 @@ export interface IStacItem {
     "eo:cloud_cover"?: number;
     [key: string]: any; // any other properties
   };
-  assets: {
-    [key: string]: StacAsset;
-  };
+  assets: Record<EStacAssetsKey, StacAsset>;
   links?: StacLink[];
 }
 

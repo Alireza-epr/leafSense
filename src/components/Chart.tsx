@@ -1,7 +1,8 @@
-import { useMapStore } from "@/store/mapStore";
+import { useMapStore } from "../store/mapStore";
 import chartStyles from "./Chart.module.scss";
 import { useEffect, useState } from "react";
 import ChartFooterItem from "./ChartFooterItem";
+import ChartListRows from "./ChartListRows"; 
 
 export interface IChartProps {
   children: React.ReactNode;
@@ -20,6 +21,8 @@ const Chart = (props: IChartProps) => {
   const [maxNDVI, setMaxNDVI] = useState<number>(0);
   const [meanNDVI, setMeanNDVI] = useState<number>(0);
   const [minNDVI, setMinNDVI] = useState<number>(0);
+
+  const [showList, setShowList] = useState(false)
 
   useEffect(() => {
     if (samples.length !== 0) {
@@ -53,11 +56,34 @@ const Chart = (props: IChartProps) => {
     return props.items ? `${samples.length}/${( props.items )}` : '-'
   }
 
+  const handleListItems = () => {
+    setShowList(!showList)
+  }
+
   return (
     <div className={` ${chartStyles.wrapper}`}>
-      <div className={` ${chartStyles.close}`} onClick={props.onClose}>
-        X
+      <div className={` ${chartStyles.buttonsWrapper}`}>
+        { props.items
+          ? 
+            <div className={` ${chartStyles.button}`} >
+              <img src="/images/list.svg" alt="List" onClick={handleListItems} />
+            </div> 
+          :
+            <></>
+        }
+        <div className={` ${chartStyles.button}`} onClick={props.onClose}>
+          X
+        </div>
       </div>
+      {
+        showList 
+        ?
+          <div className={` ${chartStyles.listWrapper}`}>
+            <ChartListRows items={[...samples, ...notValidSamples]}/>
+          </div>
+        :
+          <></>
+      }
       <div className={` ${chartStyles.children}`}>
         {previousPage && props.onPrevious && (
           <div

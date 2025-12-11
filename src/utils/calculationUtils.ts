@@ -1,5 +1,5 @@
 import { INDVISample, TPercentage } from "../store/mapStore";
-import { ESTACURLS, ITokenCollection } from "../types/apiTypes";
+import { ESTACURLS, IStacItem, ITokenCollection } from "../types/apiTypes";
 import { ESampleFilter, INDVIPanel } from "../types/generalTypes";
 import GeoTIFF, { fromUrl, GeoTIFFImage, ReadRasterResult, TypedArray } from "geotiff";
 import proj4 from "proj4";
@@ -154,7 +154,7 @@ export const getNDVISample = (
   a_Nir: ReadRasterResult ,
   a_SCL: ReadRasterResult ,
   a_NDVIPanel: INDVIPanel,
-  a_DateTime: string,
+  a_Feature: IStacItem,
 ): INDVISample => {
   
   // Upscaling SCL
@@ -188,9 +188,9 @@ export const getNDVISample = (
   const validPixelsPercentage = (validPixels / len) * 100;
   const coverageThreshold = a_NDVIPanel.coverageThreshold;
   if (validPixelsPercentage < coverageThreshold) {
-    throw new Error(
-      `Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`,
-    );
+    const err = new Error(`Scene rejected: ${validPixelsPercentage.toFixed(2)}% valid pixels (required ≥ ${coverageThreshold}%).`)
+    err.cause = {ndviArray,valid_fraction: `${validPixelsPercentage.toFixed(2)}%`}
+    throw err
   }
 
   // Reject Outliers
@@ -213,12 +213,14 @@ export const getNDVISample = (
     ndviArray
   );
   const medianNDVI = getMedianNDVI(
-    ndviArray,
+    ndviArray
   );
 
   return {
     id: a_Id,
-    datetime: a_DateTime,
+    datetime: a_Feature.properties.datetime,
+    preview: a_Feature.assets.rendered_preview.href,
+    ndviArray: ndviArray,
 
     meanNDVI: meanNDVI,
     medianNDVI: medianNDVI,
@@ -253,7 +255,10 @@ export const getMeanNDVI = (
 export const getMedianNDVI = (
   a_NDVI: Float32Array<ArrayBufferLike>,
 ) => {
-  const sorted = Float32Array.from(a_NDVI).sort((a, b) => a - b);
+  const sorted = Float32Array.from(a_NDVI).filter( n => !isNaN(n) && isFinite(n)).sort((a, b) => a - b);
+  if(sorted.length == 0){
+    return null
+  }
   const len = sorted.length
   if(len == 1){
     return sorted[0] as number

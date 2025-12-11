@@ -11,7 +11,7 @@ import {
   spatialItems,
   temporalItems,
   TSpatialComparison,
-} from "@/types/apiTypes";
+} from "../types/apiTypes";
 import { ESampleFilter } from "../types/generalTypes";
 
 const Sidebar = () => {
