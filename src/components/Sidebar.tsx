@@ -176,6 +176,7 @@ const Sidebar = () => {
               active={marker.polygon}
               onButtonClick={handlePolygonClick}
               disable={isSidebarDisabled}
+              icon="polygon"
             />
             <CButton
               title={"Remove Zone"}
@@ -197,6 +198,7 @@ const Sidebar = () => {
               active={marker.point}
               onButtonClick={handlePointClick}
               disable={isSidebarDisabled}
+              icon="point"
             />
             <CButton
               title={"Remove Point"}
