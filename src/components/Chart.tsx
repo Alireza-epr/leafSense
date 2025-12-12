@@ -1,9 +1,11 @@
 import { EMarkerType, INDVISample, useMapStore } from "../store/mapStore";
 import chartStyles from "./Chart.module.scss";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ChartFooterItem from "./ChartFooterItem";
+import ChartHeaderItem from "./ChartHeaderItem";
 import ChartListRows from "./ChartListRows";
 import { toFirstLetterUppercase } from "../utils/generalUtils";
+import { getSmoothNDVISamples } from "../utils/calculationUtils";
 
 export interface IChartProps {
   children: React.ReactNode;
@@ -16,8 +18,10 @@ export interface IChartProps {
 
 const Chart = (props: IChartProps) => {
   const samples = useMapStore((state) => state.samples);
+  const setSamples = useMapStore((state) => state.setSamples);
   const markers = useMapStore((state) => state.markers);
   const fetchFeatures = useMapStore((state) => state.fetchFeatures);
+  const globalLoading = useMapStore((state) => state.globalLoading);
   const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
 
   const nextPage = useMapStore((state) => state.nextPage);
@@ -29,6 +33,10 @@ const Chart = (props: IChartProps) => {
 
   const [showList, setShowList] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
+  const [showSmoothChart, setShowSmoothChart] = useState(false);
+  const [smoothed, setSmoothed] = useState(false);
+
+  let notSmoothedSamples = useRef<INDVISample[]>([])
 
   useEffect(() => {
     if (samples.length !== 0) {
@@ -51,12 +59,14 @@ const Chart = (props: IChartProps) => {
       setMaxNDVI(max);
       setMinNDVI(min);
       setMeanNDVI(count > 0 ? sum / count : 0);
+      
+      notSmoothedSamples.current = samples
     } else {
       setMaxNDVI(0);
       setMeanNDVI(0);
       setMinNDVI(0);
     }
-  }, [samples]);
+  }, [globalLoading]);
 
   useEffect(()=>{
     const hasPolygon = markers.filter( m => m.type === EMarkerType.polygon ).length === 4 
@@ -67,6 +77,14 @@ const Chart = (props: IChartProps) => {
       setShowToggleChart(false)
     }
   },[])
+
+  useEffect(()=>{
+    if(!globalLoading && samples.length > 0){
+      setShowSmoothChart(true)
+    } else {
+      setShowSmoothChart(false)
+    }
+  },[globalLoading])
 
   const getValidity = () => {
     return props.items ? `${samples.length}/${props.items}` : "-";
@@ -81,27 +99,31 @@ const Chart = (props: IChartProps) => {
     setFetchFeatures(nextFetchFeatures)
   }
 
+  const handleSmoothChart = () => {
+    setSmoothed(!smoothed)
+  }
+
+  useEffect(()=> {
+    if(smoothed){
+      const smoothedNDVISamples = getSmoothNDVISamples(samples)
+      setSamples(smoothedNDVISamples)
+    } else {
+      setSamples(notSmoothedSamples.current)
+    }
+  }, [smoothed])
+
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <div className={` ${chartStyles.title}`}>
           {
-            `Chart of ${toFirstLetterUppercase(fetchFeatures)}`
+            `Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : 'Zonal' }`
           }
         </div>
-        {showToggleChart ? (
-          <div className={` ${chartStyles.button}`} title="Toggle Chart">
-            <img src="/images/toggle.svg" alt="Toggle Chart" onClick={handleToggleChart} />
-          </div>
-        ) : (
-          <></>
-        )}
-        <div className={` ${chartStyles.button}`} title="List">
-          <img src="/images/list.svg" alt="List" onClick={handleListItems} />
-        </div>
-        <div className={` ${chartStyles.button}`} onClick={props.onClose}>
-          X
-        </div>
+        <ChartHeaderItem title="Smooth Chart" alt="Smooth Chart" onClick={handleSmoothChart} icon="smoothing" disabled={!showSmoothChart} active={smoothed}/>
+        <ChartHeaderItem title="Toggle Chart" alt="Toggle Chart" onClick={handleToggleChart} icon="toggle" disabled={!showToggleChart} />
+        <ChartHeaderItem title="List" alt="List" onClick={handleListItems} icon="list" />
+        <ChartHeaderItem title="Close Chart" alt="Close" onClick={props.onClose} >X</ChartHeaderItem>
       </div>
       {showList ? (
         <div className={` ${chartStyles.listWrapper}`}>

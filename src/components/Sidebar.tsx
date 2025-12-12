@@ -179,12 +179,12 @@ const Sidebar = () => {
               icon="polygon"
             />
             <CButton
-              title={"Remove Zone"}
+              title={"Remove Zonal"}
               onButtonClick={handleClearZonal}
               disable={markers.filter((m) => m.type == EMarkerType.polygon).length == 0 || isSidebarDisabled}
             />
             <CButton
-              title={"Chart of Zone"}
+              title={"Chart of Zonal"}
               onButtonClick={handleSetPolygonFetchFeatures}
               disable={
                 markers.filter((m) => m.type == EMarkerType.polygon).length < 4 || isSidebarDisabled

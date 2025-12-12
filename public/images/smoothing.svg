@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Uploaded to: SVG Repo, www.svgrepo.com, Transformed by: SVG Repo Mixer Tools -->
+
+<svg
+   width="64px"
+   height="64px"
+   viewBox="0 0 48 48"
+   fill="#ffffff"
+   stroke="#ffffff"
+   version="1.1"
+   id="svg14"
+   sodipodi:docname="smoothing.svg"
+   inkscape:version="1.2.1 (9c6d41e410, 2022-07-14)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <defs
+     id="defs18">
+    <linearGradient
+       id="linearGradient1011"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop1009" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient904"
+       inkscape:swatch="solid">
+      <stop
+         style="stop-color:#000000;stop-opacity:1;"
+         offset="0"
+         id="stop902" />
+    </linearGradient>
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1013"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientUnits="userSpaceOnUse" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1757"
+       gradientUnits="userSpaceOnUse"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientTransform="matrix(0.86913877,0,0,0.86913877,3.2068864,3.0770801)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1759"
+       gradientUnits="userSpaceOnUse"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientTransform="matrix(0.86913877,0,0,0.86913877,3.2068864,3.0770801)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1761"
+       gradientUnits="userSpaceOnUse"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientTransform="matrix(0.86913877,0,0,0.86913877,3.2068864,3.0770801)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1763"
+       gradientUnits="userSpaceOnUse"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientTransform="matrix(0.86913877,0,0,0.86913877,3.2068864,3.0770801)" />
+    <linearGradient
+       inkscape:collect="always"
+       xlink:href="#linearGradient904"
+       id="linearGradient1765"
+       gradientUnits="userSpaceOnUse"
+       x1="3.926672"
+       y1="24"
+       x2="45.084644"
+       y2="24"
+       gradientTransform="matrix(0.86913877,0,0,0.86913877,3.2068864,3.0770801)" />
+  </defs>
+  <sodipodi:namedview
+     id="namedview16"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     showgrid="false"
+     inkscape:zoom="13.75"
+     inkscape:cx="21.854545"
+     inkscape:cy="32"
+     inkscape:window-width="2560"
+     inkscape:window-height="1369"
+     inkscape:window-x="-8"
+     inkscape:window-y="-8"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg14" />
+  <g
+     id="SVGRepo_bgCarrier"
+     stroke-width="0" />
+  <g
+     id="SVGRepo_tracerCarrier"
+     stroke-linecap="round"
+     stroke-linejoin="round" />
+  <g
+     id="SVGRepo_iconCarrier"
+     style="fill:#ffffff;stroke:url(#linearGradient1765);stroke-width:0;stroke-dasharray:none;stroke-opacity:1"
+     transform="matrix(0.58947598,0,0,0.58732708,9.5543437,9.9041499)">
+    <title
+       id="title4"
+       style="stroke:url(#linearGradient1013)">chart-line-time</title>
+    <g
+       id="Layer_2"
+       data-name="Layer 2"
+       style="fill:#ffffff;stroke:url(#linearGradient1763);stroke-width:0;stroke-dasharray:none;stroke-opacity:1">
+      <g
+         id="invisible_box"
+         data-name="invisible box"
+         style="fill:#ffffff;stroke:url(#linearGradient1757);stroke-width:0;stroke-dasharray:none;stroke-opacity:1" />
+      <g
+         id="icons_Q2"
+         data-name="icons Q2"
+         style="fill:#ffffff;stroke:url(#linearGradient1761);stroke-width:0;stroke-dasharray:none;stroke-opacity:1">
+        <path
+           d="M 42,40 H 8 v -8.3 l 6.2,-6.4 A 6.4,6.4 0 0 0 17,26 6.1,6.1 0 0 0 20.3,25 l 2.4,2.1 A 7.3,7.3 0 0 0 22,30 6,6 0 0 0 34,30 5.7,5.7 0 0 0 33.1,26.8 l 3.8,-4.2 a 5.2,5.2 0 0 0 2.1,0.4 6,6 0 1 0 -6,-6 5.8,5.8 0 0 0 0.8,3 l -3.9,4.3 A 5.8,5.8 0 0 0 28,24 7,7 0 0 0 25.5,24.5 L 22.7,21.9 A 5.8,5.8 0 0 0 23,20 6,6 0 1 0 11.5,22.4 L 8,26.1 V 6 A 2,2 0 0 0 4,6 v 38 h 38 a 2,2 0 0 0 0,-4 z M 37,16.6 v 0 a 2.1,2.1 0 0 1 1.5,-1.5 H 39 a 2,2 0 1 1 -2,2 z M 28,28 a 2,2 0 0 1 2,2 v 0.2 A 2.1,2.1 0 0 1 28.3,32 H 28 a 2,2 0 0 1 -2,-1.9 v 0 A 2,2 0 0 1 28,28 Z M 17,18 a 2,2 0 1 1 -2,2 2,2 0 0 1 2,-2 z"
+           id="path9"
+           style="fill:#ffffff;stroke:url(#linearGradient1759);stroke-width:0;stroke-dasharray:none;stroke-opacity:1" />
+      </g>
+    </g>
+  </g>
+</svg>

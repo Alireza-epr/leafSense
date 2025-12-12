@@ -446,3 +446,36 @@ export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
     fraction: fractionValid,
   };
 };
+
+export const getSmoothNDVISamples = (
+  a_Samples: INDVISample[],
+  a_WindowSize: number = 3
+): INDVISample[] => {
+  if (a_WindowSize < 2) return a_Samples;
+
+  const half = Math.floor(a_WindowSize / 2);
+
+  const avg = (arr: number[]) => arr.reduce((a, b) => a + b, 0) / arr.length;
+
+  return a_Samples.map((sample, i) => {
+    const start = Math.max(0, i - half);
+    const end = Math.min(a_Samples.length - 1, i + half);
+
+    const window = a_Samples.slice(start, end + 1);
+
+    const meanValues = window
+      .map(s => s.meanNDVI)
+      .filter((v): v is number => v !== null);
+
+    const medianValues = window
+      .map(s => s.medianNDVI)
+      .filter((v): v is number => v !== null);
+
+    return {
+      ...sample,
+      meanNDVI: meanValues.length ? avg(meanValues) : sample.meanNDVI,
+      medianNDVI: medianValues.length ? avg(medianValues) : sample.medianNDVI,
+    };
+  });
+}
+

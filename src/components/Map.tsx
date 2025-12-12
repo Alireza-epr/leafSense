@@ -783,6 +783,7 @@ const Map = () => {
     if(globalLoading) {
       showLoadingModal()
     } else {
+      if(responseFeatures == null) return // avoding show Chart on mounting
       if (samples.every((s) => !s.meanNDVI)) {
         showErrorModal();
       } else {
@@ -849,7 +850,7 @@ const Map = () => {
                 }
               />
               {/* Y automatically scale to fit the data */}
-              <YAxis stroke="white" />
+              <YAxis stroke="white" domain={[-1, 1]} />
               {/* popup tooltip by hovering */}
               <Tooltip content={CustomTooltip} />
               <Line type="linear" dataKey="meanNDVI" stroke="#2ecc71" />
