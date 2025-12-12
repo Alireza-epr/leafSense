@@ -801,7 +801,7 @@ const Map = () => {
           onClick={() => handleFlyToROI(EMarkerType.polygon ,mapObject.current!.getZoom())}
         >
           <img
-            src="/images/marker-fly.svg"
+            src="/images/go_polygon.svg"
             alt="marker-fly"
             className={` ${mapStyle.flyToImage}`}
           />
@@ -815,7 +815,7 @@ const Map = () => {
           onClick={() => handleFlyToROI(EMarkerType.point, mapObject.current!.getZoom())}
         >
           <img
-            src="/images/leaf.svg"
+            src="/images/go_point.svg"
             alt="marker-fly"
             className={` ${mapStyle.flyToImage}`}
           />
