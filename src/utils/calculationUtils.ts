@@ -197,6 +197,7 @@ export const getNDVISample = (
     );
     err.cause = {
       ndviArray,
+      n_valid: validPixels,
       valid_fraction: `${validPixelsPercentage.toFixed(2)}%`,
     };
     throw err;

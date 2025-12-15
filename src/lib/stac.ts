@@ -194,7 +194,7 @@ export const useNDVI = () => {
           medianNDVI: null,
           filter: a_NDVIPanel.filter,
           filter_fraction: "N/A",
-          n_valid: 0,
+          n_valid: error.cause.n_valid ?? 0,
           valid_fraction: error.cause.valid_fraction ?? "N/A",
         };
         setNotValidSamples(prev=> [...prev, ndviSampleNotValid])

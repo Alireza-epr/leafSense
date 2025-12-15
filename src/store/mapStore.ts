@@ -23,6 +23,10 @@ export interface IMarker {
 }
 
 export type TPercentage = `${number | string}%`;
+export interface INDVISmoothed {
+  meanNDVISmoothed: number | null;
+  medianNDVISmoothed: number | null;
+}
 
 export interface INDVISample {
   id: number;

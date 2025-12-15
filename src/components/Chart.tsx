@@ -1,10 +1,10 @@
-import { EMarkerType, INDVISample, useMapStore } from "../store/mapStore";
+import { EMarkerType, INDVISample, INDVISmoothed, useMapStore } from "../store/mapStore";
 import chartStyles from "./Chart.module.scss";
 import { useEffect, useRef, useState } from "react";
 import ChartFooterItem from "./ChartFooterItem";
 import ChartHeaderItem from "./ChartHeaderItem";
 import ChartListRows from "./ChartListRows";
-import { toFirstLetterUppercase } from "../utils/generalUtils";
+import { downloadCSV, toFirstLetterUppercase } from "../utils/generalUtils";
 import { getSmoothNDVISamples } from "../utils/calculationUtils";
 
 export interface IChartProps {
@@ -103,6 +103,25 @@ const Chart = (props: IChartProps) => {
     setSmoothed(!smoothed)
   }
 
+  const handleExportCSV = (a_Samples: INDVISample[]) => {
+    const validSamples = a_Samples.filter( s => s.meanNDVI )
+    const notValidSamples = a_Samples.filter( s => !s.meanNDVI )
+    const smoothedSamples = getSmoothNDVISamples(validSamples)
+    const allSamples = [...validSamples, ...notValidSamples].sort((a, b) => a.id - b.id)
+    const exportCSV: (INDVISample & INDVISmoothed)[] = allSamples.map( s => {
+      const smoothedSample = smoothedSamples.find( smoothed => smoothed.id === s.id)
+      return {
+        ...s,
+        meanNDVISmoothed: smoothedSample ? smoothedSample.meanNDVI : null,
+        medianNDVISmoothed: smoothedSample ? smoothedSample.medianNDVI :  null
+      }
+    })
+
+    
+    downloadCSV(exportCSV)
+
+  }
+
   useEffect(()=> {
     if(smoothed){
       const smoothedNDVISamples = getSmoothNDVISamples(samples)
@@ -117,9 +136,10 @@ const Chart = (props: IChartProps) => {
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <div className={` ${chartStyles.title}`}>
           {
-            `Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : 'Zonal' }`
+            `Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : 'Zonal' } ${smoothed ? '(smoothed)' : '(raw)'}`
           }
         </div>
+        <ChartHeaderItem title="Export CSV" alt="Export CSV" onClick={()=>handleExportCSV([...samples, ...notValidSamples])} icon="export-csv" disabled={[...samples, ...notValidSamples].length == 0}/>
         <ChartHeaderItem title="Smooth Chart" alt="Smooth Chart" onClick={handleSmoothChart} icon="smoothing" disabled={!showSmoothChart} active={smoothed}/>
         <ChartHeaderItem title="Toggle Chart" alt="Toggle Chart" onClick={handleToggleChart} icon="toggle" disabled={!showToggleChart} />
         <ChartHeaderItem title="List" alt="List" onClick={handleListItems} icon="list" />

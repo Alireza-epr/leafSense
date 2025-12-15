@@ -764,7 +764,7 @@ const Map = () => {
       }
     } else {
       resetStates();
-      //showErrorModal()
+      showErrorModal()
     }
   }, [tokenCollection]);
   useEffect(() => {
