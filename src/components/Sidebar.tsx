@@ -73,7 +73,7 @@ const Sidebar = () => {
 
   const handlePolygonClick = () => {
     setMarker((prev) => {
-      if (prev.polygon) {
+      if (prev.zonal) {
         return {
           ...prev,
           polygon: false,
@@ -173,7 +173,7 @@ const Sidebar = () => {
           <div className={` ${sidebarStyles.buttonRowWrapper}`}>
             <CButton
               title={"Zonal"}
-              active={marker.polygon}
+              active={marker.zonal}
               onButtonClick={handlePolygonClick}
               disable={isSidebarDisabled}
               icon="polygon"

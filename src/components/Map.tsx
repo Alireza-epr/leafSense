@@ -554,7 +554,7 @@ const Map = () => {
   useEffect(() => {
     if (!mapObject.current) return;
 
-    if (marker.polygon) {
+    if (marker.zonal) {
       mapObject.current.on("mousedown", addPolygonMarker);
     } else {
       mapObject.current.off("mousedown", addPolygonMarker);

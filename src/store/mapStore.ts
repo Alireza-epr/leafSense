@@ -15,7 +15,7 @@ import {
 
 export enum EMarkerType {
   point = "point",
-  polygon = "polygon",
+  polygon = "zonal",
 }
 export interface IMarker {
   type: EMarkerType;
