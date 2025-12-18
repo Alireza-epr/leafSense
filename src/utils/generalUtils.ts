@@ -100,8 +100,8 @@ export const isDateValid = (a_Datetime: string) => {
     return regex.test(a_Datetime);
 }
 
-export const isOperatorValid = (a_Op: string) => {
-    return spatialItems.findIndex( s => s.title.toLowerCase() == a_Op.toLowerCase() ) !== -1
+export const isOperatorValid = (a_Op: string, a_Items: { title: string, value: string }[] ) => {
+    return a_Items.findIndex( i => i.title.toLowerCase() == a_Op.toLowerCase() ) !== -1
 }
 
 export const isValidRange = (a_num: string, a_Min: number, a_Max: number) => {

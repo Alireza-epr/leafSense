@@ -33,3 +33,18 @@ export interface ILayerMetadata {
   feature: IFeature,
   center: [number, number]
 }
+
+export enum EURLParams {
+  pointROI= "point-roi",
+  zonalROI= "zonal-roi",
+  startDate= "startdate",
+  endDate= "enddate",
+  spatialOp= "spatialop",
+  temporalOp= "temporalop",
+  cloud= "cloud",
+  snow= "snow",
+  limit= "limit",
+  coverage= "coverage",
+  smoothing= "smoothing",
+  filter= "filter"
+}

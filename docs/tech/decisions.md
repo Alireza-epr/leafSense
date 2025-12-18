@@ -76,8 +76,8 @@ zonal-roi=[
 
 ### Temporal Parameters
 
-- `startDate`: start of the selected date range
-- `endDate`: end of the selected date range
+- `startdate`: start of the selected date range
+- `enddate`: end of the selected date range
 
 **Format**:
 ```
@@ -86,23 +86,23 @@ yyyy-mm-ddThh:mm:ss
 
 **Example**:
 ```
-startDate=2025-10-01T00:00:00
-endDate=2025-12-15T00:00:00
+startdate=2025-10-01T00:00:00
+enddate=2025-12-15T00:00:00
 ```
 
 **URL-encoded**:
 ```
-?startDate=2025-10-01T00%3A00%3A00&endDate=2025-12-15T00%3A00%3A00
+?startdate=2025-10-01T00%3A00%3A00&enddate=2025-12-15T00%3A00%3A00
 
 ```
 
-Note: The temporal operation will be set accordingly.
+Note: The temporal operation will be set accordingly if it is not given.
 
 ---
 
 ### Spatial Operator
 
-- `operator`: spatial relationship used for filtering
+- `spatialop`: spatial relationship used for filtering
 
 **Supported values**:
 - `contains`
@@ -116,9 +116,23 @@ Note: The temporal operation will be set accordingly.
 
 **Example**:
 ```
-operator=within
+spatialop=within
 ```
 
+---
+### Temporal Operator
+
+- `temporalop`: temporal relationship used for filtering
+
+**Supported values**:
+- `during`
+- `after start`
+- `before end`
+
+**Example**:
+```
+temporalop=during
+```
 ---
 
 ### Quality & Coverage Filters
@@ -155,9 +169,10 @@ smoothing=false
 ```
 ?point-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C50%5D
 &zonal-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C%5B7.466654346556197%2C51.36654905504389%5D%2C%5B7.466611431211817%2C51.36500839803321%5D%2C%5B7.4642510872788534%2C51.36437872329046%5D%5D
-&startDate=2025-10-01T00%3A00%3A00
-&endDate=2025-12-15T00%3A00%3A00
-&operator=within
+&startdate=2025-10-01T00%3A00%3A00
+&enddate=2025-12-15T00%3A00%3A00
+&spatialop=within
+&temporalop=after%20start
 &cloud=33
 &snow=44
 &coverage=70

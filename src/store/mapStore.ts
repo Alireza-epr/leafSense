@@ -1,6 +1,6 @@
 import { EPastTime, ESampleFilter } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
-import { Marker, Subscription } from "maplibre-gl";
+import { Map, Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
 import { combine } from "zustand/middleware";
 import {
@@ -29,7 +29,7 @@ export interface INDVISmoothed {
 }
 
 export interface INDVISample {
-  featureId: string,
+  featureId: string;
   id: number;
   datetime: string;
   preview: string;
@@ -45,6 +45,7 @@ export interface INDVISample {
 export type TMarker = Record<EMarkerType, boolean>;
 
 export interface IMapStoreStates {
+  map: Map | null;
   marker: TMarker;
   markers: IMarker[];
   startDate: string;
@@ -75,6 +76,7 @@ export interface IMapStoreStates {
 }
 
 export interface IMapStoreActions {
+  setMap: (a_Map: Map | null | ((prev: Map | null) => Map)) => void;
   // Accept either direct value or functional update
   setMarker: (a_Marker: TMarker | ((prev: TMarker) => TMarker)) => void;
   setMarkers: (a_Markers: IMarker[] | ((prev: IMarker[]) => IMarker[])) => void;
@@ -145,6 +147,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
   combine(
     {
       // States
+      map: null as Map | null,
       marker: {
         [EMarkerType.point]: false,
         [EMarkerType.polygon]: false,
@@ -184,6 +187,10 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
     },
     (set) => ({
       // Actions
+      setMap: (a_Map) =>
+        set((state) => ({
+          map: typeof a_Map === "function" ? a_Map(state.map) : a_Map,
+        })),
       setMarker: (a_Marker: TMarker | ((a_Prev: TMarker) => TMarker)) =>
         set((state) => ({
           marker:
@@ -243,7 +250,8 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
 
       setRadius: (a_Value) =>
         set((state) => ({
-          radius: typeof a_Value === "function" ? a_Value(state.radius) : a_Value,
+          radius:
+            typeof a_Value === "function" ? a_Value(state.radius) : a_Value,
         })),
 
       setEndDate: (a_End: string | ((a_Prev: string) => string)) =>
@@ -326,13 +334,11 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
               ? a_Value(state.globalLoading)
               : a_Value,
         })),
-      
+
       setSmoothing: (a_Value) =>
         set((state) => ({
           smoothing:
-            typeof a_Value === "function"
-              ? a_Value(state.smoothing)
-              : a_Value,
+            typeof a_Value === "function" ? a_Value(state.smoothing) : a_Value,
         })),
 
       setResponseFeatures: (a_Value) =>
