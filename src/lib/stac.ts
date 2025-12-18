@@ -1,22 +1,20 @@
-import { useMapStore } from "@/store/mapStore";
+import { INDVISample, useMapStore } from "../store/mapStore";
 import {
   ESTACURLS,
   ISTACFilterRequest,
-  EStacBands,
+  EStacAssetsKey,
   IStacItem,
   ESTACCollections,
 } from "../types/apiTypes";
-import { CacheHandler } from "@/utils/apiUtils";
+import { CacheHandler } from "../utils/apiUtils";
 import {
-  computeFeatureNDVI,
-  getMeanNDVI,
   readBandCOG,
   getFeatureToken,
   isTokenExpired,
-  upscaleSCL,
+  getNDVISample,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
-import { INDVIItem } from "@/types/generalTypes";
+import { INDVIPanel } from "../types/generalTypes";
 
 const cache = new CacheHandler();
 
@@ -27,7 +25,7 @@ export const useFilterSTAC = () => {
   const getFeatures = async (a_STACRequest: ISTACFilterRequest) => {
     if (cache.getCache(a_STACRequest)) {
       const respJSON = cache.getCache(a_STACRequest);
-      console.log("Cached Features");
+      console.log("Cached Features hit");
       console.log(respJSON);
       setResponseFeatures(respJSON);
       return;
@@ -58,7 +56,7 @@ export const useFilterSTAC = () => {
         }
 
         const respJSON = await resp.json();
-        console.log("Features");
+        console.log("Cached Features missed");
         console.log(respJSON);
         cache.setCache(a_STACRequest, respJSON);
         setResponseFeatures(respJSON);
@@ -85,38 +83,43 @@ export const useNDVI = () => {
   const setNotValidSamples = useMapStore((state) => state.setNotValidSamples);
   const doneFeature = useMapStore((state) => state.doneFeature);
   const setDoneFeature = useMapStore((state) => state.setDoneFeature);
-  const setErrorNDVI = useMapStore((state) => state.setErrorNDVI);
+  const setGlobalLoading = useMapStore((state) => state.setGlobalLoading);
 
   const getNDVI = async (
     a_Features: IStacItem[],
     a_Coordinates: [number, number][],
-    a_NDVIItem: INDVIItem
+    a_NDVIPanel: INDVIPanel,
   ) => {
-    const bandKeys = [EStacBands.nir, EStacBands.red, EStacBands.scl];
-    const rasters: { band: EStacBands; raster: ReadRasterResult | null }[] =
+    const bandKeys = [
+      EStacAssetsKey.nir,
+      EStacAssetsKey.red,
+      EStacAssetsKey.scl,
+    ];
+    const rasters: { band: EStacAssetsKey; raster: ReadRasterResult | null }[] =
       bandKeys.map((b) => {
         return {
           band: b,
           raster: null,
         };
       });
-    let meanNDVIs: {
-      id: number;
-      datetime: string;
-      NDVI: number | null;
-    }[] = [];
     let countId = 1;
 
     setDoneFeature(1);
+    setSamples([]);
+    setNotValidSamples([]);
     for (const feature of a_Features) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
-        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIItem)}`;
+        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
         if (cache.getCache(cacheKey)) {
-          console.log("Cached NDVI");
-          const cachedFeature = cache.getCache(cacheKey);
-          console.log(cachedFeature);
-          meanNDVIs.push(cachedFeature);
+          console.log("Cached NDVI hit");
+          const cachedNDVI = cache.getCache(cacheKey) as INDVISample;
+          console.log(cachedNDVI);
+          if (cachedNDVI.meanNDVI) {
+            setSamples((prev) => [...prev, cachedNDVI]);
+          } else {
+            setNotValidSamples((prev) => [...prev, cachedNDVI]);
+          }
           ++countId;
           setDoneFeature((prev) => ++prev);
           continue;
@@ -152,32 +155,30 @@ export const useNDVI = () => {
         ...
 
         */
-        const nirRaster = rasters.find((r) => r.band == EStacBands.nir)?.raster;
-        const redRaster = rasters.find((r) => r.band == EStacBands.red)?.raster;
-        const SCLRaster = rasters.find((r) => r.band == EStacBands.scl)?.raster;
+        const nirRaster = rasters.find(
+          (r) => r.band == EStacAssetsKey.nir,
+        )?.raster;
+        const redRaster = rasters.find(
+          (r) => r.band == EStacAssetsKey.red,
+        )?.raster;
+        const SCLRaster = rasters.find(
+          (r) => r.band == EStacAssetsKey.scl,
+        )?.raster;
         if (nirRaster && redRaster && SCLRaster) {
-          let upscaledSCL: Uint8Array<ArrayBuffer> = upscaleSCL(
-            SCLRaster[0],
-            SCLRaster.width,
-            SCLRaster.height,
-            redRaster.width,
-            redRaster.height,
-          );
-          const featureNDVI = computeFeatureNDVI(
-            redRaster[0] as TypedArray,
-            nirRaster[0] as TypedArray,
-            upscaledSCL as TypedArray,
-            a_NDVIItem
+          const ndviSample = getNDVISample(
+            countId,
+            redRaster,
+            nirRaster,
+            SCLRaster,
+            a_NDVIPanel,
+            feature,
           );
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
-          const featureMeanNDVI = getMeanNDVI(
-            featureNDVI,
-            feature.properties.datetime,
-          );
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
-
-          cache.setCache(cacheKey, { ...featureMeanNDVI, id: countId });
-          meanNDVIs.push({ ...featureMeanNDVI, id: countId });
+          console.log("Cached NDVI missed");
+          console.log(ndviSample);
+          cache.setCache(cacheKey, ndviSample);
+          setSamples((prev) => [...prev, ndviSample]);
         } else {
           throw new Error("Scene rejected: rasters are undefined");
         }
@@ -185,25 +186,26 @@ export const useNDVI = () => {
         ++countId;
         setDoneFeature((prev) => ++prev);
       } catch (error: any) {
-        meanNDVIs.push({
+        const ndviSampleNotValid: INDVISample = {
+          featureId: feature.id,
           id: countId,
-          NDVI: null,
           datetime: feature.properties.datetime,
-        });
-        console.error(error);
+          preview: feature.assets.rendered_preview.href,
+          ndviArray: error.cause.ndviArray ?? null,
+          meanNDVI: null,
+          medianNDVI: null,
+          filter: a_NDVIPanel.filter,
+          filter_fraction: "N/A",
+          n_valid: error.cause.n_valid ?? 0,
+          valid_fraction: error.cause.valid_fraction ?? "N/A",
+        };
+        setNotValidSamples((prev) => [...prev, ndviSampleNotValid]);
         ++countId;
         setDoneFeature((prev) => ++prev);
         continue;
       }
     }
-    const validSamples = meanNDVIs.filter((m) => m.NDVI);
-    const notValidSamples = meanNDVIs.filter((m) => !m.NDVI);
-    setNotValidSamples(notValidSamples);
-    if (validSamples.length > 0) {
-      setSamples(validSamples);
-    } else {
-      setErrorNDVI(new Error("No valid scene"));
-    }
+    setGlobalLoading(false);
   };
 
   return {

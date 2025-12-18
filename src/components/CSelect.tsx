@@ -2,6 +2,7 @@ import { useRef } from "react";
 import selectStyles from "./CSelect.module.scss";
 
 export interface ICSelectProps {
+  value: string;
   name: string;
   onSelectClick: (a_Selected: string) => void;
   disabled?: boolean;
@@ -18,7 +19,10 @@ const CSelect = (props: ICSelectProps) => {
   };
 
   return (
-    <div className={` ${selectStyles.wrapper}`}>
+    <div
+      className={` ${selectStyles.wrapper}`}
+      style={{ backgroundColor: props.disabled ? "grey" : "" }}
+    >
       <div className={` ${selectStyles.label}`}>{props.name}</div>
       <select
         className={` ${selectStyles.select}`}
@@ -27,8 +31,10 @@ const CSelect = (props: ICSelectProps) => {
         onChange={(v) => handleSelectChange(v)}
         disabled={props.disabled}
         style={{
-          color: props.disabled ? "darkgray" : "",
+          backgroundColor: props.disabled ? "grey" : "",
+          color: props.disabled ? "darkgrey" : "",
         }}
+        value={props.value}
       >
         {props.options.map((option, index) => (
           <option

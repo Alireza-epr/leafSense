@@ -55,6 +55,43 @@ This repository uses **GitHub Actions** to automatically:
 - Jest + RTL + Playwright  
 - GitHub Actions CI/CD  
 
+---
+# In-Memory Cache Documentation
+
+This document describes the in-memory caching mechanisms used in the application.
+
+---
+
+## 1. Cache STAC Items
+
+**Purpose:**  
+Cache STAC (SpatioTemporal Asset Catalog) items to reduce repeated queries and improve performance.
+
+**Cache Key:**  
+The key for this cache is based on the **search parameters used to query STAC items**.  
+
+---
+
+## 2. Cache NDVI Calculations
+
+**Purpose:**  
+Cache NDVI (Normalized Difference Vegetation Index) calculation results to avoid redundant processing.
+
+**Cache Key:**  
+The key for this cache is based on:  
+1. `item_id` – Unique identifier of the STAC item.  
+2. `NDVI coverage threshold` – The threshold used for NDVI calculation.  
+3. `Rejection Outlier type` – The type of outlier rejection applied.  
+
+---
+
+**Notes:**  
+- Both caches are **in-memory** and are not persisted between application restarts.  
+- Key composition must be consistent to avoid cache misses.  
+- Consider cache size limits or eviction policies if memory usage is a concern.
+
+---
+
 ## Demo
 
 ![Demo](./demo.gif)

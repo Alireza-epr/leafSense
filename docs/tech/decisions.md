@@ -19,18 +19,170 @@ Ensuring React components render correctly.
 - Playwright, for end-to-end (E2E) tests.
 Simulating real user workflows in the browser.
 
-## URL Parameters 
-The URL parameters include ROI, date range, cloud cover threshold, selected band combination, and spectral index.
+## URL Parameters
 
-Parameter definitions:
+The URL parameters define the area of interest (ROI), temporal range, filtering thresholds, and processing options.
 
-- roi: defines the area of interest as an array of 4 coordinates, each representing a vertex of the polygon, [ [lon1, lat1], [lon2, lat2], [lon3, lat3], [lon4, lat4] ]
-- startDate: start of the selected date range, yyyy-mm-ddThh:mm:ssZ 
-- endDate: end of the selected date range, yyyy-mm-ddThh:mm:ssZ
-- cloud: maximum cloud cover percentage, integer 
+### ROI Parameters
 
-Example:
-?roi=[[51.2,35.6],[51.5,35.6],[51.5,35.8],[51.2,35.8]]&startDate=2025-01-01T00:00:00Z&endDate=2025-10-31T23:59:59Z&cloud=10
+You can specify the area of interest using a point-based ROI, a zonal (polygon) ROI, or both simultaneously.
+
+#### 1) `point-roi`
+Defines a circular ROI around a single point.
+
+**Format**:
+```
+point-roi = [ [lon, lat], radius ]
+```
+- `lon`, `lat`: longitude and latitude of the center point
+- `radius`: radius around the point (in meters)
+
+**Example (decoded)**:
+```
+point-roi=[[7.463714645476074,51.366522261452275],50]
+```
+
+**URL-encoded**:
+```
+point-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C100%5D
+```
+
+---
+
+#### 2) `zonal-roi`
+Defines a polygonal ROI using multiple vertices.
+
+**Format**:
+```
+zonal-roi = [ [lon1, lat1], [lon2, lat2], [lon3, lat3], [lon4, lat4] ]
+```
+
+**Example (decoded)**:
+```
+zonal-roi=[
+  [7.463714645476074,51.366522261452275],
+  [7.466654346556197,51.36654905504389],
+  [7.466611431211817,51.36500839803321],
+  [7.4642510872788534,51.36437872329046]
+]
+```
+
+**URL-encoded**:
+```
+?zonal-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C%5B7.466654346556197%2C51.36654905504389%5D%2C%5B7.466611431211817%2C51.36500839803321%5D%2C%5B7.4642510872788534%2C51.36437872329046%5D%5D
+```
+
+---
+
+### Temporal Parameters
+
+- `startdate`: start of the selected date range
+- `enddate`: end of the selected date range
+
+**Format**:
+```
+yyyy-mm-ddThh:mm:ss
+```
+
+**Example**:
+```
+startdate=2025-10-01T00:00:00
+enddate=2025-12-15T00:00:00
+```
+
+**URL-encoded**:
+```
+?startdate=2025-10-01T00%3A00%3A00&enddate=2025-12-15T00%3A00%3A00
+
+```
+
+Note: The temporal operation will be set accordingly if it is not given.
+
+---
+
+### Spatial Operator
+
+- `spatialop`: spatial relationship used for filtering
+
+**Supported values**:
+- `contains`
+- `intersects`
+- `within`
+- `crosses`
+- `disjoint`
+- `equals`
+- `overlaps`
+- `touches`
+
+**Example**:
+```
+spatialop=within
+```
+
+---
+### Temporal Operator
+
+- `temporalop`: temporal relationship used for filtering
+
+**Supported values**:
+- `during`
+- `after start`
+- `before end`
+
+**Example**:
+```
+temporalop=during
+```
+---
+
+### Quality & Coverage Filters
+
+- `cloud`: maximum cloud cover percentage (integer 0 - 100)
+- `snow`: maximum snow cover percentage (integer 0 - 100)
+- `coverage`: minimum scene coverage percentage (integer 0 - 100)
+- `limit`: maximum number of returned results (integer 1 - 50)
+
+**Example**:
+```
+cloud=33&snow=44&coverage=70&limit=22
+```
+
+---
+
+### Additional Options
+
+- `filter`: additional predefined filter
+  - Values: `none | z-score | iqr`
+- `smoothing`: enable or disable smoothing
+  - Values: `true | false`
+
+**Example**:
+```
+filter=none
+smoothing=false
+```
+
+---
+
+### Full Example
+
+```
+?point-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C50%5D
+&zonal-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C%5B7.466654346556197%2C51.36654905504389%5D%2C%5B7.466611431211817%2C51.36500839803321%5D%2C%5B7.4642510872788534%2C51.36437872329046%5D%5D
+&startdate=2025-10-01T00%3A00%3A00
+&enddate=2025-12-15T00%3A00%3A00
+&spatialop=within
+&temporalop=after%20start
+&cloud=33
+&snow=44
+&coverage=70
+&limit=22
+&filter=z-score
+&smoothing=true
+
+```
+
+
 
 
 ## Performance Budgets

@@ -1,6 +1,6 @@
 import React from "react";
 import coordinateStyles from "./Coordinate.module.scss";
-import { ECoordinate } from "@/types/coordinateTypes";
+import { ECoordinate } from "../types/coordinateTypes";
 
 export interface ICoordinateProps {
   lngLat: [number, number];

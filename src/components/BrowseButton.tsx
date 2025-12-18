@@ -67,7 +67,9 @@ const BrowseButton = (props: IBrowseButtonProps) => {
       style={{
         backgroundColor: props.disabled
           ? "grey"
-          : loading ? "rgb(28, 215, 206)" : "",
+          : loading
+            ? "rgb(28, 215, 206)"
+            : "",
         color: props.disabled ? "darkgray" : "",
       }}
     >

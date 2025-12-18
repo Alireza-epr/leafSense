@@ -8,7 +8,7 @@ import { ECoordinate } from "../types/coordinateTypes";
 import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
 import maplibregl from "maplibre-gl";
 import { validateImportedROI } from "../utils/calculationUtils";
-import { getLocaleISOString } from "@/utils/dateUtils";
+import { getLocaleISOString } from "../utils/dateUtils";
 
 export interface ICoordinate {
   id: number | string;
@@ -20,7 +20,7 @@ export interface IImportedROI {
 }
 
 export interface ICoordinatesProps {
-  disable: boolean
+  disable: boolean;
 }
 
 const Coordinates = (props: ICoordinatesProps) => {
