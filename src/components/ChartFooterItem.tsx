@@ -14,7 +14,7 @@ const ChartFooterItem = (props: IChartFooterItemProps) => {
         className={` ${chartFooterItemStyles.footerItemValue}`}
         title={`${props.value}`}
       >
-        {typeof props.value == "string" ? props.value : props.value.toFixed(3) }
+        {typeof props.value == "string" ? props.value : props.value.toFixed(3)}
       </div>
     </div>
   );

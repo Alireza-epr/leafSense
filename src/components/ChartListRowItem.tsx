@@ -19,9 +19,7 @@ const ChartListRowItem = (props: IChartListRowItemProps) => {
           : props.isHeaderItem
             ? "#476d6c"
             : "#3aac1aff",
-        margin: props.isSummaryItem 
-          ? "0 1vh"
-          : "", 
+        margin: props.isSummaryItem ? "0 1vh" : "",
       }}
     >
       <div className={` ${chartListRowItem.item}`}>{props.children}</div>

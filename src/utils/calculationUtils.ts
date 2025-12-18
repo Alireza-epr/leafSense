@@ -451,7 +451,7 @@ export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
 
 export const getSmoothNDVISamples = (
   a_Samples: INDVISample[],
-  a_WindowSize: number = 3
+  a_WindowSize: number = 3,
 ): INDVISample[] => {
   if (a_WindowSize < 2) return a_Samples;
 
@@ -466,11 +466,11 @@ export const getSmoothNDVISamples = (
     const window = a_Samples.slice(start, end + 1);
 
     const meanValues = window
-      .map(s => s.meanNDVI)
+      .map((s) => s.meanNDVI)
       .filter((v): v is number => v !== null);
 
     const medianValues = window
-      .map(s => s.medianNDVI)
+      .map((s) => s.medianNDVI)
       .filter((v): v is number => v !== null);
 
     return {
@@ -479,5 +479,4 @@ export const getSmoothNDVISamples = (
       medianNDVI: medianValues.length ? avg(medianValues) : sample.medianNDVI,
     };
   });
-}
-
+};

@@ -19,8 +19,9 @@ const CSelect = (props: ICSelectProps) => {
   };
 
   return (
-    <div className={` ${selectStyles.wrapper}`} 
-      style={{backgroundColor: props.disabled ? "grey" : "" }}
+    <div
+      className={` ${selectStyles.wrapper}`}
+      style={{ backgroundColor: props.disabled ? "grey" : "" }}
     >
       <div className={` ${selectStyles.label}`}>{props.name}</div>
       <select

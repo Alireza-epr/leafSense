@@ -148,7 +148,7 @@ const Sidebar = () => {
   const handleRadiusChange = (a_Range: string) => {
     setRadius(a_Range);
   };
-  
+
   const handleSpatialClick = (a_Selected: string) => {
     setSpatialOp(spatialItems.find((i) => i.title == a_Selected)!.value);
   };
@@ -162,24 +162,23 @@ const Sidebar = () => {
   };
 
   const handleChangeSmoothing = (a_State: boolean) => {
-    setSmoothing(a_State)
-  }
+    setSmoothing(a_State);
+  };
 
-  const [ isSidebarDisabled, setIsSidebarDisabled ] = useState(false)
+  const [isSidebarDisabled, setIsSidebarDisabled] = useState(false);
 
-  useEffect(()=>{
-    if(fetchFeatures !== null){
-      setIsSidebarDisabled(true)
+  useEffect(() => {
+    if (fetchFeatures !== null) {
+      setIsSidebarDisabled(true);
     } else {
-      setIsSidebarDisabled(false)
+      setIsSidebarDisabled(false);
     }
-  }, [fetchFeatures])
+  }, [fetchFeatures]);
 
   return (
-    <div className={` ${sidebarStyles.wrapper}`} >
+    <div className={` ${sidebarStyles.wrapper}`}>
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
         <Section title="Drawing" disabled={isSidebarDisabled}>
-
           <div className={` ${sidebarStyles.buttonRowWrapper}`}>
             <CButton
               title={"Zonal"}
@@ -191,13 +190,17 @@ const Sidebar = () => {
             <CButton
               title={"Remove Zonal"}
               onButtonClick={handleClearZonal}
-              disable={markers.filter((m) => m.type == EMarkerType.polygon).length == 0 || isSidebarDisabled}
+              disable={
+                markers.filter((m) => m.type == EMarkerType.polygon).length ==
+                  0 || isSidebarDisabled
+              }
             />
             <CButton
               title={"Chart of Zonal"}
               onButtonClick={handleSetPolygonFetchFeatures}
               disable={
-                markers.filter((m) => m.type == EMarkerType.polygon).length < 4 || isSidebarDisabled
+                markers.filter((m) => m.type == EMarkerType.polygon).length <
+                  4 || isSidebarDisabled
               }
             />
           </div>
@@ -213,13 +216,17 @@ const Sidebar = () => {
             <CButton
               title={"Remove Point"}
               onButtonClick={handleClearPoint}
-              disable={markers.filter((m) => m.type == EMarkerType.point).length == 0 || isSidebarDisabled}
+              disable={
+                markers.filter((m) => m.type == EMarkerType.point).length ==
+                  0 || isSidebarDisabled
+              }
             />
             <CButton
               title={"Chart of Point"}
               onButtonClick={handleSetPointFetchFeatures}
               disable={
-                markers.filter((m) => m.type == EMarkerType.point).length === 0 || isSidebarDisabled
+                markers.filter((m) => m.type == EMarkerType.point).length ===
+                  0 || isSidebarDisabled
               }
             />
           </div>
@@ -229,16 +236,23 @@ const Sidebar = () => {
             value={radius}
             onRangeChange={handleRadiusChange}
           />
-
         </Section>
 
         <Section title="STAC" disabled={isSidebarDisabled}>
           <Section title="Start Date" disabled={isSidebarDisabled}>
-            <DateInput value={startDate} onDateChange={handleStartDateChange} disabled={isSidebarDisabled}/>
+            <DateInput
+              value={startDate}
+              onDateChange={handleStartDateChange}
+              disabled={isSidebarDisabled}
+            />
           </Section>
 
           <Section title="End Date" disabled={isSidebarDisabled}>
-            <DateInput value={endDate} onDateChange={handleEndDateChange} disabled={isSidebarDisabled}/>
+            <DateInput
+              value={endDate}
+              onDateChange={handleEndDateChange}
+              disabled={isSidebarDisabled}
+            />
           </Section>
 
           <Section title="Operation" disabled={isSidebarDisabled}>

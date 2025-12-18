@@ -1,4 +1,9 @@
-import { EMarkerType, INDVISample, INDVISmoothed, useMapStore } from "../store/mapStore";
+import {
+  EMarkerType,
+  INDVISample,
+  INDVISmoothed,
+  useMapStore,
+} from "../store/mapStore";
 import chartStyles from "./Chart.module.scss";
 import { useEffect, useRef, useState } from "react";
 import ChartFooterItem from "./ChartFooterItem";
@@ -40,16 +45,16 @@ const Chart = (props: IChartProps) => {
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [summaryItems, setSummaryItems] = useState<IChartSummaryRow[]>([
-    { id:1, title: "Total / Used Scenes", value: "-" },
-    { id:2, title: "Average Valid Pixels", value: "-" },
-    { id:3, title: "First Date", value: "-" },
-    { id:4, title: "Last Date", value: "-" },
-    { id:5, title: "Latency", value: "-" },
-  ])
+    { id: 1, title: "Total / Used Scenes", value: "-" },
+    { id: 2, title: "Average Valid Pixels", value: "-" },
+    { id: 3, title: "First Date", value: "-" },
+    { id: 4, title: "Last Date", value: "-" },
+    { id: 5, title: "Latency", value: "-" },
+  ]);
   const [showSmoothChart, setShowSmoothChart] = useState(false);
   //const [smoothed, setSmoothed] = useState(false);
 
-  let notSmoothedSamples = useRef<INDVISample[]>([])
+  let notSmoothedSamples = useRef<INDVISample[]>([]);
 
   useEffect(() => {
     if (samples.length !== 0) {
@@ -72,8 +77,8 @@ const Chart = (props: IChartProps) => {
       setMaxNDVI(max);
       setMinNDVI(min);
       setMeanNDVI(count > 0 ? sum / count : 0);
-      
-      notSmoothedSamples.current = samples
+
+      notSmoothedSamples.current = samples;
     } else {
       setMaxNDVI(0);
       setMeanNDVI(0);
@@ -81,128 +86,170 @@ const Chart = (props: IChartProps) => {
     }
   }, [globalLoading]);
 
-  useEffect(()=>{
-    const hasPolygon = markers.filter( m => m.type === EMarkerType.polygon ).length === 4 
-    const hasPoint = markers.filter( m => m.type === EMarkerType.point ).length === 1 
-    if(hasPolygon && hasPoint){
-      setShowToggleChart(true)
+  useEffect(() => {
+    const hasPolygon =
+      markers.filter((m) => m.type === EMarkerType.polygon).length === 4;
+    const hasPoint =
+      markers.filter((m) => m.type === EMarkerType.point).length === 1;
+    if (hasPolygon && hasPoint) {
+      setShowToggleChart(true);
     } else {
-      setShowToggleChart(false)
+      setShowToggleChart(false);
     }
-  },[])
+  }, []);
 
-  useEffect(()=>{
-    if(!globalLoading && samples.length > 0){
-      setShowSmoothChart(true)
+  useEffect(() => {
+    if (!globalLoading && samples.length > 0) {
+      setShowSmoothChart(true);
     } else {
-      setShowSmoothChart(false)
+      setShowSmoothChart(false);
     }
-  },[globalLoading])
+  }, [globalLoading]);
 
   const getValidity = () => {
     return props.items ? `${samples.length}/${props.items}` : "-";
   };
 
   const handleListItems = () => {
-    setShowSummary(false)
+    setShowSummary(false);
     setShowList(!showList);
   };
 
   const handleToggleChart = () => {
-    const nextFetchFeatures = fetchFeatures === EMarkerType.polygon ? EMarkerType.point : EMarkerType.polygon
-    setFetchFeatures(nextFetchFeatures)
-  }
+    const nextFetchFeatures =
+      fetchFeatures === EMarkerType.polygon
+        ? EMarkerType.point
+        : EMarkerType.polygon;
+    setFetchFeatures(nextFetchFeatures);
+  };
 
-  const getLatency = () => props.latency ? `${(props.latency/1000).toFixed(2)} s` : "-"
+  const getLatency = () =>
+    props.latency ? `${(props.latency / 1000).toFixed(2)} s` : "-";
 
-  const getValidFraction = (a_Fraction: `${string}%` | `${number}%` | "N/A") =>{
-    if(a_Fraction == "N/A") return 0
-    const num = a_Fraction.substring( 0, a_Fraction.indexOf("%")  )
-    return Number(num)
-  }
+  const getValidFraction = (
+    a_Fraction: `${string}%` | `${number}%` | "N/A",
+  ) => {
+    if (a_Fraction == "N/A") return 0;
+    const num = a_Fraction.substring(0, a_Fraction.indexOf("%"));
+    return Number(num);
+  };
 
   const handleToggleSummary = (a_AllSamples: INDVISample[]) => {
-    setShowList(false)
-    setShowSummary(!showSummary)
+    setShowList(false);
+    setShowSummary(!showSummary);
 
     // Total / Used Scenes
-    const validsLen = a_AllSamples.filter( s => s.meanNDVI ).length
-    const totalUsed = `${validsLen} / ${a_AllSamples.length}`
+    const validsLen = a_AllSamples.filter((s) => s.meanNDVI).length;
+    const totalUsed = `${validsLen} / ${a_AllSamples.length}`;
 
     // Average Valid Pixels
-    const sumValidPixels = 
-    a_AllSamples
-    .filter( s => s.meanNDVI )
-    .map( s => getValidFraction(s.valid_fraction) )
-    .reduce( (a, b) => a + b , 0 )
-    const averageValidPixels = (sumValidPixels / validsLen).toFixed(2)
+    const sumValidPixels = a_AllSamples
+      .filter((s) => s.meanNDVI)
+      .map((s) => getValidFraction(s.valid_fraction))
+      .reduce((a, b) => a + b, 0);
+    const averageValidPixels = (sumValidPixels / validsLen).toFixed(2);
 
     // First / Last Date
-    const sortedValids = 
-    a_AllSamples
-    .filter( s => s.meanNDVI )
-    .sort( (a, b) => a.id - b.id )
+    const sortedValids = a_AllSamples
+      .filter((s) => s.meanNDVI)
+      .sort((a, b) => a.id - b.id);
 
-    const firstDate = sortedValids[0].datetime
-    const lastDate = sortedValids[ validsLen - 1 ].datetime
-    
+    const firstDate = sortedValids[0].datetime;
+    const lastDate = sortedValids[validsLen - 1].datetime;
+
     setSummaryItems([
-      { id:1, title: "Used / Total Scenes", value: totalUsed },
-      { id:2, title: "Average Valid Pixels", value: averageValidPixels },
-      { id:3, title: "First Date", value: firstDate },
-      { id:4, title: "Last Date", value: lastDate },
-      { id:5, title: "Latency", value: getLatency() },
-    ])
-
-
-  }
+      { id: 1, title: "Used / Total Scenes", value: totalUsed },
+      { id: 2, title: "Average Valid Pixels", value: averageValidPixels },
+      { id: 3, title: "First Date", value: firstDate },
+      { id: 4, title: "Last Date", value: lastDate },
+      { id: 5, title: "Latency", value: getLatency() },
+    ]);
+  };
 
   const handleSmoothChart = () => {
-    setSmoothing(!smoothing)
-  }
+    setSmoothing(!smoothing);
+  };
 
   const handleExportCSV = (a_Samples: INDVISample[]) => {
-    const validSamples = a_Samples.filter( s => s.meanNDVI )
-    const notValidSamples = a_Samples.filter( s => !s.meanNDVI )
-    const smoothedSamples = getSmoothNDVISamples(validSamples)
-    const allSamples = [...validSamples, ...notValidSamples].sort((a, b) => a.id - b.id)
-    const exportCSV: (INDVISample & INDVISmoothed)[] = allSamples.map( s => {
-      const smoothedSample = smoothedSamples.find( smoothed => smoothed.id === s.id)
+    const validSamples = a_Samples.filter((s) => s.meanNDVI);
+    const notValidSamples = a_Samples.filter((s) => !s.meanNDVI);
+    const smoothedSamples = getSmoothNDVISamples(validSamples);
+    const allSamples = [...validSamples, ...notValidSamples].sort(
+      (a, b) => a.id - b.id,
+    );
+    const exportCSV: (INDVISample & INDVISmoothed)[] = allSamples.map((s) => {
+      const smoothedSample = smoothedSamples.find(
+        (smoothed) => smoothed.id === s.id,
+      );
       return {
         ...s,
         meanNDVISmoothed: smoothedSample ? smoothedSample.meanNDVI : null,
-        medianNDVISmoothed: smoothedSample ? smoothedSample.medianNDVI :  null
-      }
-    })
+        medianNDVISmoothed: smoothedSample ? smoothedSample.medianNDVI : null,
+      };
+    });
 
-    
-    downloadCSV(exportCSV)
+    downloadCSV(exportCSV);
+  };
 
-  }
-
-  useEffect(()=> {
-    if(smoothing){
-      const smoothedNDVISamples = getSmoothNDVISamples(samples)
-      setSamples(smoothedNDVISamples)
+  useEffect(() => {
+    if (smoothing) {
+      const smoothedNDVISamples = getSmoothNDVISamples(samples);
+      setSamples(smoothedNDVISamples);
     } else {
-      setSamples(notSmoothedSamples.current)
+      setSamples(notSmoothedSamples.current);
     }
-  }, [smoothing])
+  }, [smoothing]);
 
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <div className={` ${chartStyles.title}`}>
-          {
-            `Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : 'Zonal' } ${smoothing ? '(smoothed)' : '(raw)'}`
-          }
+          {`Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : "Zonal"} ${smoothing ? "(smoothed)" : "(raw)"}`}
         </div>
-        <ChartHeaderItem title="Series Summary" alt="Series Summary" onClick={()=>handleToggleSummary([...samples, ...notValidSamples])} icon="info" disabled={[...samples, ...notValidSamples].length == 0} active={showSummary}/>
-        <ChartHeaderItem title="Export CSV" alt="Export CSV" onClick={()=>handleExportCSV([...samples, ...notValidSamples])} icon="export-csv" disabled={[...samples, ...notValidSamples].length == 0}/>
-        <ChartHeaderItem title="Smooth Chart" alt="Smooth Chart" onClick={handleSmoothChart} icon="smoothing" disabled={!showSmoothChart} active={smoothing}/>
-        <ChartHeaderItem title="Toggle Chart" alt="Toggle Chart" onClick={handleToggleChart} icon="toggle" disabled={!showToggleChart} />
-        <ChartHeaderItem title="List" alt="List" onClick={handleListItems} icon="list" active={showList}/>
-        <ChartHeaderItem title="Close Chart" alt="Close" onClick={props.onClose} >X</ChartHeaderItem>
+        <ChartHeaderItem
+          title="Series Summary"
+          alt="Series Summary"
+          onClick={() => handleToggleSummary([...samples, ...notValidSamples])}
+          icon="info"
+          disabled={[...samples, ...notValidSamples].length == 0}
+          active={showSummary}
+        />
+        <ChartHeaderItem
+          title="Export CSV"
+          alt="Export CSV"
+          onClick={() => handleExportCSV([...samples, ...notValidSamples])}
+          icon="export-csv"
+          disabled={[...samples, ...notValidSamples].length == 0}
+        />
+        <ChartHeaderItem
+          title="Smooth Chart"
+          alt="Smooth Chart"
+          onClick={handleSmoothChart}
+          icon="smoothing"
+          disabled={!showSmoothChart}
+          active={smoothing}
+        />
+        <ChartHeaderItem
+          title="Toggle Chart"
+          alt="Toggle Chart"
+          onClick={handleToggleChart}
+          icon="toggle"
+          disabled={!showToggleChart}
+        />
+        <ChartHeaderItem
+          title="List"
+          alt="List"
+          onClick={handleListItems}
+          icon="list"
+          active={showList}
+        />
+        <ChartHeaderItem
+          title="Close Chart"
+          alt="Close"
+          onClick={props.onClose}
+        >
+          X
+        </ChartHeaderItem>
       </div>
       {showList ? (
         <div className={` ${chartStyles.listWrapper}`}>
@@ -213,7 +260,7 @@ const Chart = (props: IChartProps) => {
       )}
       {showSummary ? (
         <div className={` ${chartStyles.listWrapper}`}>
-          <ChartSummaryRows items={summaryItems}/>
+          <ChartSummaryRows items={summaryItems} />
         </div>
       ) : (
         <></>
@@ -249,10 +296,7 @@ const Chart = (props: IChartProps) => {
         <ChartFooterItem title="Max NDVI" value={maxNDVI} />
         <ChartFooterItem title="Mean NDVI" value={meanNDVI} />
         <ChartFooterItem title="Min NDVI" value={minNDVI} />
-        <ChartFooterItem
-          title="Latency"
-          value={ getLatency() }
-        />
+        <ChartFooterItem title="Latency" value={getLatency()} />
         <ChartFooterItem title="Validity" value={getValidity()} />
       </div>
     </div>

@@ -105,8 +105,8 @@ export const useNDVI = () => {
     let countId = 1;
 
     setDoneFeature(1);
-    setSamples([])
-    setNotValidSamples([])
+    setSamples([]);
+    setNotValidSamples([]);
     for (const feature of a_Features) {
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
@@ -115,10 +115,10 @@ export const useNDVI = () => {
           console.log("Cached NDVI");
           const cachedNDVI = cache.getCache(cacheKey) as INDVISample;
           console.log(cachedNDVI);
-          if(cachedNDVI.meanNDVI){
-            setSamples(prev => [...prev, cachedNDVI])
+          if (cachedNDVI.meanNDVI) {
+            setSamples((prev) => [...prev, cachedNDVI]);
           } else {
-            setNotValidSamples(prev => [...prev, cachedNDVI])
+            setNotValidSamples((prev) => [...prev, cachedNDVI]);
           }
           ++countId;
           setDoneFeature((prev) => ++prev);
@@ -177,7 +177,7 @@ export const useNDVI = () => {
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
 
           cache.setCache(cacheKey, ndviSample);
-          setSamples(prev=> [...prev, ndviSample])
+          setSamples((prev) => [...prev, ndviSample]);
         } else {
           throw new Error("Scene rejected: rasters are undefined");
         }
@@ -198,13 +198,13 @@ export const useNDVI = () => {
           n_valid: error.cause.n_valid ?? 0,
           valid_fraction: error.cause.valid_fraction ?? "N/A",
         };
-        setNotValidSamples(prev=> [...prev, ndviSampleNotValid])
+        setNotValidSamples((prev) => [...prev, ndviSampleNotValid]);
         ++countId;
         setDoneFeature((prev) => ++prev);
         continue;
       }
     }
-    setGlobalLoading(false)
+    setGlobalLoading(false);
   };
 
   return {

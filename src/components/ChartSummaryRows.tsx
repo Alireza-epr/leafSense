@@ -9,10 +9,14 @@ export interface IChartSummaryRowsProps {
 const ChartSummaryRows = (props: IChartSummaryRowsProps) => {
   return (
     <div className={` ${chartSummaryRowsStyles.wrapper}`}>
-      {props.items
-        .map((i, index) => (
-          <ChartSummaryRow title={i.title} value={i.value} id={i.id} key={index}/>
-        ))}
+      {props.items.map((i, index) => (
+        <ChartSummaryRow
+          title={i.title}
+          value={i.value}
+          id={i.id}
+          key={index}
+        />
+      ))}
     </div>
   );
 };

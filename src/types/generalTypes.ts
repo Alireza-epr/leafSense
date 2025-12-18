@@ -27,24 +27,39 @@ export interface INDVIPanel {
   coverageThreshold: number;
 }
 
-export type Units = "meters" | "metres" | "millimeters" | "millimetres" | "centimeters" | "centimetres" | "kilometers" | "kilometres" | "miles" | "nauticalmiles" | "inches" | "yards" | "feet" | "radians" | "degrees";
+export type Units =
+  | "meters"
+  | "metres"
+  | "millimeters"
+  | "millimetres"
+  | "centimeters"
+  | "centimetres"
+  | "kilometers"
+  | "kilometres"
+  | "miles"
+  | "nauticalmiles"
+  | "inches"
+  | "yards"
+  | "feet"
+  | "radians"
+  | "degrees";
 
 export interface ILayerMetadata {
-  feature: IFeature,
-  center: [number, number]
+  feature: IFeature;
+  center: [number, number];
 }
 
 export enum EURLParams {
-  pointROI= "point-roi",
-  zonalROI= "zonal-roi",
-  startDate= "startdate",
-  endDate= "enddate",
-  spatialOp= "spatialop",
-  temporalOp= "temporalop",
-  cloud= "cloud",
-  snow= "snow",
-  limit= "limit",
-  coverage= "coverage",
-  smoothing= "smoothing",
-  filter= "filter"
+  pointROI = "point-roi",
+  zonalROI = "zonal-roi",
+  startDate = "startdate",
+  endDate = "enddate",
+  spatialOp = "spatialop",
+  temporalOp = "temporalop",
+  cloud = "cloud",
+  snow = "snow",
+  limit = "limit",
+  coverage = "coverage",
+  smoothing = "smoothing",
+  filter = "filter",
 }

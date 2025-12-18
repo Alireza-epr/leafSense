@@ -658,7 +658,7 @@ const Map = () => {
 
   // Read URLParams
   useEffect(() => {
-    if(!map) return 
+    if (!map) return;
 
     const params = new URLSearchParams(window.location.search);
 
@@ -732,7 +732,7 @@ const Map = () => {
 
     // Temporal Op
     const temporalOpParam = params.get(EURLParams.temporalOp);
-    if(temporalOpParam){
+    if (temporalOpParam) {
       if (isOperatorValid(temporalOpParam, temporalItems)) {
         setTemporalOp(
           temporalItems.find(
@@ -837,14 +837,12 @@ const Map = () => {
 
   // Write URLParams
   useEffect(() => {
-    if(!map) return 
+    if (!map) return;
 
     const polygonMarkers = markers.filter(
       (m) => m.type === EMarkerType.polygon,
     );
-    const pointMarkers = markers.filter(
-      (m) => m.type === EMarkerType.point,
-    );
+    const pointMarkers = markers.filter((m) => m.type === EMarkerType.point);
 
     const params = new URLSearchParams();
 
@@ -860,13 +858,19 @@ const Map = () => {
         const lngLat = m.marker.getLngLat();
         return [lngLat.lng, lngLat.lat];
       });
-      const point = [ ...pointCoords, Number(radius) ]
+      const point = [...pointCoords, Number(radius)];
       params.set(EURLParams.pointROI, JSON.stringify(point));
     }
     params.set(EURLParams.startDate, startDate);
     params.set(EURLParams.endDate, endDate);
-    params.set(EURLParams.temporalOp, temporalItems.find(i => i.value === temporalOp)!.title.toLowerCase());
-    params.set(EURLParams.spatialOp, spatialItems.find(i => i.value === spatialOp)!.title.toLowerCase());
+    params.set(
+      EURLParams.temporalOp,
+      temporalItems.find((i) => i.value === temporalOp)!.title.toLowerCase(),
+    );
+    params.set(
+      EURLParams.spatialOp,
+      spatialItems.find((i) => i.value === spatialOp)!.title.toLowerCase(),
+    );
     params.set(EURLParams.cloud, cloudCover);
     params.set(EURLParams.snow, snowCover);
     params.set(EURLParams.limit, limit);
@@ -874,21 +878,19 @@ const Map = () => {
     params.set(EURLParams.filter, sampleFilter);
     params.set(EURLParams.smoothing, smoothing ? "true" : "false");
 
-
-
     window.history.replaceState(null, "", `?${params.toString()}`);
   }, [
     markers,
-    radius, 
-    startDate, 
-    endDate, 
+    radius,
+    startDate,
+    endDate,
     spatialOp,
     cloudCover,
     snowCover,
     limit,
     coverageThreshold,
     sampleFilter,
-    smoothing
+    smoothing,
   ]);
 
   // Get NDVI for STAC Items
@@ -966,8 +968,8 @@ const Map = () => {
         }
       }
     } else {
-      console.log("tokenCollection error")
-      console.log(responseFeatures)
+      console.log("tokenCollection error");
+      console.log(responseFeatures);
       if (responseFeatures && responseFeatures.features.length !== 0) {
         showErrorModal();
       }
