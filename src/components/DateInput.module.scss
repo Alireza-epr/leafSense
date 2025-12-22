@@ -1,25 +1,25 @@
 .wrapper {
   width: 100%;
   display: flex;
+  container-type: inline-size;
 }
 
 .input {
   flex: 1;
-  padding: 14px 16px;
-  border-radius: 14px;
-  border: 1px solid #2b2b2b;
+  padding: 10px;
+  border-radius: 16px;
+  border: 1px solid white;
   background-color: darkcyan;
   color: #fff;
 
-  font-size: 15px;
-  font-family: "Inter", monospace;
+  //font-size: 15px;
+  //font-family: "Inter", monospace;
   letter-spacing: 0.5px;
 
   outline: none;
   transition: border 0.2s ease, box-shadow 0.2s ease;
-
+  font-size: 3.5cqw;
   &:focus {
-    border-color: #4f8cff;
     box-shadow: 0 0 0 3px rgba(79, 140, 255, 0.25);
   }
 
