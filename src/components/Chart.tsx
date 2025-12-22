@@ -147,15 +147,15 @@ const Chart = (props: IChartProps) => {
       .filter((s) => s.meanNDVI)
       .map((s) => getValidFraction(s.valid_fraction))
       .reduce((a, b) => a + b, 0);
-    const averageValidPixels = (sumValidPixels / validsLen).toFixed(2);
+    const averageValidPixels = validsLen !== 0 ? (sumValidPixels / validsLen).toFixed(2) : "-" ;
 
     // First / Last Date
     const sortedValids = a_AllSamples
       .filter((s) => s.meanNDVI)
       .sort((a, b) => a.id - b.id);
 
-    const firstDate = sortedValids[0].datetime;
-    const lastDate = sortedValids[validsLen - 1].datetime;
+    const firstDate = validsLen !== 0 ? sortedValids[0].datetime : "-" ;
+    const lastDate = validsLen !== 0 ? sortedValids[validsLen - 1].datetime : "-" ;
 
     setSummaryItems([
       { id: 1, title: "Used / Total Scenes", value: totalUsed },

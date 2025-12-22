@@ -995,6 +995,8 @@ const Map = () => {
       if (responseFeatures == null) return; // avoding show Chart on mounting
       if (samples.every((s) => !s.meanNDVI)) {
         showErrorModal();
+        end = Date.now();
+        setLatency(end - start);
       } else {
         showChartModal();
         end = Date.now();
@@ -1074,6 +1076,7 @@ const Map = () => {
           onClose={handleCloseChart}
           onNext={handleNextPageChart}
           onPrevious={handlePreviousPageChart}
+          latency={latency}
         >
           <div className={` ${mapStyle.errorWrapper}`}>
             <div className={` ${mapStyle.error}`}>
