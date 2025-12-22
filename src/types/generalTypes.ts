@@ -63,3 +63,8 @@ export enum EURLParams {
   smoothing = "smoothing",
   filter = "filter",
 }
+
+export enum EAggregationMethod {
+  Mean= "mean",
+  Median= "median"
+}

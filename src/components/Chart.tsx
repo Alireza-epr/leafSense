@@ -13,6 +13,7 @@ import ChartSummaryRows from "./ChartSummaryRows";
 import { IChartSummaryRow } from "./ChartSummaryRow";
 import { downloadCSV, toFirstLetterUppercase } from "../utils/generalUtils";
 import { getSmoothNDVISamples } from "../utils/calculationUtils";
+import { EAggregationMethod } from "../types/generalTypes";
 
 export interface IChartProps {
   children: React.ReactNode;
@@ -33,6 +34,9 @@ const Chart = (props: IChartProps) => {
 
   const smoothing = useMapStore((state) => state.smoothing);
   const setSmoothing = useMapStore((state) => state.setSmoothing);
+
+  const yAxis = useMapStore((state) => state.yAxis);
+  const setYAxis = useMapStore((state) => state.setYAxis);
 
   const nextPage = useMapStore((state) => state.nextPage);
   const previousPage = useMapStore((state) => state.previousPage);
@@ -191,6 +195,16 @@ const Chart = (props: IChartProps) => {
     downloadCSV(exportCSV);
   };
 
+  const handleToggleYAxis = () => {
+    setYAxis(prev => {
+      if(prev == EAggregationMethod.Mean){
+        return EAggregationMethod.Median
+      } else {
+        return EAggregationMethod.Mean
+      }
+    })
+  }
+
   useEffect(() => {
     if (smoothing) {
       const smoothedNDVISamples = getSmoothNDVISamples(samples);
@@ -200,11 +214,18 @@ const Chart = (props: IChartProps) => {
     }
   }, [smoothing]);
 
+  const getTitleInfo = () => {
+    let smoothingStatus = smoothing ? "smoothed" : "raw"
+    let yAxisStatus = yAxis == EAggregationMethod.Mean ? "Mean" : "Median"
+    const full = "( " + yAxisStatus + " - " + smoothingStatus + " )"
+    return full
+  }
+
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <div className={` ${chartStyles.title}`}>
-          {`Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : "Zonal"} ${smoothing ? "(smoothed)" : "(raw)"}`}
+          {`Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : "Zonal"} ${getTitleInfo()}`}
         </div>
         <ChartHeaderItem
           title="Series Summary"
@@ -220,6 +241,13 @@ const Chart = (props: IChartProps) => {
           onClick={() => handleExportCSV([...samples, ...notValidSamples])}
           icon="export-csv"
           disabled={[...samples, ...notValidSamples].length == 0}
+        />
+        <ChartHeaderItem
+          title={yAxis}
+          alt="Aggregation"
+          onClick={handleToggleYAxis}
+          icon="y-axis"
+          disabled={globalLoading}
         />
         <ChartHeaderItem
           title="Smooth Chart"

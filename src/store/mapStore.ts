@@ -1,4 +1,4 @@
-import { EPastTime, ESampleFilter } from "../types/generalTypes";
+import { EAggregationMethod, EPastTime, ESampleFilter } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Map, Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
@@ -73,6 +73,7 @@ export interface IMapStoreStates {
   nextPage: StacLink | null;
   previousPage: StacLink | null;
   sampleFilter: ESampleFilter;
+  yAxis: EAggregationMethod;
 }
 
 export interface IMapStoreActions {
@@ -141,6 +142,7 @@ export interface IMapStoreActions {
   setSampleFilter: (
     a_Filter: ESampleFilter | ((prev: ESampleFilter) => ESampleFilter),
   ) => void;
+  setYAxis: (a_Value: EAggregationMethod | ((prev: EAggregationMethod) => EAggregationMethod)) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -184,6 +186,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       sampleFilter: ESampleFilter.none,
       notValidSamples: [] as INDVISample[],
       smoothing: false,
+      yAxis: EAggregationMethod.Mean,
     },
     (set) => ({
       // Actions
@@ -381,6 +384,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
             typeof a_Value === "function"
               ? a_Value(state.sampleFilter)
               : a_Value,
+        })),
+
+      setYAxis: (a_Value) =>
+        set((state) => ({
+          yAxis:
+            typeof a_Value === "function" ? a_Value(state.yAxis) : a_Value,
         })),
     }),
   ),

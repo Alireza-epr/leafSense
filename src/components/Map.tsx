@@ -28,6 +28,7 @@ import {
 } from "../types/apiTypes";
 import Loading from "./Loading";
 import {
+  EAggregationMethod,
   ELoadingSize,
   ESampleFilter,
   EURLParams,
@@ -83,6 +84,7 @@ const Map = () => {
   const previousPage = useMapStore((state) => state.previousPage);
   const sampleFilter = useMapStore((state) => state.sampleFilter);
   const smoothing = useMapStore((state) => state.smoothing);
+  const yAxis = useMapStore((state) => state.yAxis);
 
   const setNextPage = useMapStore((state) => state.setNextPage);
   const setPreviousPage = useMapStore((state) => state.setPreviousPage);
@@ -880,10 +882,12 @@ const Map = () => {
 
     window.history.replaceState(null, "", `?${params.toString()}`);
   }, [
+    map,
     markers,
     radius,
     startDate,
     endDate,
+    temporalOp,
     spatialOp,
     cloudCover,
     snowCover,
@@ -1064,7 +1068,7 @@ const Map = () => {
               <YAxis stroke="white" domain={[-1, 1]} />
               {/* popup tooltip by hovering */}
               <Tooltip content={CustomTooltip} />
-              <Line type="linear" dataKey="meanNDVI" stroke="#2ecc71" />
+              <Line type="linear" dataKey={yAxis == EAggregationMethod.Mean ? "meanNDVI" : "medianNDVI"} stroke="#2ecc71" />
             </LineChart>
           </ResponsiveContainer>
         </Chart>
