@@ -79,7 +79,7 @@ const Sidebar = () => {
       if (prev.zonal) {
         return {
           ...prev,
-          polygon: false,
+          zonal: false,
         };
       } else {
         const markerKeys = Object.keys(prev);
