@@ -12,8 +12,8 @@ import ChartListRows from "./ChartListRows";
 import ChartSummaryRows from "./ChartSummaryRows";
 import { IChartSummaryRow } from "./ChartSummaryRow";
 import { downloadCSV, toFirstLetterUppercase } from "../utils/generalUtils";
-import { getSmoothNDVISamples } from "../utils/calculationUtils";
-import { EAggregationMethod } from "../types/generalTypes";
+import { detectChangePointsZScore, getSmoothNDVISamples } from "../utils/calculationUtils";
+import { EAggregationMethod, IChartHeaderItemOption } from "../types/generalTypes";
 import ChartHeaderItemOptions from "./ChartHeaderItemOptions";
 
 export interface IChartProps {
@@ -36,6 +36,13 @@ const Chart = (props: IChartProps) => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const setSmoothingWindow = useMapStore((state) => state.setSmoothingWindow);
 
+  const changeDetection = useMapStore((state) => state.changeDetection);
+  const setChangeDetection = useMapStore((state) => state.setChangeDetection);
+
+  
+  const changePoints = useMapStore((state) => state.changePoints);
+  const setChangePoints = useMapStore((state) => state.setChangePoints);
+
   const yAxis = useMapStore((state) => state.yAxis);
   const setYAxis = useMapStore((state) => state.setYAxis);
 
@@ -50,6 +57,7 @@ const Chart = (props: IChartProps) => {
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showSmoothingOptions, showShowSmoothingOptions] = useState(false);
+  const [showDetectionOptions, showShowDetectionOptions] = useState(false);
   const [summaryItems, setSummaryItems] = useState<IChartSummaryRow[]>([
     { id: 1, title: "Total / Used Scenes", value: "-" },
     { id: 2, title: "Average Valid Pixels", value: "-" },
@@ -57,7 +65,7 @@ const Chart = (props: IChartProps) => {
     { id: 4, title: "Last Date", value: "-" },
     { id: 5, title: "Latency", value: "-" },
   ]);
-  const [showSmoothChart, setShowSmoothChart] = useState(false);
+  const [enableHeaderOption, setEnableHeaderOption] = useState(false);
   //const [smoothed, setSmoothed] = useState(false);
 
 
@@ -104,15 +112,25 @@ const Chart = (props: IChartProps) => {
 
   useEffect(() => {
     if (!globalLoading && samples.length > 0) {
-      setShowSmoothChart(true);
+      setEnableHeaderOption(true);
     } else {
-      setShowSmoothChart(false);
+      setEnableHeaderOption(false);
     }
   }, [globalLoading]);
 
   useEffect(()=>{
-    setSamples(prev=>getSmoothNDVISamples(prev, Number(smoothingWindow)))
+    setSamples(prev=>getSmoothNDVISamples(prev, Number(smoothingWindow[0].value)))
   },[smoothingWindow])
+
+  useEffect(()=>{
+    const points = detectChangePointsZScore(
+      samples,
+      +changeDetection.find( o => o.id == 1 )!.value,
+      +changeDetection.find( o => o.id == 2 )!.value,
+      +changeDetection.find( o => o.id == 3 )!.value,
+    )
+    setChangePoints(points)
+  },[changeDetection])
 
   const getValidity = () => {
     return props.items ? `${samples.length}/${props.items}` : "-";
@@ -134,14 +152,6 @@ const Chart = (props: IChartProps) => {
   const getLatency = () =>
     props.latency ? `${(props.latency / 1000).toFixed(2)} s` : "-";
 
-  const getValidFraction = (
-    a_Fraction: `${string}%` | `${number}%` | "N/A",
-  ) => {
-    if (a_Fraction == "N/A") return 0;
-    const num = a_Fraction.substring(0, a_Fraction.indexOf("%"));
-    return Number(num);
-  };
-
   const handleToggleSummary = useCallback(
     (a_AllSamples: INDVISample[]) => {
       setShowList(false);
@@ -154,7 +164,7 @@ const Chart = (props: IChartProps) => {
       // Average Valid Pixels
       const sumValidPixels = a_AllSamples
         .filter((s) => s.meanNDVI)
-        .map((s) => getValidFraction(s.valid_fraction))
+        .map((s) => s.valid_fraction)
         .reduce((a, b) => a + b, 0);
       const averageValidPixels = validsLen !== 0 ? (sumValidPixels / validsLen).toFixed(2) : "-" ;
 
@@ -177,24 +187,36 @@ const Chart = (props: IChartProps) => {
   ,[showSummary, props.latency]);
 
   const handleToggleSmoothingOptions = () => {
+    showShowDetectionOptions(false)
     showShowSmoothingOptions(!showSmoothingOptions)
   }
 
-  const handleSmoothingWindow = (a_Window: string) => {
-    setSmoothingWindow(a_Window)
+  const handleToggleDetectionOptions = () => {
+    showShowSmoothingOptions(false)
+    showShowDetectionOptions(!showDetectionOptions)
+  }
+
+  const handleSmoothingWindow = (a_Window: IChartHeaderItemOption) => {
+    setSmoothingWindow([a_Window])
+  }
+
+  const handleChangeDetection = (a_Option: IChartHeaderItemOption) => {
+    setChangeDetection(prev =>
+      prev.map(o => (o.id === a_Option.id ? a_Option : o))
+    )
   }
 
   const handleExportCSV = useCallback(
     (a_Samples: INDVISample[]) => {
       const validSamples = a_Samples.filter((s) => s.meanNDVI);
-      const notValidSamples = a_Samples.filter((s) => !s.meanNDVI);
-      const allSamples = [...validSamples, ...notValidSamples].sort(
+      const thiNotValidSamples = a_Samples.filter((s) => !s.meanNDVI);
+      const allSamples = [...validSamples, ...thiNotValidSamples].sort(
         (a, b) => a.id - b.id,
       );
 
-      downloadCSV(allSamples);
+      downloadCSV(allSamples, changePoints);
     }
-  ,[]);
+  ,[changePoints]);
   const handleToggleYAxis = () => {
     setYAxis(prev => {
       if(prev == EAggregationMethod.Mean){
@@ -203,6 +225,18 @@ const Chart = (props: IChartProps) => {
         return EAggregationMethod.Mean
       }
     })
+  }
+
+  const handlePrevious = () => {
+    if(!globalLoading && props.onPrevious){
+      props.onPrevious()
+    }
+  }
+
+  const handleNext = () => {
+    if(!globalLoading && props.onNext){
+      props.onNext()
+    }
   }
 
 
@@ -217,7 +251,7 @@ const Chart = (props: IChartProps) => {
           alt="Series Summary"
           onClick={() => handleToggleSummary([...samples, ...notValidSamples])}
           icon="info"
-          disabled={[...samples, ...notValidSamples].length == 0}
+          disabled={!enableHeaderOption}
           active={showSummary}
         />
         <ChartHeaderItem
@@ -225,28 +259,43 @@ const Chart = (props: IChartProps) => {
           alt="Export CSV"
           onClick={() => handleExportCSV([...samples, ...notValidSamples])}
           icon="export-csv"
-          disabled={[...samples, ...notValidSamples].length == 0}
+          disabled={!enableHeaderOption}
         />
+        <ChartHeaderItem
+          title={"Change Detection"}
+          alt="Change Detection"
+          onClick={handleToggleDetectionOptions}
+          icon="detection"
+          disabled={!enableHeaderOption}
+          active={showDetectionOptions}
+        >
+          { showDetectionOptions
+            ? <ChartHeaderItemOptions 
+                options={changeDetection} 
+                onOption={handleChangeDetection} 
+              />
+            : <></>
+          }
+        </ ChartHeaderItem>
         <ChartHeaderItem
           title={"Switch Y Axis"}
           alt="Aggregation"
           onClick={handleToggleYAxis}
           icon="y-axis"
-          disabled={globalLoading}
+          disabled={!enableHeaderOption}
         />
         <ChartHeaderItem
           title="Smooth Chart"
           alt="Smooth Chart"
           onClick={handleToggleSmoothingOptions}
           icon="smoothing"
-          disabled={!showSmoothChart}
+          disabled={!enableHeaderOption}
           active={showSmoothingOptions}
         >
           { showSmoothingOptions
             ? <ChartHeaderItemOptions 
-                active={smoothingWindow}
-                options={["1", "3", "5", "7", "9"]} 
-                onOption={(window)=>handleSmoothingWindow(window)} 
+                options={smoothingWindow} 
+                onOption={handleSmoothingWindow} 
               />
             : <></>
           }
@@ -269,6 +318,7 @@ const Chart = (props: IChartProps) => {
           title="Close Chart"
           alt="Close"
           onClick={props.onClose}
+          isClose={true}
         >
           X
         </ChartHeaderItem>
@@ -291,7 +341,10 @@ const Chart = (props: IChartProps) => {
         {previousPage && props.onPrevious && (
           <div
             className={`${chartStyles.arrow} ${chartStyles.previous}`}
-            onClick={props.onPrevious}
+            onClick={handlePrevious}
+            style={{
+              backgroundColor: globalLoading ? "grey" : ""
+            }}
           >
             <img
               src="/images/prev-page.svg"
@@ -304,7 +357,10 @@ const Chart = (props: IChartProps) => {
         {nextPage && props.onNext && (
           <div
             className={`${chartStyles.arrow} ${chartStyles.next}`}
-            onClick={props.onNext}
+            onClick={handleNext}
+            style={{
+              backgroundColor: globalLoading ? "grey" : ""
+            }}
           >
             <img
               src="/images/next-page.svg"

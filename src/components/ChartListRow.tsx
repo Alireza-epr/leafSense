@@ -81,7 +81,7 @@ const ChartListRow = (props: IChartListItemProps) => {
         title={`${props.item.valid_fraction}`}
         isSceneNotValid={props.item.meanNDVI == null}
       >
-        {props.item.valid_fraction}
+        {props.item.valid_fraction.toFixed(2)+"%"}
       </ChartListRowItem>
 
       <ChartListRowItem
@@ -95,7 +95,7 @@ const ChartListRow = (props: IChartListItemProps) => {
         title={`${props.item.filter_fraction}`}
         isSceneNotValid={props.item.meanNDVI == null}
       >
-        {props.item.filter_fraction}
+        {props.item.filter_fraction.toFixed(2)+"%"}
       </ChartListRowItem>
 
       <ChartListRowItem

@@ -5,15 +5,17 @@
     left: 0; 
     flex-direction: column;
     z-index: 3;
-    width: 100%;
+    //width: 100%;
     border-radius: 16px;
-    gap: 1px
+    gap: 1px;
+    font-size: 1rem;
+    color: black
 }
 
 .option {
     background-color: darkgreen;
     border-radius: 16px; 
-    width: 100%;
+    //width: 100%;
     display: flex;
     justify-content: center;
     align-items: center;

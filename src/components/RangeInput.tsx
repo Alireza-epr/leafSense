@@ -7,6 +7,7 @@ export interface IRangeInput {
   onRangeChange: (a_Date: string) => void;
   min?: number;
   max?: number;
+  step?: number;
 }
 
 const RangeInput = (props: IRangeInput) => {
@@ -24,6 +25,7 @@ const RangeInput = (props: IRangeInput) => {
         onChange={(v) => onRangeChange(v)}
         min={props.min ?? "0"}
         max={props.max ?? "100"}
+        step={props.step ?? "1"}
         disabled={props.disabled}
         className={` ${rangeInputStyles.input}`}
       />

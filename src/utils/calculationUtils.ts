@@ -1,6 +1,6 @@
 import { INDVISample, TPercentage } from "../store/mapStore";
 import { ESTACURLS, IStacItem, ITokenCollection } from "../types/apiTypes";
-import { ESampleFilter, INDVIPanel } from "../types/generalTypes";
+import { ESampleFilter, IChangePoint, INDVIPanel } from "../types/generalTypes";
 import GeoTIFF, {
   fromUrl,
   GeoTIFFImage,
@@ -198,7 +198,7 @@ export const getNDVISample = (
     err.cause = {
       ndviArray,
       n_valid: validPixels,
-      valid_fraction: `${validPixelsPercentage.toFixed(2)}%`,
+      valid_fraction: validPixelsPercentage,
     };
     throw err;
   }
@@ -206,7 +206,7 @@ export const getNDVISample = (
   // Reject Outliers
   let filteredNDVIArray: {
     ndviArray: Float32Array<ArrayBuffer>;
-    fraction: TPercentage;
+    fraction: number;
   };
   switch (a_NDVIPanel.filter) {
     case ESampleFilter.IQR:
@@ -216,7 +216,7 @@ export const getNDVISample = (
       filteredNDVIArray = rejectOutliersZScore(ndviArray);
       break;
     default:
-      filteredNDVIArray = { ndviArray, fraction: "100%" };
+      filteredNDVIArray = { ndviArray, fraction: 100 };
   }
 
   // Calculating mean and median
@@ -236,7 +236,7 @@ export const getNDVISample = (
     medianNDVISmoothed: medianNDVI,
 
     n_valid: validPixels,
-    valid_fraction: `${validPixelsPercentage.toFixed(2)}%`,
+    valid_fraction: validPixelsPercentage,
 
     filter: a_NDVIPanel.filter,
     filter_fraction: filteredNDVIArray.fraction,
@@ -417,7 +417,7 @@ export const rejectOutliersIQR = (a_NDVI: Float32Array) => {
     (ndvi) => ndvi >= lowIQR && ndvi <= highIQR,
   );
 
-  const fractionValid: TPercentage = `${((filteredNDVI.length / a_NDVI.length) * 100).toFixed(2)}%`;
+  const fractionValid = ((filteredNDVI.length / a_NDVI.length) * 100);
 
   return {
     ndviArray: new Float32Array(filteredNDVI),
@@ -429,7 +429,7 @@ export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
   const validNDVI = Array.from(a_NDVI).filter((v) => !isNaN(v));
 
   if (validNDVI.length === 0) {
-    return { ndviArray: new Float32Array(), fraction: `${0}%` as TPercentage };
+    return { ndviArray: new Float32Array(), fraction: 0 };
   }
 
   const mean = validNDVI.reduce((sum, val) => sum + val, 0) / validNDVI.length;
@@ -443,7 +443,7 @@ export const rejectOutliersZScore = (a_NDVI: Float32Array, a_Threshold = 2) => {
     (ndvi) => Math.abs(ndvi - mean) <= a_Threshold * stdDev,
   );
 
-  const fractionValid: TPercentage = `${((filteredNDVI.length / a_NDVI.length) * 100).toFixed(2)}%`;
+  const fractionValid = ((filteredNDVI.length / a_NDVI.length) * 100);
 
   return {
     ndviArray: new Float32Array(filteredNDVI),
@@ -474,7 +474,6 @@ export const getSmoothNDVISamples = (
     const medianValues = window
       .map((s) => s.medianNDVI)
       .filter((v): v is number => v !== null);
-
     return {
       ...sample,
       meanNDVISmoothed: meanValues.length ? avg(meanValues) : sample.meanNDVI,
@@ -482,3 +481,51 @@ export const getSmoothNDVISamples = (
     };
   });
 };
+
+export const detectChangePointsZScore = (
+  a_ValidSamples: INDVISample[],
+  a_Window = 5,
+  a_ZThreshold = 2.5,
+  a_MinSeparation = 2
+): IChangePoint[] => {
+  
+  const ndvi = a_ValidSamples.map( s => s.meanNDVI as number )
+  const datetimes = a_ValidSamples.map( s => s.datetime )
+
+  const deltas: number[] = [];
+
+  for (let i = 1; i < ndvi.length; i++) {
+    deltas.push(ndvi[i] - ndvi[i - 1]);
+  }
+  const changes: IChangePoint[] = [];
+  let lastIndex = -Infinity;
+
+  for (let i = a_Window; i < deltas.length; i++) {
+    const slice = deltas.slice(i - a_Window, i);
+
+    const mean =
+      slice.reduce((s, v) => s + v, 0) / slice.length;
+
+    const variance =
+      slice.reduce((s, v) => s + (v - mean) ** 2, 0) / slice.length;
+
+    const std = Math.sqrt(variance);
+    if (std === 0) continue;
+
+    const z = (deltas[i] - mean) / std;
+
+    if (Math.abs(z) >= a_ZThreshold && i - lastIndex >= a_MinSeparation) {
+      changes.push({
+        id: a_ValidSamples[i + 1].id,
+        datetime: datetimes[i + 1],
+        delta: deltas[i],
+        z,
+        reason: "z-score",
+      });
+      lastIndex = i;
+    }
+  }
+
+  return changes;
+}
+

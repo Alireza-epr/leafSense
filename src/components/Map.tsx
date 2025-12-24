@@ -3,7 +3,7 @@ import { useRef, useEffect, useCallback, use, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { EMarkerType, IMarker, TMarker, useMapStore } from "../store/mapStore";
+import { EMarkerType, IMarker, INDVISample, TMarker, TPercentage, useMapStore } from "../store/mapStore";
 import type { Feature, Polygon } from "geojson";
 import { useFilterSTAC, useNDVI, useTokenCollection } from "../lib/stac";
 import {
@@ -14,6 +14,10 @@ import {
   Tooltip,
   ResponsiveContainer,
   Label,
+  BarChart,
+  ReferenceLine,
+  Bar,
+  Cell,
 } from "recharts";
 import {
   ESTACCollections,
@@ -49,6 +53,7 @@ import {
   isValidFilter,
   isValidRange,
 } from "../utils/generalUtils";
+import CustomizedDot from "./CustomizedDot";
 
 let start: number, end: number;
 
@@ -72,6 +77,7 @@ const Map = () => {
   const fetchFeatures = useMapStore((state) => state.fetchFeatures);
   const globalLoading = useMapStore((state) => state.globalLoading);
   const samples = useMapStore((state) => state.samples);
+  const notValidSamples = useMapStore((state) => state.notValidSamples);
   const responseFeatures = useMapStore((state) => state.responseFeatures);
   const errorFeatures = useMapStore((state) => state.errorFeatures);
   const errorNDVI = useMapStore((state) => state.errorNDVI);
@@ -540,10 +546,33 @@ const Map = () => {
   );
 
   const getYAxisLabel = () => {
-    let smoothingStatus = smoothingWindow !== "1" ? `smoothed window ${smoothingWindow}` : "raw"
+    let smoothingStatus = smoothingWindow[0].value !== "1" ? `smoothed` : "raw"
     let yAxisStatus = yAxis == EAggregationMethod.Mean ? "Mean" : "Median"
     const full = yAxisStatus + " - " + smoothingStatus
     return full
+  }
+
+  const getAllSamples = useCallback(()=>{
+    const allSamples = [...samples, ...notValidSamples].sort(
+      (a, b) => a.id - b.id,
+    );
+    return allSamples
+  }, [samples, notValidSamples])
+
+  const withGapIndicator = (a_AllSamples: INDVISample[]) => {
+    let lastValid: number | null = null;
+
+    return a_AllSamples.map(s => {
+      if (s.meanNDVI != null) {
+        lastValid = s.meanNDVI;
+        return { ...s, meanNDVI_gap: null };
+      }
+
+      return {
+        ...s,
+        meanNDVI_gap: lastValid,
+      };
+    });
   }
 
   // Loading Map
@@ -1048,15 +1077,15 @@ const Map = () => {
           items={responseFeatures?.features.length ?? 0}
           latency={latency}
         >
-          <ResponsiveContainer width="100%" height="100%">
+          <ResponsiveContainer width="100%" height="90%">
             {/* resize automatically */}
             {/* array of objects */}
-            <LineChart data={samples}>
+            <LineChart data={withGapIndicator(getAllSamples())}>
               <XAxis
                 dataKey={"id"}
                 stroke="white"
                 tickFormatter={(id) =>
-                  samples.find((d) => d.id === id)!.datetime.substring(0, 10)
+                  withGapIndicator(getAllSamples()).find((d) => d.id === id)!.datetime.substring(0, 10)
                 }
               />
               {/* Y automatically scale to fit the data */}
@@ -1072,19 +1101,75 @@ const Map = () => {
               </YAxis>
               {/* popup tooltip by hovering */}
               <Tooltip content={CustomTooltip} />
-              <Line 
-                type="linear"
-                dataKey={
-                  yAxis == EAggregationMethod.Mean 
-                  ? smoothingWindow !== "1"
-                    ? "meanNDVISmoothed" 
-                    : "meanNDVI" 
-                  : smoothingWindow !== "1"
-                    ? "medianNDVISmoothed" 
-                    : "medianNDVI"
-                } stroke="#2ecc71" />
+                <Line 
+                  type="linear"
+                  dataKey={
+                    yAxis == EAggregationMethod.Mean 
+                    ? smoothingWindow[0].value !== "1"
+                      ? "meanNDVISmoothed" 
+                      : "meanNDVI" 
+                    : smoothingWindow[0].value !== "1"
+                      ? "medianNDVISmoothed" 
+                      : "medianNDVI"
+                  } 
+                  stroke="#2ecc71" 
+                  dot={CustomizedDot}
+                />
+
+                <Line
+                  type="linear"
+                  dataKey="meanNDVI_gap"
+                  stroke="#2ecc71"
+                  strokeDasharray="6 4"
+                  opacity={0.5}
+                />
             </LineChart>
           </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height="10%">
+            <BarChart data={withGapIndicator(getAllSamples())} margin={{left: 60}} >
+              <XAxis 
+                dataKey={"id"} 
+                hide
+                tickFormatter={(id) =>
+                  withGapIndicator(getAllSamples()).find((d) => d.id === id)!.datetime.substring(0, 10)
+                }
+              />
+              <YAxis domain={[0, 100]} hide />
+
+
+              <ReferenceLine
+                y={Number(coverageThreshold)}
+                stroke="#ff6b6b"
+                strokeDasharray="4 4"
+              >
+                  <Label
+                    style={{
+                        textAnchor: "middle",
+                        fontSize: "1.01rem",
+                        fill: "#dad458ff",
+                    }}
+                    value={Number(coverageThreshold)+"%"} 
+                  />
+                
+              </ReferenceLine>
+
+              <Bar dataKey={"valid_fraction"} barSize={20}>
+                {withGapIndicator(getAllSamples()).map((sample, index) => (
+                  <Cell
+                    key={sample.id}
+                    fill={
+                      sample.valid_fraction < Number(coverageThreshold)
+                        ? "rgba(255, 0, 0, 0.77)"
+                        : "rgba(56,161,105,0.8)"
+                    }
+                  />
+                ))}
+              </Bar>
+              <Tooltip content={CustomTooltip} />
+
+            </BarChart>
+          </ResponsiveContainer>
+
         </Chart>
       ) : (
         <></>

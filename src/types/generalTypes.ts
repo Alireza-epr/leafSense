@@ -68,3 +68,18 @@ export enum EAggregationMethod {
   Mean= "mean",
   Median= "median"
 }
+export interface IChangePoint {
+  id: number;
+  datetime: string;
+  delta: number;
+  z: number;
+  reason: "z-score";
+}
+export interface IChartHeaderItemOption {
+  title: string,
+  id: number,
+  value: string,
+  min: number, 
+  max: number,
+  step: number
+}

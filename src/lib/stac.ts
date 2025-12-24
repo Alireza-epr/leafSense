@@ -186,6 +186,11 @@ export const useNDVI = () => {
         ++countId;
         setDoneFeature((prev) => ++prev);
       } catch (error: any) {
+        if(!error.cause){
+          console.error("Unexpected error getNDVI: "+error)
+          continue
+        }
+        
         const ndviSampleNotValid: INDVISample = {
           featureId: feature.id,
           id: countId,
@@ -197,9 +202,9 @@ export const useNDVI = () => {
           medianNDVI: null,
           medianNDVISmoothed: null,
           filter: a_NDVIPanel.filter,
-          filter_fraction: "N/A",
+          filter_fraction: 0,
           n_valid: error.cause.n_valid ?? 0,
-          valid_fraction: error.cause.valid_fraction ?? "N/A",
+          valid_fraction: error.cause.valid_fraction ?? 0,
         };
         setNotValidSamples((prev) => [...prev, ndviSampleNotValid]);
         ++countId;

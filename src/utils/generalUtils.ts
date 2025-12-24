@@ -1,6 +1,7 @@
 import { spatialItems } from "../types/apiTypes";
 import { EMarkerType, INDVISample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
+import { IChangePoint } from "src/types/generalTypes";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
   if (!a_String) return;
@@ -11,12 +12,33 @@ export const toFirstLetterUppercase = (a_String: string | null) => {
   return allLetters.join("");
 };
 
-export const jsonToCsv = (a_NDVISamples: INDVISample[]) => {
+export const jsonToCsv = (a_NDVISamples: INDVISample[], a_ChangePoints: IChangePoint[]) => {
   if (!a_NDVISamples.length) return "";
 
   const excludedSamples = a_NDVISamples.map(
-    ({ ndviArray, preview, ...rest }) => rest,
+    ({ ndviArray, preview, ...rest }) => {
+      let exportedSample = {
+        ...rest,
+        valid_fraction: rest.valid_fraction.toFixed(2)+"%",
+        filter_fraction: rest.filter_fraction.toFixed(2)+"%"
+      }
+      const changePoint = a_ChangePoints.find( p => p.id === rest.id )
+      if(changePoint){
+        return {
+          ...exportedSample,
+          "change point": true,
+          "Z-Score": changePoint.z >= 0 ? `+${changePoint.z.toFixed(2)}` : `${changePoint.z.toFixed(2)}`
+        }
+      } else {
+        return {
+          ...exportedSample,
+          "change point": false,
+          "Z-Score": null
+        }
+      }
+    },
   );
+
 
   const headers = Object.keys(excludedSamples[0]);
 
@@ -40,8 +62,8 @@ export const jsonToCsv = (a_NDVISamples: INDVISample[]) => {
   return csvRows.join("\n");
 };
 
-export const downloadCSV = (a_NDVISamples: INDVISample[]) => {
-  const csvString = jsonToCsv(a_NDVISamples);
+export const downloadCSV = (a_NDVISamples: INDVISample[], a_ChangePoints: IChangePoint[]) => {
+  const csvString = jsonToCsv(a_NDVISamples, a_ChangePoints);
 
   const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);

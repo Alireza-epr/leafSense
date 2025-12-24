@@ -22,7 +22,7 @@ const ChartListRowItem = (props: IChartListRowItemProps) => {
         margin: props.isSummaryItem ? "0 1vh" : "",
       }}
     >
-      <div className={` ${chartListRowItem.item}`}>{props.children}</div>
+      <div className={` ${chartListRowItem.item}`} style={{fontSize: props.isHeaderItem || props.isSummaryItem ? "1rem" : ""}}>{props.children}</div>
     </div>
   );
 };

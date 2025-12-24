@@ -1,4 +1,4 @@
-import { EAggregationMethod, EPastTime, ESampleFilter } from "../types/generalTypes";
+import { EAggregationMethod, EPastTime, ESampleFilter, IChangePoint, IChartHeaderItemOption } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Map, Marker, Subscription } from "maplibre-gl";
 import { create } from "zustand";
@@ -39,9 +39,9 @@ export interface INDVISample {
   medianNDVI: number | null;
   medianNDVISmoothed: number | null;
   n_valid: number;
-  valid_fraction: TPercentage | "N/A";
+  valid_fraction: number; // 0 - 100
   filter: ESampleFilter;
-  filter_fraction: TPercentage | "N/A";
+  filter_fraction: number; // 0 - 100
 }
 
 export type TMarker = Record<EMarkerType, boolean>;
@@ -61,7 +61,9 @@ export interface IMapStoreStates {
   showError: boolean;
   fetchFeatures: EMarkerType | null;
   globalLoading: boolean;
-  smoothingWindow: string;
+  smoothingWindow: IChartHeaderItemOption[];
+  changeDetection: IChartHeaderItemOption[];
+  changePoints: IChangePoint[];
   samples: INDVISample[];
   notValidSamples: INDVISample[];
   responseFeatures: IStacSearchResponse | null;
@@ -99,7 +101,7 @@ export interface IMapStoreActions {
       | ((prev: EMarkerType | null) => EMarkerType | null),
   ) => void;
   setGlobalLoading: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
-  setSmoothingWindow: (a_Value: string | ((prev: string) => string)) => void;
+  setSmoothingWindow: (a_Value: IChartHeaderItemOption[] | ((prev: IChartHeaderItemOption[]) => IChartHeaderItemOption[])) => void;
   setSamples: (
     a_Value: INDVISample[] | ((prev: INDVISample[]) => INDVISample[]),
   ) => void;
@@ -145,6 +147,16 @@ export interface IMapStoreActions {
     a_Filter: ESampleFilter | ((prev: ESampleFilter) => ESampleFilter),
   ) => void;
   setYAxis: (a_Value: EAggregationMethod | ((prev: EAggregationMethod) => EAggregationMethod)) => void;
+  setChangeDetection: (
+    a_Value:
+      | (IChartHeaderItemOption[])
+      | ((prev: IChartHeaderItemOption[]) => IChartHeaderItemOption[]),
+  ) => void;
+  setChangePoints: (
+    a_Value:
+      | (IChangePoint[])
+      | ((prev: IChangePoint[]) => IChangePoint[]),
+  ) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -187,8 +199,42 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       samples: [] as INDVISample[],
       sampleFilter: ESampleFilter.none,
       notValidSamples: [] as INDVISample[],
-      smoothingWindow: "1",
+      smoothingWindow: [{
+        title: "Window (1=off)",
+        id: 1,
+        value: "1",
+        min: 1, 
+        max: 7,
+        step: 2,
+      }] as IChartHeaderItemOption[],
       yAxis: EAggregationMethod.Mean,
+      changeDetection: [
+        {
+          title: "Window (1=off)",
+          id: 1,
+          value: "1",
+          min: 1, 
+          max: 7,
+          step: 2,
+        },
+        {
+          title: "Z-Threshold",
+          id: 2,
+          value: "2.5",
+          min: 1.5, 
+          max: 4,
+          step: 0.1,
+        },
+        {
+          title: "Separation",
+          id: 3,
+          value: "3",
+          min: 1, 
+          max: 10,
+          step: 1,
+        }
+      ] as IChartHeaderItemOption[],
+      changePoints: [] as IChangePoint[]
     },
     (set) => ({
       // Actions
@@ -392,6 +438,18 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           yAxis:
             typeof a_Value === "function" ? a_Value(state.yAxis) : a_Value,
+        })),
+
+      setChangeDetection: (a_Value) =>
+        set((state) => ({
+          changeDetection:
+            typeof a_Value === "function" ? a_Value(state.changeDetection) : a_Value,
+        })),
+
+      setChangePoints: (a_Value) =>
+        set((state) => ({
+          changePoints:
+            typeof a_Value === "function" ? a_Value(state.changePoints) : a_Value,
         })),
     }),
   ),
