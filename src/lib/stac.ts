@@ -114,11 +114,16 @@ export const useNDVI = () => {
         if (cache.getCache(cacheKey)) {
           console.log("Cached NDVI hit");
           const cachedNDVI = cache.getCache(cacheKey) as INDVISample;
-          console.log(cachedNDVI);
+          const updatedId: INDVISample = {
+            ...cachedNDVI,
+            id: countId
+          }
+          console.log(updatedId);
           if (cachedNDVI.meanNDVI) {
-            setSamples((prev) => [...prev, cachedNDVI]);
+
+            setSamples((prev) => [...prev, updatedId]);
           } else {
-            setNotValidSamples((prev) => [...prev, cachedNDVI]);
+            setNotValidSamples((prev) => [...prev, updatedId]);
           }
           ++countId;
           setDoneFeature((prev) => ++prev);
@@ -186,10 +191,10 @@ export const useNDVI = () => {
         ++countId;
         setDoneFeature((prev) => ++prev);
       } catch (error: any) {
-        if(!error.cause){
+        /* if(!error.cause){
           console.error("Unexpected error getNDVI: "+error)
           continue
-        }
+        } */
         
         const ndviSampleNotValid: INDVISample = {
           featureId: feature.id,
@@ -206,6 +211,8 @@ export const useNDVI = () => {
           n_valid: error.cause.n_valid ?? 0,
           valid_fraction: error.cause.valid_fraction ?? 0,
         };
+        console.log("Cached NDVI missed");
+        console.log(ndviSampleNotValid);
         setNotValidSamples((prev) => [...prev, ndviSampleNotValid]);
         ++countId;
         setDoneFeature((prev) => ++prev);
