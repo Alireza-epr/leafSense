@@ -3,7 +3,7 @@ import { useRef, useEffect, useCallback, use, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { EMarkerType, IMarker, INDVISample, TMarker, TPercentage, useMapStore } from "../store/mapStore";
+import { EMarkerType, IMarker, INDVISample, IPolygon, TMarker, TPercentage, useMapStore } from "../store/mapStore";
 import type { Feature, Polygon } from "geojson";
 import { useFilterSTAC, useNDVI, useTokenCollection } from "../lib/stac";
 import {
@@ -92,7 +92,9 @@ const Map = () => {
   const sampleFilter = useMapStore((state) => state.sampleFilter);
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const yAxis = useMapStore((state) => state.yAxis);
-
+  const polygons = useMapStore((state) => state.polygons);
+  
+  const setPolygons = useMapStore((state) => state.setPolygons);
   const setNextPage = useMapStore((state) => state.setNextPage);
   const setPreviousPage = useMapStore((state) => state.setPreviousPage);
   const setMarkers = useMapStore((state) => state.setMarkers);
@@ -118,6 +120,7 @@ const Map = () => {
   );
   const setSampleFilter = useMapStore((state) => state.setSampleFilter);
   const setRadius = useMapStore((state) => state.setRadius);
+  const setMarker = useMapStore((state) => state.setMarker);
 
   const mapContainer = useRef<HTMLDivElement>(null);
   //const mapObject = useRef<MapLibre | null>(null);
@@ -149,6 +152,7 @@ const Map = () => {
     1000,
   );
 
+  const polygonsRef = useRef(polygons);
   const markersRef = useRef(markers);
   const radiusRef = useRef(radius);
   const fetchFeaturesRef = useRef(fetchFeatures);
@@ -249,6 +253,19 @@ const Map = () => {
 
   const addPolygonMarker = useCallback(
     (a_Event: maplibregl.MapMouseEvent) => {
+      if(a_Event.originalEvent.button === 2 && map) {
+
+        const polygonMarkers = markersRef.current.filter((m) => m.type == EMarkerType.polygon);
+        if(polygonMarkers.length >= 3 ){
+          setPolygons(prev => [...prev, {id: prev.length +1, markers: polygonMarkers}])
+          setMarker((prev)=>{
+            return {
+              ...prev,
+              zonal: false,
+            };
+          })
+        }
+      }
       if (a_Event.originalEvent.button === 0 && map) {
         addMarker(
           [a_Event.lngLat.lng, a_Event.lngLat.lat],
@@ -257,41 +274,41 @@ const Map = () => {
         );
       }
     },
-    [map, addMarker],
+    [map, addMarker, setPolygons, setMarker],
   );
 
-  const removePolygonLayer = useCallback(() => {
+  const removePolygonLayer = useCallback((a_PolygonId: string) => {
     if (map) {
-      const polygonLayer = map.getLayer("polygon");
+      const polygonLayer = map.getLayer(a_PolygonId);
       if (polygonLayer) {
-        map.removeLayer("polygon");
-        map.removeSource("polygon");
+        map.removeLayer(`${a_PolygonId}_label`);
+        map.removeLayer(a_PolygonId);
+        map.removeSource(a_PolygonId);
       }
     }
   }, [map]);
 
-  const removePolygon = useCallback(() => {
+  const removePolygonLayers = useCallback(() => {
     if (map) {
-      // Remove polygon markers
-      markersRef.current.forEach((m) => {
-        if (m.type === EMarkerType.polygon) {
-          m.marker.remove();
-        }
-      });
-
-      // Update state
-      setMarkers((prev) => prev.filter((m) => m.type !== EMarkerType.polygon));
-
-      // Remove polygon layer
-      removePolygonLayer();
+      const polygonLayers = map.getLayersOrder().filter( l => l.includes("polygon") && !l.includes("label"));
+      if (polygonLayers) {
+        polygonLayers.forEach( l => {
+          map.removeLayer(`${l}_label`);
+          map.removeLayer(l);
+          map.removeSource(l);
+        })
+      }
     }
-  }, [map, setMarkers, removePolygonLayer]);
+  }, [map])
+
   const drawPolygon = useCallback(
-    (a_PolygonMarkers: IMarker[]) => {
-      const polygonCoords = a_PolygonMarkers.map((m) => {
+    (a_Polygon: IPolygon) => {
+      const polygonCoords = a_Polygon.markers.map((m) => {
         const lngLat = m.marker.getLngLat();
         return [lngLat.lng, lngLat.lat];
       });
+
+      const polygonId = "polygon_"+a_Polygon.id
 
       const geojson: Feature<Polygon> = {
         type: "Feature",
@@ -299,24 +316,27 @@ const Map = () => {
           type: "Polygon",
           coordinates: [polygonCoords], // array of arrays
         },
-        properties: {},
+        properties: {
+          polygonId: a_Polygon.id,
+        },
       };
-
-      removePolygonLayer(); // must be stable
 
       if (!map!.getStyle()) {
         return;
       }
 
-      map!.addSource("polygon", {
+      
+      removePolygonLayer(polygonId)
+
+      map!.addSource(polygonId, {
         type: "geojson",
         data: geojson,
       });
 
       map!.addLayer({
-        id: "polygon",
+        id: polygonId,
         type: "fill",
-        source: "polygon",
+        source: polygonId,
         paint: {
           "fill-color": "#088",
           "fill-opacity": 0.5,
@@ -325,9 +345,35 @@ const Map = () => {
           feature: geojson,
         },
       });
+
+      map!.addLayer({
+        id: `${polygonId}_label`,
+        type: "symbol",
+        source: polygonId,
+        layout: {
+          "text-field": ["get", "polygonId"],
+          "text-size": 24,
+          "text-anchor": "center",
+        },
+        paint: {
+          "text-color": "#0f0",
+          "text-halo-color": "#fff",
+          "text-halo-width": 2,
+        },
+      });
+
+      setMarkers(prev => prev.filter( m => m.type !== EMarkerType.polygon ))
     },
-    [map, removePolygonLayer],
+    [map, removePolygonLayer, setMarkers],
   );
+
+  const drawPolygons = () => {
+
+    polygonsRef.current.forEach( polygon =>{
+      drawPolygon(polygon)
+    })
+    
+  }
 
   const redrawCircle = useCallback(() => {
     const point = markers.find((m) => m.type === EMarkerType.point);
@@ -367,7 +413,9 @@ const Map = () => {
 
   const getCoordinatesFromMarkers = useCallback((): [number, number][] => {
     if (fetchFeaturesRef.current === EMarkerType.polygon) {
-      let coordinates: [number, number][] = markersRef.current
+      const lastPolygonLayer =  polygonsRef.current.at(-1)
+      if(!lastPolygonLayer) return []
+      let coordinates: [number, number][] = lastPolygonLayer.markers
         .filter((m) => m.type === EMarkerType.polygon)
         .map((m) => {
           const lng = m.marker.getLngLat().lng;
@@ -526,7 +574,9 @@ const Map = () => {
   const handleFlyToROI = useCallback(
     (a_To: EMarkerType, a_Zoom: number) => {
       if (a_To === EMarkerType.polygon) {
-        const polygonLayer = map!.getLayer("polygon");
+        const lastPolygonLayer = map!.getLayersOrder().filter( l => l.includes("polygon") && !l.includes("label") ).at(-1)
+        if(!lastPolygonLayer) return
+        const polygonLayer = map!.getLayer(lastPolygonLayer);
         const metadata = polygonLayer!.metadata as ILayerMetadata;
         const feature = metadata!.feature;
         const coordinates: [number, number][][] = feature.geometry.coordinates;
@@ -609,6 +659,7 @@ const Map = () => {
       center: [7.4711617988066905, 51.36223529413988], // [lng, lat]
       zoom: 15,
       maxZoom: 18,
+      dragRotate: false
     });
 
     mapInstance.addControl(new maplibregl.NavigationControl());
@@ -629,6 +680,16 @@ const Map = () => {
     radiusRef.current = radius;
     redrawCircle();
   }, [radius]);
+
+  // Follow Changing Polygons
+  useEffect(() => {
+    polygonsRef.current = polygons;
+    if(polygons.length === 0){
+      removePolygonLayers()
+    } else {
+      drawPolygons()
+    }
+  }, [polygons]);
 
   // Handle Marker
   useEffect(() => {
@@ -652,16 +713,11 @@ const Map = () => {
     };
   }, [marker]);
 
-  // Handle Polygon Drawing
+  // Follow Changing Markers
   useEffect(() => {
     if (!map) return;
     markersRef.current = markers;
-    if (markers.length !== 0 && markers.some((m) => !m.marker._map)) {
-      addMarkersToMap();
-      return;
-    }
 
-    const polygonMarkers = markers.filter((m) => m.type == EMarkerType.polygon);
     const pointMarker = markers.filter((m) => m.type == EMarkerType.point);
 
     if (pointMarker.length === 0) {
@@ -669,29 +725,6 @@ const Map = () => {
       removeCircleLayer();
     }
 
-    if (polygonMarkers.length === 0) {
-      showMap();
-      removePolygonLayer();
-    }
-
-    if (polygonMarkers.length < 4) {
-      showMap();
-      return;
-    }
-
-    if (polygonMarkers.length > 4) {
-      const newPolygonMarker = polygonMarkers[polygonMarkers.length - 1].marker;
-      const lngLat = newPolygonMarker.getLngLat();
-
-      removePolygon();
-
-      addMarker([lngLat.lng, lngLat.lat], map, EMarkerType.polygon);
-      return;
-    }
-
-    //console.log("start drawing polygon");
-    //console.log(markers);
-    drawPolygon(polygonMarkers);
   }, [markers]);
 
   // Read URLParams
@@ -702,7 +735,14 @@ const Map = () => {
 
     // point or zonal
     const pointROI = params.get(EURLParams.pointROI);
-    const zonalROI = params.get(EURLParams.zonalROI);
+    let zonalROIs: string[] = []
+    let i = 1
+    while( params.get(EURLParams.zonalROI+"-"+i) !== null ){
+      let zonalROI = params.get(EURLParams.zonalROI+"-"+i)
+      if(!zonalROI) continue
+      zonalROIs.push(zonalROI)
+      i++
+    }
 
     if (pointROI) {
       if (isROIValid(pointROI, EMarkerType.point)) {
@@ -724,24 +764,37 @@ const Map = () => {
         console.warn("Failed to use URLParam: pointROI does not match");
       }
     }
-    if (zonalROI) {
-      if (isROIValid(zonalROI, EMarkerType.polygon)) {
-        removePolygonLayer();
-        removeMarker(EMarkerType.polygon);
-        setTimeout(() => {
-          const parsedROI: [number, number][] = JSON.parse(zonalROI);
-          parsedROI.forEach((coordinate) => {
-            const [lng, lat] = coordinate;
-            if (!map) {
-              console.warn("Failed to use URLParam: Map is not ready");
-              return;
-            }
-            addMarker([lng, lat], map, EMarkerType.polygon);
-          });
-        }, 100);
-      } else {
-        console.warn("Failed to use URLParam: zonalROI does not match");
-      }
+    if (zonalROIs.length > 0) {
+      removePolygonLayers();
+      zonalROIs.forEach( (zonalROI, index) => {
+        if (isROIValid(zonalROI, EMarkerType.polygon)) {
+          removeMarker(EMarkerType.polygon);
+          setTimeout(() => {
+            const parsedROI: [number, number][] = JSON.parse(zonalROI);
+            let thisPolygonMarkers: IMarker[] = []
+            parsedROI.forEach((coordinate) => {
+              const [lng, lat] = coordinate;
+              if (!map) {
+                console.warn("Failed to use URLParam: Map is not ready");
+                return;
+              }
+              const markerElement = new maplibregl.Marker()
+                .setLngLat([lng, lat])
+                .addTo(map);
+
+              const newMarker = {
+                type: EMarkerType.polygon,
+                marker: markerElement,
+              };
+              
+              thisPolygonMarkers.push(newMarker)
+            });
+            setPolygons(prev => [...prev, {id: prev.length +1, markers: thisPolygonMarkers}])
+          }, 100);
+        } else {
+          console.warn("Failed to use URLParam: zonalROI-"+(index+1)+" does not match");
+        }    
+      })
     }
 
     // start and end date
@@ -867,19 +920,19 @@ const Map = () => {
   useEffect(() => {
     if (!map) return;
 
-    const polygonMarkers = markers.filter(
-      (m) => m.type === EMarkerType.polygon,
-    );
     const pointMarkers = markers.filter((m) => m.type === EMarkerType.point);
 
     const params = new URLSearchParams();
 
-    if (polygonMarkers.length > 0) {
-      const polygonCoords = polygonMarkers.map((m) => {
-        const lngLat = m.marker.getLngLat();
-        return [lngLat.lng, lngLat.lat];
-      });
-      params.set(EURLParams.zonalROI, JSON.stringify(polygonCoords));
+    if (polygons.length > 0) {
+      polygons.forEach( polygon => {
+        const polygonCoords = polygon.markers.map((m) => {
+          const lngLat = m.marker.getLngLat();
+          return [lngLat.lng, lngLat.lat];
+        });
+        params.set(EURLParams.zonalROI+"-"+polygon.id, JSON.stringify(polygonCoords));
+      })
+      
     }
     if (pointMarkers.length > 0) {
       const pointCoords = pointMarkers.map((m) => {
@@ -909,6 +962,7 @@ const Map = () => {
   }, [
     map,
     markers,
+    polygons,
     radius,
     startDate,
     endDate,
@@ -1035,7 +1089,7 @@ const Map = () => {
 
   return (
     <div className={` ${mapStyle.wrapper}`}>
-      {markers.filter((m) => m.type == EMarkerType.polygon).length === 4 ? (
+      {polygons.length !== 0 ? (
         <div
           className={` ${mapStyle.flyTo}`}
           onClick={() => handleFlyToROI(EMarkerType.polygon, map!.getZoom())}

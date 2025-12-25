@@ -46,6 +46,11 @@ export interface INDVISample {
 
 export type TMarker = Record<EMarkerType, boolean>;
 
+export interface IPolygon {
+  id: number,
+  markers: IMarker[]
+}
+
 export interface IMapStoreStates {
   map: Map | null;
   marker: TMarker;
@@ -78,6 +83,7 @@ export interface IMapStoreStates {
   previousPage: StacLink | null;
   sampleFilter: ESampleFilter;
   yAxis: EAggregationMethod;
+  polygons: IPolygon[]
 }
 
 export interface IMapStoreActions {
@@ -157,6 +163,11 @@ export interface IMapStoreActions {
       | (IChangePoint[])
       | ((prev: IChangePoint[]) => IChangePoint[]),
   ) => void;
+  setPolygons: (
+    a_Value:
+      | (IPolygon[])
+      | ((prev: IPolygon[]) => IPolygon[]),
+  ) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -169,6 +180,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         [EMarkerType.polygon]: false,
       } as TMarker,
       markers: [] as IMarker[],
+      polygons: [] as IPolygon[],
       //filter
       startDate: getLocaleISOString(new Date(), {
         unit: EPastTime.months,
@@ -450,6 +462,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           changePoints:
             typeof a_Value === "function" ? a_Value(state.changePoints) : a_Value,
+        })),
+
+      setPolygons: (a_Value) =>
+        set((state) => ({
+          polygons:
+            typeof a_Value === "function" ? a_Value(state.polygons) : a_Value,
         })),
     }),
   ),

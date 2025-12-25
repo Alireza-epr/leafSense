@@ -46,6 +46,8 @@ const Chart = (props: IChartProps) => {
   const yAxis = useMapStore((state) => state.yAxis);
   const setYAxis = useMapStore((state) => state.setYAxis);
 
+  const polygons = useMapStore((state) => state.polygons);
+
   const nextPage = useMapStore((state) => state.nextPage);
   const previousPage = useMapStore((state) => state.previousPage);
   const notValidSamples = useMapStore((state) => state.notValidSamples);
@@ -244,7 +246,7 @@ const Chart = (props: IChartProps) => {
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <div className={` ${chartStyles.title}`}>
-          {`Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : "Zonal"}`}
+          {`Chart of ${fetchFeatures == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures) : "Zonal Nr."+polygons.at(-1)?.id}`}
         </div>
         <ChartHeaderItem
           title="Series Summary"
