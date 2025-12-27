@@ -3,12 +3,13 @@ import customTooltipStyles from "./CustomTooltip.module.scss";
 import { TooltipContentProps } from "recharts";
 import CustumTooltipItem from "./CustumTooltipItem";
 import { getDatetime } from "../utils/dateUtils";
+import { IChartPoint } from "src/types/generalTypes";
 
 const CustomTooltip = (props: TooltipContentProps<string, string>) => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const changePoints = useMapStore((state) => state.changePoints);
   if (props.active && props.payload && props.payload.length) {
-    const ndviSample: INDVISample = props.payload[0].payload;
+    const ndviSample: IChartPoint = props.payload[0].payload;
     return (
       <div
         className={` ${customTooltipStyles.wrapper}`}
@@ -24,11 +25,31 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
           label={"Mean"}
           value={ndviSample.meanNDVI ?? "N/A"}
         />
-        {smoothingWindow[0].value !== "1" ? (
+        {ndviSample.comparison_meanNDVI !== undefined ? (
           <CustumTooltipItem
-            label={"Mean (Smoothed)"}
-            value={ndviSample.meanNDVISmoothed ?? "N/A"}
+            isAbnormal={true}
+            label={"Comparison Mean"}
+            value={ndviSample.comparison_meanNDVI ?? "N/A"}
           />
+        ) : (
+          <></>
+        )}
+        {smoothingWindow[0].value !== "1" ? (
+          <>
+            <CustumTooltipItem
+              label={"Mean (Smoothed)"}
+              value={ndviSample.meanNDVISmoothed ?? "N/A"}
+            />
+            {ndviSample.comparison_meanNDVI !== undefined ? (
+              <CustumTooltipItem
+                isAbnormal={true}
+                label={"Comparison Mean (Smoothed)"}
+                value={ndviSample.comparison_meanNDVISmoothed ?? "N/A"}
+              />
+            ) : (
+              <></>
+            )}
+          </>
         ) : (
           <></>
         )}
@@ -36,11 +57,31 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
           label={"Median"}
           value={ndviSample.medianNDVI ?? "N/A"}
         />
-        {smoothingWindow[0].value !== "1" ? (
+        {ndviSample.comparison_meanNDVI !== undefined ? (
           <CustumTooltipItem
-            label={"Median (Smoothed)"}
-            value={ndviSample.medianNDVISmoothed ?? "N/A"}
+            isAbnormal={true}
+            label={"Comparison Median"}
+            value={ndviSample.comparison_medianNDVI ?? "N/A"}
           />
+        ) : (
+          <></>
+        )}
+        {smoothingWindow[0].value !== "1" ? (
+          <>
+            <CustumTooltipItem
+              label={"Median (Smoothed)"}
+              value={ndviSample.medianNDVISmoothed ?? "N/A"}
+            />
+            {ndviSample.comparison_meanNDVI !== undefined ? (
+              <CustumTooltipItem
+                isAbnormal={true}
+                label={"Comparison Median (Smoothed)"}
+                value={ndviSample.comparison_meanNDVISmoothed ?? "N/A"}
+              />
+            ) : (
+              <></>
+            )}
+          </>
         ) : (
           <></>
         )}

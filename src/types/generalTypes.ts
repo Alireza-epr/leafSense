@@ -1,4 +1,4 @@
-import { EMarkerType } from "../store/mapStore";
+import { EMarkerType, INDVISample } from "../store/mapStore";
 import { IFeature } from "./geoJSON";
 
 export enum EPastTime {
@@ -63,6 +63,13 @@ export enum EURLParams {
   coverage = "coverage",
   smoothing = "smoothing",
   filter = "filter",
+  loglevel= "loglevel"
+}
+
+export enum ELogLevel {
+  message= "message",
+  warning= "warning",
+  error= "error"
 }
 
 export enum EAggregationMethod {
@@ -95,3 +102,20 @@ export interface IComparisonItem {
   type: EMarkerType;
   id: number;
 }
+
+export interface INDVISampleExtended {
+  main_meanNDVI?: number | null;
+  main_meanNDVISmoothed?: number | null;
+  main_medianNDVI?: number | null;
+  main_medianNDVISmoothed?: number | null;
+  main_meanNDVI_gap?: number | null;
+
+  // COMPARISON
+  comparison_meanNDVI?: number | null;
+  comparison_meanNDVISmoothed?: number | null;
+  comparison_medianNDVI?: number | null;
+  comparison_medianNDVISmoothed?: number | null;
+  comparison_meanNDVI_gap?: number | null;
+}
+
+export type IChartPoint = INDVISample & INDVISampleExtended

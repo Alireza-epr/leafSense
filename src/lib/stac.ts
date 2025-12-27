@@ -14,7 +14,8 @@ import {
   getNDVISample,
 } from "../utils/calculationUtils";
 import { ReadRasterResult, TypedArray } from "geotiff";
-import { INDVIPanel } from "../types/generalTypes";
+import { ELogLevel, INDVIPanel } from "../types/generalTypes";
+import { log } from "../utils/generalUtils";
 
 const cache = new CacheHandler();
 
@@ -25,8 +26,7 @@ export const useFilterSTAC = () => {
   const getFeatures = async (a_STACRequest: ISTACFilterRequest, a_RequestContext: ERequestContext) => {
     if (cache.getCache(a_STACRequest)) {
       const respJSON = cache.getCache(a_STACRequest);
-      console.log("Cached Features hit");
-      console.log(respJSON);
+      log("Cached Features hit"+`_${a_RequestContext}`, respJSON);
       setResponseFeatures(prev=>({
         ...prev,
         [a_RequestContext]: respJSON
@@ -59,8 +59,7 @@ export const useFilterSTAC = () => {
         }
 
         const respJSON = await resp.json();
-        console.log("Cached Features missed");
-        console.log(respJSON);
+        log("Cached Features missed"+`_${a_RequestContext}`, respJSON);
         cache.setCache(a_STACRequest, respJSON);
         setResponseFeatures(prev=>({
           ...prev,
@@ -130,17 +129,16 @@ export const useNDVI = () => {
       [a_RequestContext]: []
     }));
     for (const feature of a_Features) {
+      const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)
-        const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
         if (cache.getCache(cacheKey)) {
-          console.log("Cached NDVI hit");
           const cachedNDVI = cache.getCache(cacheKey) as INDVISample;
           const updatedId: INDVISample = {
             ...cachedNDVI,
             id: counter[a_RequestContext],
           };
-          console.log(updatedId);
+          log("Cached NDVI hit"+`_${a_RequestContext}`,updatedId);
           if (cachedNDVI.meanNDVI) {
             setSamples(prev=>({
               ...prev,
@@ -210,8 +208,7 @@ export const useNDVI = () => {
           );
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
-          console.log("Cached NDVI missed");
-          console.log(ndviSample);
+          log("Cached NDVI missed"+`_${a_RequestContext}`, ndviSample);
           cache.setCache(cacheKey, ndviSample);
           setSamples(prev=>({
             ...prev,
@@ -227,10 +224,10 @@ export const useNDVI = () => {
           [a_RequestContext]: prev[a_RequestContext] + 1
         }));
       } catch (error: any) {
-        /* if(!error.cause){
-          console.error("Unexpected error getNDVI: "+error)
+        if(!error.cause){
+          log("Unexpected error getNDVI", error, ELogLevel.error)
           continue
-        } */
+        }
 
         const ndviSampleNotValid: INDVISample = {
           featureId: feature.id,
@@ -247,8 +244,8 @@ export const useNDVI = () => {
           n_valid: error.cause.n_valid ?? 0,
           valid_fraction: error.cause.valid_fraction ?? 0,
         };
-        console.log("Cached NDVI missed");
-        console.log(ndviSampleNotValid);
+        log("Cached NDVI missed"+`_${a_RequestContext}`, ndviSampleNotValid);
+        cache.setCache(cacheKey, ndviSampleNotValid);
         setNotValidSamples(prev=>({
             ...prev,
             [a_RequestContext]: [...prev[a_RequestContext], ndviSampleNotValid]
@@ -291,8 +288,7 @@ export const useTokenCollection = () => {
         });
       }
     } catch (error) {
-      console.log("useTokenCollection error");
-      console.log(error);
+      log("useTokenCollection error", error, ELogLevel.error);
       setTokenCollection(null);
     }
   };

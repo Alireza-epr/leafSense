@@ -278,6 +278,20 @@ export const getMedianNDVI = (a_NDVI: Float32Array<ArrayBufferLike>) => {
   }
 };
 
+export const getMean = (a_Array: (number | null)[] ) => {
+  let sum = 0;
+  let count = 0;
+
+  for (const n of a_Array) {
+    if (n !== null && !isNaN(n) && isFinite(n)) {
+      sum += n;
+      ++count;
+    }
+  }
+
+  return count > 0 ? sum / count : null;
+};
+
 export const validateImportedROI = (a_JSON: any) => {
   // 1. Must contain "coordinates"
   if (!a_JSON || !a_JSON.coordinates) {

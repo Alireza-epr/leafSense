@@ -27,6 +27,7 @@ import {
   ReferenceLine,
   Bar,
   Cell,
+  Legend
 } from "recharts";
 import {
   ESTACCollections,
@@ -56,18 +57,26 @@ import { debounce, throttle } from "../utils/apiUtils";
 import CustomTooltip from "./CustomTooltip";
 import circle from "@turf/circle";
 import {
+  getChartDataKey,
+  getChartPoints,
+  getGapDataKey,
+  getMergedSamples,
   isDateValid,
   isOperatorValid,
   isROIValid,
   isValidBoolean,
   isValidFilter,
   isValidRange,
+  getGapValue,
+  getAllSamples,
+  log,
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
+import { getMean, getMeanNDVI } from "src/utils/calculationUtils";
 
 let start: number, end: number;
 
-const Map = () => {
+const Home = () => {
   const { getFeatures } = useFilterSTAC();
   const { getTokenCollection } = useTokenCollection();
   const { getNDVI } = useNDVI();
@@ -215,6 +224,7 @@ const Map = () => {
 
   const drawCircle = useCallback(
     (a_Center: [number, number]) => {
+      if(!map) return 
       const radius = Number(radiusRef.current);
       const options = { units: "meters" as Units };
       const circleFeature = circle(a_Center, radius, options);
@@ -302,6 +312,12 @@ const Map = () => {
           map.removeLayer(`${a_PolygonId}_label`);
           map.removeLayer(a_PolygonId);
           map.removeSource(a_PolygonId);
+
+          const id = a_PolygonId.substring( a_PolygonId.indexOf("_") + 1 )
+          const polygon = polygonsRef.current.find( p => p.id == Number(id) )
+          if(polygon){
+            polygon.markers.forEach( m => m.marker.remove() )
+          }
         }
       }
     },
@@ -315,9 +331,7 @@ const Map = () => {
         .filter((l) => l.includes("polygon") && !l.includes("label"));
       if (polygonLayers) {
         polygonLayers.forEach((l) => {
-          map.removeLayer(`${l}_label`);
-          map.removeLayer(l);
-          map.removeSource(l);
+          removePolygonLayer(l)
         });
       }
     }
@@ -325,6 +339,7 @@ const Map = () => {
 
   const drawPolygon = useCallback(
     (a_Polygon: IPolygon) => {
+      if(!map) return 
       const polygonCoords = a_Polygon.markers.map((m) => {
         const lngLat = m.marker.getLngLat();
         return [lngLat.lng, lngLat.lat];
@@ -388,11 +403,11 @@ const Map = () => {
     [map, removePolygonLayer, setMarkers],
   );
 
-  const drawPolygons = () => {
+  const drawPolygons = useCallback(() => {
     polygonsRef.current.forEach((polygon) => {
       drawPolygon(polygon);
     });
-  };
+  }, [polygons]);
 
   const redrawCircle = useCallback(() => {
     const point = markers.find((m) => m.type === EMarkerType.point);
@@ -563,6 +578,23 @@ const Map = () => {
     setGlobalLoading(true);
   }, [setShowError, setShowChart, setGlobalLoading]);
 
+  const mergeSamplesAndShowChartModal = useCallback(()=>{
+    const mainMergedSamples = getMergedSamples( samples[ERequestContext.main] )
+    const comparisonMergedSamples = getMergedSamples( samples[ERequestContext.comparison] )
+
+    setSamples({
+      main: mainMergedSamples.filter( s => s.meanNDVI !== null ),
+      comparison: comparisonMergedSamples.filter( s => s.meanNDVI !== null),
+    })
+    setNotValidSamples({
+      main: mainMergedSamples.filter( s => s.meanNDVI === null ),
+      comparison: comparisonMergedSamples.filter( s => s.meanNDVI === null ),
+    })
+    showChartModal();
+    end = Date.now();
+    setLatency(end - start);
+  },[samples, notValidSamples, setSamples, setLatency])
+
   const showChartModal = useCallback(() => {
     setShowError(false);
     setShowChart(true);
@@ -608,6 +640,10 @@ const Map = () => {
       "main": null,
       "comparison": null
     });
+    setResponseFeatures({
+      "main": null,
+      "comparison": null
+    });
     showMap();
   }, [setFetchFeatures, showMap]);
 
@@ -618,7 +654,7 @@ const Map = () => {
         ...nextPage.body,
       };
 
-      console.log("Next Request", postBody);
+      log("Next Request", postBody);
       showLoadingModal();
       setComparisonItem(null)
       resetStates(ERequestContext.main);
@@ -633,7 +669,7 @@ const Map = () => {
         ...previousPage.body,
       };
 
-      console.log("Previous Request", postBody);
+      log("Previous Request", postBody);
       showLoadingModal();
       setComparisonItem(null)
       resetStates(ERequestContext.main);
@@ -673,29 +709,6 @@ const Map = () => {
     let yAxisStatus = yAxis == EAggregationMethod.Mean ? "Mean" : "Median";
     const full = yAxisStatus + " - " + smoothingStatus;
     return full;
-  };
-
-  const getAllSamples = useCallback((a_RequestContext: ERequestContext) => {
-    const allSamples = [...samples[a_RequestContext], ...notValidSamples[a_RequestContext]].sort(
-      (a, b) => a.id - b.id,
-    );
-    return allSamples;
-  }, [samples, notValidSamples]);
-
-  const withGapIndicator = (a_AllSamples: INDVISample[]) => {
-    let lastValid: number | null = null;
-
-    return a_AllSamples.map((s) => {
-      if (s.meanNDVI != null) {
-        lastValid = s.meanNDVI;
-        return { ...s, meanNDVI_gap: null };
-      }
-
-      return {
-        ...s,
-        meanNDVI_gap: lastValid,
-      };
-    });
   };
 
   // Loading Map
@@ -837,7 +850,7 @@ const Map = () => {
       }
     }
     if (zonalROIs.length > 0) {
-      removePolygonLayers();
+      setPolygons([])
       zonalROIs.forEach((zonalROI, index) => {
         if (isROIValid(zonalROI, EMarkerType.polygon)) {
           removeMarker(EMarkerType.polygon);
@@ -1001,6 +1014,11 @@ const Map = () => {
     const pointMarkers = markers.filter((m) => m.type === EMarkerType.point);
 
     const params = new URLSearchParams();
+    const existingParams = new URLSearchParams(window.location.search);
+    const loglevel = existingParams.get(EURLParams.loglevel)
+    if(loglevel){
+      params.set(EURLParams.loglevel, loglevel)
+    } 
 
     if (polygons.length > 0) {
       polygons.forEach((polygon) => {
@@ -1062,21 +1080,22 @@ const Map = () => {
     fetchFeaturesRef.current = fetchFeatures;
     const fetchAnyFeature = fetchFeatures.comparison !== null || fetchFeatures.main !== null
     if(!fetchAnyFeature) return
-    for(let fetchFeature in fetchFeatures){
-      if(fetchFeatures[fetchFeature] !== null){
-        const postBody = getPostBody(fetchFeature as ERequestContext);
-        showLoadingModal();
-        resetStates(fetchFeature as ERequestContext);
-        start = Date.now();
-        console.log("Request Body");
-        console.log(postBody);
-        debouncedGetFeatures(postBody, fetchFeature as ERequestContext);
-      } else {
-        if(fetchFeature === ERequestContext.main){
-          resetStates(ERequestContext.main);
-          showMap();
-        }
-      }
+    showLoadingModal();
+    if(fetchFeatures[ERequestContext.comparison] !== null){
+      const postBody = getPostBody(ERequestContext.comparison);
+      resetStates(ERequestContext.comparison);
+      start = Date.now();
+      log("Request Body_"+ ERequestContext.comparison, postBody);
+      debouncedGetFeatures(postBody, ERequestContext.comparison);
+    } else if(fetchFeatures[ERequestContext.main] !== null){
+      const postBody = getPostBody(ERequestContext.main);
+      resetStates(ERequestContext.main);
+      start = Date.now();
+      log("Request Body_"+ ERequestContext.main, postBody);
+      debouncedGetFeatures(postBody, ERequestContext.main);
+    } else if(fetchFeatures[ERequestContext.main] === null){
+      resetStates(ERequestContext.main);
+      showMap();
     }
   }, [fetchFeatures]);
 
@@ -1087,6 +1106,23 @@ const Map = () => {
       setFetchFeatures(prev=>({
         ...prev,
         [ERequestContext.comparison]: comparisonItem.type 
+      }))
+    } else {
+      setFetchFeatures(prev=>({
+        ...prev,
+        [ERequestContext.comparison]: null
+      }))
+      setResponseFeatures(prev=>({
+        ...prev,
+        [ERequestContext.comparison]: null
+      }))
+      setSamples(prev=>({
+        ...prev,
+        [ERequestContext.comparison]: []
+      }))
+      setNotValidSamples(prev=>({
+        ...prev,
+        [ERequestContext.comparison]: []
       }))
     }
   },[comparisonItem])
@@ -1147,17 +1183,6 @@ const Map = () => {
           coverageThreshold: Number(coverageThreshold),
         };
         //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
-        if(responseFeatures[ERequestContext.main]){
-          if (responseFeatures[ERequestContext.main].features.length > 0) {
-
-            getNDVI(
-              responseFeatures[ERequestContext.main].features,
-              getCoordinatesFromMarkers(ERequestContext.main),
-              NDVIItem,
-              ERequestContext.main
-            );
-          }
-        }
         if(responseFeatures[ERequestContext.comparison]){
           if (responseFeatures[ERequestContext.comparison].features.length > 0) {
 
@@ -1168,12 +1193,21 @@ const Map = () => {
               ERequestContext.comparison
             );
           }
+        } else if(responseFeatures[ERequestContext.main]){
+          if (responseFeatures[ERequestContext.main].features.length > 0) {
+
+            getNDVI(
+              responseFeatures[ERequestContext.main].features,
+              getCoordinatesFromMarkers(ERequestContext.main),
+              NDVIItem,
+              ERequestContext.main
+            );
+          }
         }
         
       }
     } else {
-      console.log("tokenCollection error");
-      console.log(responseFeatures);
+      log("tokenCollection", responseFeatures);
       
       if (responseFeatures[ERequestContext.main] && responseFeatures[ERequestContext.main].features.length !== 0) {
         showErrorModal();
@@ -1257,12 +1291,12 @@ const Map = () => {
           <ResponsiveContainer width="100%" height="90%">
             {/* resize automatically */}
             {/* array of objects */}
-            <LineChart data={withGapIndicator(getAllSamples(ERequestContext.main))}>
+            <LineChart data={getChartPoints(samples, notValidSamples)}>
               <XAxis
                 dataKey={"id"}
                 stroke="white"
                 tickFormatter={(id) =>
-                  withGapIndicator(getAllSamples(ERequestContext.main))
+                  getChartPoints(samples, notValidSamples)
                     .find((d) => d.id === id)!
                     .datetime.substring(0, 10)
                 }
@@ -1281,43 +1315,66 @@ const Map = () => {
               </YAxis>
               {/* popup tooltip by hovering */}
               <Tooltip content={CustomTooltip} />
+              <Legend />
+              {/* MAIN */}
               <Line
                 type="linear"
-                dataKey={
-                  yAxis == EAggregationMethod.Mean
-                    ? smoothingWindow[0].value !== "1"
-                      ? "meanNDVISmoothed"
-                      : "meanNDVI"
-                    : smoothingWindow[0].value !== "1"
-                      ? "medianNDVISmoothed"
-                      : "medianNDVI"
-                }
-                stroke="#2ecc71"
+                dataKey={getChartDataKey(ERequestContext.main, yAxis, smoothingWindow[0].value)}
+                stroke="#00ff1eff"
                 dot={CustomizedDot}
+                width={2}
+                name="Main Area NDVI"
+                legendType="line"
               />
 
               <Line
                 type="linear"
-                dataKey="meanNDVI_gap"
-                stroke="#2ecc71"
+                dataKey={getGapDataKey(ERequestContext.main, yAxis)}
+                stroke="#00ff1eff"
                 strokeDasharray="6 4"
                 opacity={0.5}
+                width={2}
+                legendType={'none'}
               />
+              {
+                comparisonItem
+                ?
+                <>
+                  <Line
+                    type="linear"
+                    dataKey={getChartDataKey(ERequestContext.comparison, yAxis, smoothingWindow[0].value)}
+                    stroke="#ffb300ff"
+                    dot={CustomizedDot}
+                    width={2}
+                    name="Comparison Area NDVI"
+                    legendType="line"
+                  />
+
+                  <Line
+                    type="linear"
+                    dataKey={getGapDataKey(ERequestContext.comparison, yAxis)}
+                    stroke="#ffb300ff"
+                    strokeDasharray="6 4"
+                    opacity={0.4}
+                    width={2}
+                    legendType={'none'}
+                  />
+                  </>
+                : 
+                <></>
+              }
+              
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height="10%">
             <BarChart
-              data={withGapIndicator(getAllSamples(ERequestContext.main))}
+              data={getChartPoints(samples, notValidSamples)}
               margin={{ left: 60 }}
             >
               <XAxis
-                dataKey={"id"}
+                dataKey={"datetime"}
                 hide
-                tickFormatter={(id) =>
-                  withGapIndicator(getAllSamples(ERequestContext.main))
-                    .find((d) => d.id === id)!
-                    .datetime.substring(0, 10)
-                }
+                tickFormatter={(d) => d.substring(0, 10)}
               />
               <YAxis domain={[0, 100]} hide />
 
@@ -1337,7 +1394,7 @@ const Map = () => {
               </ReferenceLine>
 
               <Bar dataKey={"valid_fraction"} barSize={20}>
-                {withGapIndicator(getAllSamples(ERequestContext.main)).map((sample, index) => (
+                {getChartPoints(samples, notValidSamples).map((sample, index) => (
                   <Cell
                     key={sample.id}
                     fill={
@@ -1404,4 +1461,4 @@ const Map = () => {
   );
 };
 
-export default Map;
+export default Home;

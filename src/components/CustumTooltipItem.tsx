@@ -10,7 +10,7 @@ const CustumTooltipItem = (props: ICustomTooltipItemProps) => {
     <div
       className={` ${customTooltipItemStyle.wrapper}`}
       style={{
-        color: props.isAbnormal ? "orange" : "",
+        color: props.isAbnormal ? "#ffb300ff" : "",
       }}
     >
       <div className={` ${customTooltipItemStyle.label}`}>{props.label}</div>

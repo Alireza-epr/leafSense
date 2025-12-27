@@ -1,7 +1,8 @@
 import { spatialItems } from "../types/apiTypes";
-import { EMarkerType, INDVISample } from "../store/mapStore";
+import { EMarkerType, ERequestContext, INDVISample, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
-import { IChangePoint } from "../types/generalTypes";
+import { EAggregationMethod, ELogLevel, EURLParams, IChangePoint, IChartPoint } from "../types/generalTypes";
+import { getMean } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
   if (!a_String) return;
@@ -158,4 +159,223 @@ export const isValidBoolean = (a_Boolean: string) => {
   return ["false", "true"]
     .map((i) => i.toLowerCase())
     .includes(a_Boolean.toLowerCase());
+};
+
+export const getGapValue = (a_AllSamples: INDVISample[]) => {
+  let lastValid: number | null = null;
+
+  return a_AllSamples.map((s) => {
+    if (s.meanNDVI != null) {
+      lastValid = s.meanNDVI;
+      return { ...s, meanNDVI_gap: null };
+    }
+
+    return {
+      ...s,
+      meanNDVI_gap: lastValid,
+    };
+  });
+};
+
+export const withGapIndicator = (
+  points: IChartPoint[],
+  key: keyof IChartPoint,
+  gapKey: keyof IChartPoint
+): IChartPoint[] => {
+  let lastValid: number | null = null;
+
+  return points.map(p => {
+    const value = p[key] as number | null;
+
+    if (value != null) {
+      lastValid = value;
+      return { ...p, [gapKey]: null };
+    }
+
+    return {
+      ...p,
+      [gapKey]: lastValid
+    };
+  });
+};
+
+export const getAllSamples = (a_ValidSamples: INDVISample[], a_NotValidSamples: INDVISample[]) => {
+  const allSamples = [...a_ValidSamples, ...a_NotValidSamples].sort(
+    (a, b) => a.id - b.id,
+  );
+  return allSamples;
+}
+
+export const cloneSample = (s: INDVISample): IChartPoint => ({
+  ...s,
+  // is mutable, Spread does NOT clone it
+  ndviArray: s.ndviArray ? new Float32Array(s.ndviArray) : null,
+});
+
+export const getChartPoints = (
+  a_ValidSamples: TSample,
+  a_NotValidSamples: TSample
+): IChartPoint[] => {
+
+  const mainSamples = getAllSamples(
+    a_ValidSamples[ERequestContext.main],
+    a_NotValidSamples[ERequestContext.main]
+  );
+
+  const comparisonSamples = getAllSamples(
+    a_ValidSamples[ERequestContext.comparison],
+    a_NotValidSamples[ERequestContext.comparison]
+  );
+
+  const hasComparison = comparisonSamples.length > 0;
+
+  const comparisonByDatetime = new Map<string, INDVISample>();
+
+  for (const s of comparisonSamples) {
+    if (!comparisonByDatetime.has(s.datetime)) {
+      comparisonByDatetime.set(s.datetime, s);
+    }
+  }
+
+  let points: IChartPoint[] = mainSamples.map(main => {
+    const comparison = comparisonByDatetime.get(main.datetime);
+
+    return {
+      ...main,
+
+      // main
+      main_meanNDVI: main.meanNDVI,
+      main_meanNDVISmoothed: main.meanNDVISmoothed,
+      main_medianNDVI: main.medianNDVI,
+      main_medianNDVISmoothed: main.medianNDVISmoothed,
+      main_meanNDVI_gap: null,
+
+      // comparison
+      ...(hasComparison && {
+        comparison_meanNDVI: comparison?.meanNDVI ?? null,
+        comparison_meanNDVISmoothed: comparison?.meanNDVISmoothed ?? null,
+        comparison_medianNDVI: comparison?.medianNDVI ?? null,
+        comparison_medianNDVISmoothed: comparison?.medianNDVISmoothed ?? null,
+        comparison_meanNDVI_gap: null,
+      }),
+    };
+  });
+
+  points = withGapIndicator(points, "main_meanNDVI", "main_meanNDVI_gap");
+  if (hasComparison) {
+    points = withGapIndicator(
+      points,
+      "comparison_meanNDVI",
+      "comparison_meanNDVI_gap"
+    );
+  }
+
+  return points;
+};
+
+
+export const getChartPoints2 = (a_ValidSamples: TSample, a_NotValidSamples: TSample): IChartPoint[] => {
+  const map = new Map<string, IChartPoint>()
+  const mainSamples = getAllSamples(a_ValidSamples[ERequestContext.main], a_NotValidSamples[ERequestContext.main])
+  const comparisonSamples = getAllSamples(a_ValidSamples[ERequestContext.comparison], a_NotValidSamples[ERequestContext.comparison])
+  const applyExtension = (a_NDVISample: INDVISample, a_Context: ERequestContext) => {
+    const existing = map.get(a_NDVISample.datetime) ?? cloneSample(a_NDVISample);
+
+    const next: IChartPoint = {
+      ...existing,
+      [`${a_Context}_meanNDVI`]: a_NDVISample.meanNDVI,
+      [`${a_Context}_meanNDVISmoothed`]: a_NDVISample.meanNDVISmoothed,
+      [`${a_Context}_medianNDVI`]: a_NDVISample.medianNDVI,
+      [`${a_Context}_medianNDVISmoothed`]: a_NDVISample.medianNDVISmoothed,
+    };
+
+    map.set( a_NDVISample.datetime, next )
+  }
+
+  mainSamples.forEach(s => {
+    applyExtension(s, ERequestContext.main)
+  });
+  comparisonSamples.forEach(s => {
+    applyExtension(s, ERequestContext.comparison)
+  });
+
+  let points = Array.from(map.values()).sort(
+    (a, b) => new Date(a.datetime).getTime() - new Date(b.datetime).getTime()
+  );
+
+
+  // Apply gaps AFTER merge
+  points = withGapIndicator(
+    points,
+    "main_meanNDVI",
+    "main_meanNDVI_gap"
+  );
+
+  points = withGapIndicator(
+    points,
+    "comparison_meanNDVI",
+    "comparison_meanNDVI_gap"
+  );
+
+  return points;
+}
+
+export const getChartDataKey = (a_Context: ERequestContext, a_YAxis: EAggregationMethod, a_SmoothingWindow: string) => {
+  const isSmoothed = a_SmoothingWindow !== "1";
+
+  if (a_YAxis === EAggregationMethod.Mean) {
+    return isSmoothed
+      ? `${a_Context}_meanNDVISmoothed`
+      : `${a_Context}_meanNDVI`;
+  }
+
+  return isSmoothed
+    ? `${a_Context}_medianNDVISmoothed`
+    : `${a_Context}_medianNDVI`;
+};
+
+export const getGapDataKey = (a_Context: ERequestContext, a_YAxis: EAggregationMethod) => {
+  return `${getChartDataKey(a_Context, a_YAxis, "1")}_gap`;
+}
+
+export const getMergedSamples = (a_AllSamples: INDVISample[]) => {
+  const map = new Map<string, INDVISample[]>();
+
+  for (const s of a_AllSamples) {
+    if (!map.has(s.datetime)) {
+      map.set(s.datetime, []);
+    }
+    map.get(s.datetime)!.push(s);
+  }
+
+  return Array.from(map.entries()).map(([datetime, group]) => {
+    const base = group[0];
+
+    return {
+      ...base,
+      meanNDVI: getMean(group.map(s => s.meanNDVI)),
+      medianNDVI: getMean(group.map(s => s.medianNDVI)),
+      meanNDVISmoothed: getMean(group.map(s => s.meanNDVISmoothed)),
+      medianNDVISmoothed: getMean(group.map(s => s.medianNDVISmoothed)),
+    };
+  });
+}
+
+export const formatTimestamp = (a_Date?: Date): string => {
+  const now = a_Date ?? new Date();
+  const timestamp = now.toISOString().replace('T', ' ').replace('Z', '');
+  return timestamp.substring(0, 23);
+};
+
+export const log = (a_Title: string, a_Message: any, a_Type: ELogLevel = ELogLevel.message): void => {
+  const formattedMessage = `[${formatTimestamp()}] ${a_Title}`;
+  const params = new URLSearchParams(window.location.search);
+  const logLevel = params.get( EURLParams.loglevel )
+  if (logLevel && logLevel === "3") {
+    switch(a_Type){
+      case ELogLevel.message: console.log(formattedMessage, a_Message);break;
+      case ELogLevel.warning: console.warn(formattedMessage, a_Message);break;
+      case ELogLevel.error: console.error(formattedMessage, a_Message);break;
+    }
+  }
 };
