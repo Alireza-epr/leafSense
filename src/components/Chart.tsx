@@ -3,6 +3,7 @@ import {
   ERequestContext,
   INDVISample,
   INDVISmoothed,
+  TSample,
   useMapStore,
 } from "../store/mapStore";
 import chartStyles from "./Chart.module.scss";
@@ -12,7 +13,7 @@ import ChartHeaderItem from "./ChartHeaderItem";
 import ChartListRows from "./ChartListRows";
 import ChartSummaryRows from "./ChartSummaryRows";
 import { IChartSummaryRow } from "./ChartSummaryRow";
-import { downloadCSV, toFirstLetterUppercase } from "../utils/generalUtils";
+import { downloadCSV, getAllSamples, toFirstLetterUppercase } from "../utils/generalUtils";
 import {
   detectChangePointsZScore,
   getSmoothNDVISamples,
@@ -167,7 +168,16 @@ const Chart = (props: IChartProps) => {
       +changeDetection.find((o) => o.id == 2)!.value,
       +changeDetection.find((o) => o.id == 3)!.value,
     );
-    setChangePoints(points);
+    const comparisonPoints = detectChangePointsZScore(
+      samples[ERequestContext.comparison],
+      +changeDetection.find((o) => o.id == 1)!.value,
+      +changeDetection.find((o) => o.id == 2)!.value,
+      +changeDetection.find((o) => o.id == 3)!.value,
+    );
+    setChangePoints({
+      main: points,
+      comparison: comparisonPoints
+    });
   }, [changeDetection]);
 
   const getValidity = () => {
@@ -272,10 +282,37 @@ const Chart = (props: IChartProps) => {
     );
   };
 
+  const disableChangePointDetection = () => {
+    setChangeDetection((prev)=>prev.map( (o, index) =>{
+      if(index === 0){
+        return {
+          ...o,
+          value: "1"
+        }
+      } else {
+        return o
+      }
+    }))
+  }
+  const disableSmoothingDetection = () => {
+    setSmoothingWindow((prev)=>prev.map( (o, index) =>{
+      if(index === 0){
+        return {
+          ...o,
+          value: "1"
+        }
+      } else {
+        return o
+      }
+    }))
+  }
+
   const handleChangeComparison = (a_Option: IChartHeaderItemOption) => {
     if(comparisonItemRef.current && comparisonItemRef.current.id === a_Option.id){
       setComparisonItem(null)
     } else {
+      disableSmoothingDetection()
+      disableChangePointDetection()
       setComparisonItem({
         id: a_Option.id,
         type:
@@ -285,14 +322,19 @@ const Chart = (props: IChartProps) => {
   };
 
   const handleExportCSV = useCallback(
-    (a_Samples: INDVISample[]) => {
-      const validSamples = a_Samples.filter((s) => s.meanNDVI);
-      const thiNotValidSamples = a_Samples.filter((s) => !s.meanNDVI);
-      const allSamples = [...validSamples, ...thiNotValidSamples].sort(
-        (a, b) => a.id - b.id,
+    (a_Samples: TSample, a_NotValidSamples: TSample) => {
+      
+      const mainSamples = getAllSamples(
+        a_Samples[ERequestContext.main],
+        a_NotValidSamples[ERequestContext.main]
       );
 
-      downloadCSV(allSamples, changePoints);
+      const comparisonSamples = getAllSamples(
+        a_Samples[ERequestContext.comparison],
+        a_NotValidSamples[ERequestContext.comparison]
+      );
+
+      downloadCSV(mainSamples, comparisonSamples, changePoints);
     },
     [changePoints],
   );
@@ -353,7 +395,7 @@ const Chart = (props: IChartProps) => {
         <ChartHeaderItem
           title="Export CSV"
           alt="Export CSV"
-          onClick={() => handleExportCSV([...samples[ERequestContext.main], ...notValidSamples[ERequestContext.main]])}
+          onClick={() => handleExportCSV(samples, notValidSamples)}
           icon="export-csv"
           disabled={!enableHeaderOption}
         />
@@ -363,7 +405,7 @@ const Chart = (props: IChartProps) => {
           onClick={handleToggleDetectionOptions}
           icon="detection"
           disabled={!enableHeaderOption}
-          active={showDetectionOptions}
+          active={changeDetection[0].value !== "1"}
         >
           {showDetectionOptions ? (
             <ChartHeaderItemOptions
@@ -387,7 +429,7 @@ const Chart = (props: IChartProps) => {
           onClick={handleToggleSmoothingOptions}
           icon="smoothing"
           disabled={!enableHeaderOption}
-          active={showSmoothingOptions}
+          active={smoothingWindow[0].value !== "1"}
         >
           {showSmoothingOptions ? (
             <ChartHeaderItemOptions

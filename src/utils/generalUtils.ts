@@ -1,5 +1,5 @@
 import { spatialItems } from "../types/apiTypes";
-import { EMarkerType, ERequestContext, INDVISample, TSample } from "../store/mapStore";
+import { EMarkerType, ERequestContext, INDVISample, TChangePoint, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
 import { EAggregationMethod, ELogLevel, EURLParams, IChangePoint, IChartPoint } from "../types/generalTypes";
 import { getMean } from "./calculationUtils";
@@ -14,6 +14,7 @@ export const toFirstLetterUppercase = (a_String: string | null) => {
 };
 
 export const jsonToCsv = (
+  a_Title: string,
   a_NDVISamples: INDVISample[],
   a_ChangePoints: IChangePoint[],
 ) => {
@@ -27,22 +28,15 @@ export const jsonToCsv = (
         filter_fraction: rest.filter_fraction.toFixed(2) + "%",
       };
       const changePoint = a_ChangePoints.find((p) => p.id === rest.id);
-      if (changePoint) {
-        return {
-          ...exportedSample,
-          "change point": true,
-          "Z-Score":
-            changePoint.z >= 0
-              ? `+${changePoint.z.toFixed(2)}`
-              : `${changePoint.z.toFixed(2)}`,
-        };
-      } else {
-        return {
-          ...exportedSample,
-          "change point": false,
-          "Z-Score": null,
-        };
-      }
+      return {
+        ...exportedSample,
+        "change point": !!changePoint,
+        "Z-Score": changePoint
+          ? changePoint.z >= 0
+            ? `+${changePoint.z.toFixed(2)}`
+            : changePoint.z.toFixed(2)
+          : "N/A",
+      };
     },
   );
 
@@ -51,6 +45,7 @@ export const jsonToCsv = (
   const delimiter = ";";
 
   const csvRows = [
+    `### ${a_Title} ###`,
     headers.join(delimiter), // header row
     ...excludedSamples.map((sample) =>
       headers
@@ -69,10 +64,30 @@ export const jsonToCsv = (
 };
 
 export const downloadCSV = (
-  a_NDVISamples: INDVISample[],
-  a_ChangePoints: IChangePoint[],
+  a_AllMainSamples: INDVISample[],
+  a_AllComparisonSamples: INDVISample[],
+  a_ChangePoints: TChangePoint,
 ) => {
-  const csvString = jsonToCsv(a_NDVISamples, a_ChangePoints);
+  const sections: string[] = [];
+
+  sections.push(
+    jsonToCsv("MAIN SAMPLES", a_AllMainSamples, a_ChangePoints.main)
+  );
+
+  if (a_AllComparisonSamples.length > 0) {
+    sections.push(""); // blank line
+    sections.push(""); // blank line
+
+    sections.push(
+      jsonToCsv(
+        "COMPARISON SAMPLES",
+        a_AllComparisonSamples,
+        a_ChangePoints.comparison
+      )
+    );
+  }
+
+  const csvString = sections.join("\n");
 
   const blob = new Blob([csvString], { type: "text/csv;charset=utf-8;" });
   const url = URL.createObjectURL(blob);
@@ -229,16 +244,16 @@ export const getChartPoints = (
 
   const hasComparison = comparisonSamples.length > 0;
 
-  const comparisonByDatetime = new Map<string, INDVISample>();
-
-  for (const s of comparisonSamples) {
-    if (!comparisonByDatetime.has(s.datetime)) {
-      comparisonByDatetime.set(s.datetime, s);
-    }
+  const comparisonByDatetime = new Map<string, INDVISample[]>();
+  for (const c of comparisonSamples) {
+    const list = comparisonByDatetime.get(c.datetime) ?? [];
+    list.push(c);
+    comparisonByDatetime.set(c.datetime, list);
   }
 
   let points: IChartPoint[] = mainSamples.map(main => {
-    const comparison = comparisonByDatetime.get(main.datetime);
+    const list = comparisonByDatetime.get(main.datetime);
+    const comparison = list?.shift(); 
 
     return {
       ...main,
@@ -257,6 +272,7 @@ export const getChartPoints = (
         comparison_medianNDVI: comparison?.medianNDVI ?? null,
         comparison_medianNDVISmoothed: comparison?.medianNDVISmoothed ?? null,
         comparison_meanNDVI_gap: null,
+        comparison_id: comparison?.id
       }),
     };
   });

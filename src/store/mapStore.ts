@@ -62,6 +62,7 @@ export type TResponseFeature = Record< ERequestContext, IStacSearchResponse | nu
 export type TErrorFeature = Record< ERequestContext, Error | null >
 export type TErrorNDVI = Record< ERequestContext, Error | null >
 export type TDoneFeature = Record< ERequestContext, number >
+export type TChangePoint = Record< ERequestContext, IChangePoint[] >
 
 export type TMarker = Record<EMarkerType, boolean>;
 
@@ -89,7 +90,7 @@ export interface IMapStoreStates {
   changeDetection: IChartHeaderItemOption[];
   comparisonOptions: IChartHeaderItemOption[];
   comparisonItem: IComparisonItem | null;
-  changePoints: IChangePoint[];
+  changePoints: TChangePoint;
   samples: TSample;
   notValidSamples: TSample;
   responseFeatures: TResponseFeature;
@@ -198,7 +199,7 @@ export interface IMapStoreActions {
       | ((prev: IComparisonItem | null) => IComparisonItem | null),
   ) => void;
   setChangePoints: (
-    a_Value: IChangePoint[] | ((prev: IChangePoint[]) => IChangePoint[]),
+    a_Value: TChangePoint | ((prev: TChangePoint) => TChangePoint),
   ) => void;
   setPolygons: (
     a_Value: IPolygon[] | ((prev: IPolygon[]) => IPolygon[]),
@@ -304,7 +305,10 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
           step: 1,
         },
       ] as IChartHeaderItemOption[],
-      changePoints: [] as IChangePoint[],
+      changePoints: {
+        "main": [] as IChangePoint[],
+        "comparison": [] as IChangePoint[],
+      },
       comparisonOptions: [] as IChartHeaderItemOption[],
       comparisonItem: null as IComparisonItem | null,
     },

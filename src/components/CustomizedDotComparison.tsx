@@ -1,7 +1,8 @@
 import { DotItemDotProps } from "recharts";
 import { INDVISample, useMapStore } from "../store/mapStore";
+import { IChartPoint } from "../types/generalTypes";
 
-const CustomizedDot = (props: DotItemDotProps) => {
+const CustomizedDotComparison = (props: DotItemDotProps) => {
   const { cx, cy, r, payload } = props;
 
   const changePoints = useMapStore((state) => state.changePoints);
@@ -10,9 +11,10 @@ const CustomizedDot = (props: DotItemDotProps) => {
     return <g />;
   }
 
-  const changePoint = changePoints.main.find(
-    (p) => p.id === (payload as INDVISample).id,
+  const changePoint = changePoints.comparison.find(
+    (p) => p.id === (payload as IChartPoint).comparison_id
   );
+
   if (changePoint) {
     return (
       <svg x={cx - 10} y={cy - 10} width={20} height={20} viewBox="0 0 20 20">
@@ -37,9 +39,9 @@ const CustomizedDot = (props: DotItemDotProps) => {
 
   return (
     <svg x={cx - 5} y={cy - 5} width={10} height={10} viewBox="0 0 10 10">
-      <circle cx="5" cy="5" r="4" fill="#00ff1eff" />
+      <circle cx="5" cy="5" r="4" fill="#ffb300ff" />
     </svg>
   );
 };
 
-export default CustomizedDot;
+export default CustomizedDotComparison;

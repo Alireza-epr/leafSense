@@ -116,6 +116,7 @@ export interface INDVISampleExtended {
   comparison_medianNDVI?: number | null;
   comparison_medianNDVISmoothed?: number | null;
   comparison_meanNDVI_gap?: number | null;
+  comparison_id?: number;
 }
 
 export type IChartPoint = INDVISample & INDVISampleExtended

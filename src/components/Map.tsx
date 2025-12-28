@@ -73,6 +73,7 @@ import {
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
 import { getMean, getMeanNDVI } from "src/utils/calculationUtils";
+import CustomizedDotComparison from "./CustomizedDotComparison";
 
 let start: number, end: number;
 
@@ -1344,7 +1345,7 @@ const Home = () => {
                     type="linear"
                     dataKey={getChartDataKey(ERequestContext.comparison, yAxis, smoothingWindow[0].value)}
                     stroke="#ffb300ff"
-                    dot={CustomizedDot}
+                    dot={CustomizedDotComparison}
                     width={2}
                     name="Comparison Area NDVI"
                     legendType="line"

@@ -95,12 +95,23 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
           label={"Filter Fraction"}
           value={ndviSample.filter_fraction.toFixed(2) + "%"}
         />
-        {changePoints.findIndex((p) => p.id == ndviSample.id) !== -1 ? (
+        {changePoints.main.findIndex((p) => p.id == ndviSample.id) !== -1 ? (
           <CustumTooltipItem
-            isAbnormal={true}
             label={"Z-Score"}
             value={
-              changePoints.find((p) => p.id == ndviSample.id)?.z.toFixed(2) ??
+              changePoints.main.find((p) => p.id == ndviSample.id)?.z.toFixed(2) ??
+              ""
+            }
+          />
+        ) : (
+          <></>
+        )}
+        {changePoints.comparison.findIndex((p) => p.id == ndviSample.comparison_id) !== -1 ? (
+          <CustumTooltipItem
+            isAbnormal={true}
+            label={"Comparison Z-Score"}
+            value={
+              changePoints.comparison.find((p) => p.id == ndviSample.comparison_id)?.z.toFixed(2) ??
               ""
             }
           />
