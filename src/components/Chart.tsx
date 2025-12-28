@@ -153,8 +153,9 @@ const Chart = (props: IChartProps) => {
   }, [globalLoading]);
 
   useEffect(() => {
+    if(smoothingWindow[0].value === "1") return
     setSamples(prev=>({
-      ...prev,
+      [ERequestContext.comparison]: getSmoothNDVISamples(prev[ERequestContext.comparison], Number(smoothingWindow[0].value)),
       [ERequestContext.main]: getSmoothNDVISamples(prev[ERequestContext.main], Number(smoothingWindow[0].value))
     }))
   }, [smoothingWindow]);
