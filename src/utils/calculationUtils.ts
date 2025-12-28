@@ -1,6 +1,6 @@
 import { INDVISample, TPercentage } from "../store/mapStore";
 import { ESTACURLS, IStacItem, ITokenCollection } from "../types/apiTypes";
-import { ESampleFilter, IChangePoint, INDVIPanel } from "../types/generalTypes";
+import { ELogLevel, ESampleFilter, IChangePoint, INDVIPanel } from "../types/generalTypes";
 import GeoTIFF, {
   fromUrl,
   GeoTIFFImage,
@@ -8,6 +8,7 @@ import GeoTIFF, {
   TypedArray,
 } from "geotiff";
 import proj4 from "proj4";
+import { log } from "./generalUtils";
 
 export const getFeatureToken = async (
   a_Id: string,
@@ -15,8 +16,7 @@ export const getFeatureToken = async (
   const resp = await fetch(`${ESTACURLS.collectionTokenURL}${a_Id}`);
   if (!resp.ok) {
     const respJSON = await resp.json();
-    console.error("Failed to get the collection token: ");
-    console.error(respJSON);
+    log("Failed to get the collection token: ", respJSON, ELogLevel.error);
     return null;
   }
   const respJSON = await resp.json();
@@ -37,7 +37,7 @@ export const getSignedURL = async (a_Url: string) => {
   console.log(resp) */
   if (!resp.ok) {
     const respJSON = await resp.json();
-    console.error("Failed to get the signed URL: " + respJSON.message);
+    log("Failed to get the signed URL: ", respJSON.message, ELogLevel.error);
     return "";
   }
   const respJSON = await resp.json();

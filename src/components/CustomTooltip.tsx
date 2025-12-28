@@ -3,7 +3,7 @@ import customTooltipStyles from "./CustomTooltip.module.scss";
 import { TooltipContentProps } from "recharts";
 import CustumTooltipItem from "./CustumTooltipItem";
 import { getDatetime } from "../utils/dateUtils";
-import { IChartPoint } from "src/types/generalTypes";
+import { IChartPoint } from "../types/generalTypes";
 
 const CustomTooltip = (props: TooltipContentProps<string, string>) => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);

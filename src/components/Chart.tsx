@@ -13,7 +13,7 @@ import ChartHeaderItem from "./ChartHeaderItem";
 import ChartListRows from "./ChartListRows";
 import ChartSummaryRows from "./ChartSummaryRows";
 import { IChartSummaryRow } from "./ChartSummaryRow";
-import { downloadCSV, getAllSamples, toFirstLetterUppercase } from "../utils/generalUtils";
+import { downloadCSV, getAllSamples, getLatency, getSummaryInfo, getValidity, toFirstLetterUppercase } from "../utils/generalUtils";
 import {
   detectChangePointsZScore,
   getSmoothNDVISamples,
@@ -31,7 +31,6 @@ export interface IChartProps {
   onNext?: () => void;
   onPrevious?: () => void;
   items?: number;
-  latency?: number;
 }
 
 const Chart = (props: IChartProps) => {
@@ -39,11 +38,16 @@ const Chart = (props: IChartProps) => {
   const setSamples = useMapStore((state) => state.setSamples);
   const markers = useMapStore((state) => state.markers);
   const fetchFeatures = useMapStore((state) => state.fetchFeatures);
+  const responseFeatures = useMapStore((state) => state.responseFeatures);
   const globalLoading = useMapStore((state) => state.globalLoading);
+  const latency = useMapStore((state) => state.latency);
   const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
 
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const setSmoothingWindow = useMapStore((state) => state.setSmoothingWindow);
+
+  const summaryItem = useMapStore((state) => state.summaryItem);
+  const setSummaryItem = useMapStore((state) => state.setSummaryItem);
 
   const changeDetection = useMapStore((state) => state.changeDetection);
   const setChangeDetection = useMapStore((state) => state.setChangeDetection);
@@ -79,13 +83,6 @@ const Chart = (props: IChartProps) => {
   const [showSmoothingOptions, setShowSmoothingOptions] = useState(false);
   const [showDetectionOptions, setShowDetectionOptions] = useState(false);
   const [showComparisonOptions, setShowComparisonOptions] = useState(false);
-  const [summaryItems, setSummaryItems] = useState<IChartSummaryRow[]>([
-    { id: 1, title: "Total / Used Scenes", value: "-" },
-    { id: 2, title: "Average Valid Pixels", value: "-" },
-    { id: 3, title: "First Date", value: "-" },
-    { id: 4, title: "Last Date", value: "-" },
-    { id: 5, title: "Latency", value: "-" },
-  ]);
   const [enableHeaderOption, setEnableHeaderOption] = useState(false);
   //const [smoothed, setSmoothed] = useState(false);
 
@@ -180,9 +177,7 @@ const Chart = (props: IChartProps) => {
     });
   }, [changeDetection]);
 
-  const getValidity = () => {
-    return props.items ? `${samples[ERequestContext.main].length}/${props.items}` : "-";
-  };
+
 
   const handleListItems = () => {
     setShowSummary(false);
@@ -200,44 +195,49 @@ const Chart = (props: IChartProps) => {
     }));
   };
 
-  const getLatency = () =>
-    props.latency ? `${(props.latency / 1000).toFixed(2)} s` : "-";
+
 
   const handleToggleSummary = useCallback(
-    (a_AllSamples: INDVISample[]) => {
+    (a_Samples: TSample, a_NotValidSamples: TSample) => {
       setShowList(false);
       setShowSummary(!showSummary);
 
-      // Total / Used Scenes
-      const validsLen = a_AllSamples.filter((s) => s.meanNDVI).length;
-      const totalUsed = `${validsLen} / ${a_AllSamples.length}`;
+      const mainSamples = getAllSamples(
+        a_Samples[ERequestContext.main],
+        a_NotValidSamples[ERequestContext.main]
+      );
 
-      // Average Valid Pixels
-      const sumValidPixels = a_AllSamples
-        .filter((s) => s.meanNDVI)
-        .map((s) => s.valid_fraction)
-        .reduce((a, b) => a + b, 0);
-      const averageValidPixels =
-        validsLen !== 0 ? (sumValidPixels / validsLen).toFixed(2) : "-";
+      const comparisonSamples = getAllSamples(
+        a_Samples[ERequestContext.comparison],
+        a_NotValidSamples[ERequestContext.comparison]
+      );
 
-      // First / Last Date
-      const sortedValids = a_AllSamples
-        .filter((s) => s.meanNDVI)
-        .sort((a, b) => a.id - b.id);
+      // Main
+      const { totalUsed, averageValidPixels, firstDate, lastDate } = getSummaryInfo(mainSamples)
+      const { 
+        totalUsed: totalUsedComparison, 
+        averageValidPixels: averageValidPixelsComparison, 
+        firstDate: firstDateComparison, 
+        lastDate: lastDateComparison } = getSummaryInfo(comparisonSamples)
 
-      const firstDate = validsLen !== 0 ? sortedValids[0].datetime : "-";
-      const lastDate =
-        validsLen !== 0 ? sortedValids[validsLen - 1].datetime : "-";
-
-      setSummaryItems([
-        { id: 1, title: "Used / Total Scenes", value: totalUsed },
-        { id: 2, title: "Average Valid Pixels", value: averageValidPixels },
-        { id: 3, title: "First Date", value: firstDate },
-        { id: 4, title: "Last Date", value: lastDate },
-        { id: 5, title: "Latency", value: getLatency() },
-      ]);
+      setSummaryItem({
+        main: [
+          { id: 1, title: "Used / Total Scenes", value: totalUsed },
+          { id: 2, title: "Average Valid Pixels", value: averageValidPixels },
+          { id: 3, title: "First Date", value: firstDate },
+          { id: 4, title: "Last Date", value: lastDate },
+          { id: 5, title: "Latency", value: getLatency(ERequestContext.comparison, latency) },
+        ],
+        comparison: [
+          { id: 1, title: "Used / Total Scenes", value: totalUsedComparison },
+          { id: 2, title: "Average Valid Pixels", value: averageValidPixelsComparison },
+          { id: 3, title: "First Date", value: firstDateComparison },
+          { id: 4, title: "Last Date", value: lastDateComparison },
+          { id: 5, title: "Latency", value: getLatency(ERequestContext.comparison, latency) },
+        ],
+      });
     },
-    [showSummary, props.latency],
+    [showSummary, latency],
   );
 
   const disappearOptionsExcept = (a_Option: EChartHeaderOptions) => {
@@ -387,7 +387,7 @@ const Chart = (props: IChartProps) => {
         <ChartHeaderItem
           title="Series Summary"
           alt="Series Summary"
-          onClick={() => handleToggleSummary([...samples[ERequestContext.main], ...notValidSamples[ERequestContext.main]])}
+          onClick={() => handleToggleSummary(samples, notValidSamples)}
           icon="info"
           disabled={!enableHeaderOption}
           active={showSummary}
@@ -471,8 +471,9 @@ const Chart = (props: IChartProps) => {
         <></>
       )}
       {showSummary ? (
-        <div className={` ${chartStyles.listWrapper}`}>
-          <ChartSummaryRows items={summaryItems} />
+        <div className={` ${chartStyles.summaryWrapper}`}>
+          <ChartSummaryRows items={summaryItem.main} title={"Main Samples Summary"}/>
+          {comparisonItemRef.current ? <ChartSummaryRows items={summaryItem.comparison} title={"Comparison Samples Summary"}/> : <></>}
         </div>
       ) : (
         <></>
@@ -514,8 +515,14 @@ const Chart = (props: IChartProps) => {
         <ChartFooterItem title="Max NDVI" value={maxNDVI} />
         <ChartFooterItem title="Mean NDVI" value={meanNDVI} />
         <ChartFooterItem title="Min NDVI" value={minNDVI} />
-        <ChartFooterItem title="Latency" value={getLatency()} />
-        <ChartFooterItem title="Validity" value={getValidity()} />
+        <ChartFooterItem title="Latency" 
+          value={getLatency(ERequestContext.main, latency)} 
+          subValue={comparisonItemRef.current ? getLatency(ERequestContext.comparison, latency) : null}
+        />
+        <ChartFooterItem title="Validity" 
+          value={getValidity(samples.main.length, responseFeatures.main?.features.length)} 
+          subValue={comparisonItemRef.current ? getValidity(samples.comparison.length, responseFeatures.comparison?.features.length) : null}
+        />
       </div>
     </div>
   );

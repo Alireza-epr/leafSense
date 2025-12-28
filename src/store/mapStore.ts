@@ -19,6 +19,7 @@ import {
   TSpatialComparison,
   TTemporalComparison,
 } from "../types/apiTypes";
+import { IChartSummaryRow } from "../components/ChartSummaryRow";
 
 export enum EMarkerType {
   point = "point",
@@ -63,6 +64,8 @@ export type TErrorFeature = Record< ERequestContext, Error | null >
 export type TErrorNDVI = Record< ERequestContext, Error | null >
 export type TDoneFeature = Record< ERequestContext, number >
 export type TChangePoint = Record< ERequestContext, IChangePoint[] >
+export type TSummaryItem = Record< ERequestContext, IChartSummaryRow[] >
+export type TLatency = Record< ERequestContext, number >
 
 export type TMarker = Record<EMarkerType, boolean>;
 
@@ -106,6 +109,8 @@ export interface IMapStoreStates {
   sampleFilter: ESampleFilter;
   yAxis: EAggregationMethod;
   polygons: IPolygon[];
+  summaryItem: TSummaryItem;
+  latency: TLatency;
 }
 
 export interface IMapStoreActions {
@@ -204,6 +209,12 @@ export interface IMapStoreActions {
   setPolygons: (
     a_Value: IPolygon[] | ((prev: IPolygon[]) => IPolygon[]),
   ) => void;
+  setSummaryItem: (
+    a_Value: TSummaryItem | ((prev: TSummaryItem) => TSummaryItem),
+  ) => void;
+  setLatency: (
+    a_Value: TLatency | ((prev: TLatency) => TLatency),
+  ) => void; 
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -311,6 +322,26 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       },
       comparisonOptions: [] as IChartHeaderItemOption[],
       comparisonItem: null as IComparisonItem | null,
+      summaryItem: {
+        main: [
+          { id: 1, title: "Total / Used Scenes", value: "-" },
+          { id: 2, title: "Average Valid Pixels", value: "-" },
+          { id: 3, title: "First Date", value: "-" },
+          { id: 4, title: "Last Date", value: "-" },
+          { id: 5, title: "Latency", value: "-" },
+        ],
+        comparison: [
+          { id: 1, title: "Total / Used Scenes", value: "-" },
+          { id: 2, title: "Average Valid Pixels", value: "-" },
+          { id: 3, title: "First Date", value: "-" },
+          { id: 4, title: "Last Date", value: "-" },
+          { id: 5, title: "Latency", value: "-" },
+        ]
+      } as TSummaryItem,
+      latency: {
+        main: 0,
+        comparison: 0
+      }
     },
     (set) => ({
       // Actions
@@ -551,6 +582,18 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           polygons:
             typeof a_Value === "function" ? a_Value(state.polygons) : a_Value,
+        })),
+      
+      setSummaryItem: (a_Value) =>
+        set((state) => ({
+          summaryItem:
+            typeof a_Value === "function" ? a_Value(state.summaryItem) : a_Value,
+        })),
+      
+      setLatency: (a_Value) =>
+        set((state) => ({
+          latency:
+            typeof a_Value === "function" ? a_Value(state.latency) : a_Value,
         })),
     }),
   ),

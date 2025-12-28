@@ -1,8 +1,8 @@
-import { spatialItems } from "../types/apiTypes";
-import { EMarkerType, ERequestContext, INDVISample, TChangePoint, TSample } from "../store/mapStore";
+import { ESTACCollections, ITokenCollection, spatialItems } from "../types/apiTypes";
+import { EMarkerType, ERequestContext, INDVISample, TChangePoint, TLatency, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
 import { EAggregationMethod, ELogLevel, EURLParams, IChangePoint, IChartPoint } from "../types/generalTypes";
-import { getMean } from "./calculationUtils";
+import { getFeatureToken, getMean, isTokenExpired } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
   if (!a_String) return;
@@ -395,3 +395,45 @@ export const log = (a_Title: string, a_Message: any, a_Type: ELogLevel = ELogLev
     }
   }
 };
+
+
+export const getSummaryInfo = (a_Samples: INDVISample[]) => {
+
+  const allSamples = a_Samples
+  if(a_Samples.length === 0) return { totalUsed: "-" , averageValidPixels: "-", firstDate: "-", lastDate: "-" }
+  const validSamples = a_Samples.filter( s => s.meanNDVI !== null )
+  // Total / Used Scenes
+  const validsLen = validSamples.length;
+  const totalUsed = `${validsLen} / ${allSamples.length}`;
+
+  // Average Valid Pixels
+  const sumValidPixels = validSamples
+    .map((s) => s.valid_fraction)
+    .reduce((a, b) => a + b, 0);
+  const averageValidPixels =
+    validsLen !== 0 ? (sumValidPixels / validsLen).toFixed(2) : "-";
+
+  // First / Last Date
+  const sortedValids = validSamples
+    .sort((a, b) => a.id - b.id);
+
+  const firstDate = validsLen !== 0 ? sortedValids[0].datetime : "-";
+  const lastDate = validsLen !== 0 ? sortedValids[validsLen - 1].datetime : "-";
+
+  return { totalUsed, averageValidPixels, firstDate, lastDate }
+}
+
+export const getLatency = (a_RequestContext: ERequestContext, a_Latency: TLatency) =>
+  a_RequestContext === ERequestContext.main 
+  ?
+    a_Latency.main ? `${(a_Latency.main / 1000).toFixed(2)} s` : "-"
+  :
+    a_Latency.comparison ? `${(a_Latency.comparison / 1000).toFixed(2)} s` : "-"
+
+export const getValidity = (a_ValidSamples: number, a_AllSamples: number | undefined) => {
+  return a_AllSamples ? `${a_ValidSamples}/${a_AllSamples}` : "-";
+};
+
+
+
+

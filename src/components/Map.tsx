@@ -14,7 +14,7 @@ import {
   useMapStore,
 } from "../store/mapStore";
 import type { Feature, Polygon } from "geojson";
-import { useFilterSTAC, useNDVI, useTokenCollection } from "../lib/stac";
+import { useFilterSTAC, useNDVI } from "../lib/stac";
 import {
   LineChart,
   Line,
@@ -45,6 +45,7 @@ import Loading from "./Loading";
 import {
   EAggregationMethod,
   ELoadingSize,
+  ELogLevel,
   ESampleFilter,
   EURLParams,
   IComparisonItem,
@@ -72,14 +73,14 @@ import {
   log,
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
-import { getMean, getMeanNDVI } from "src/utils/calculationUtils";
+import { getMean, getMeanNDVI } from "../utils/calculationUtils";
 import CustomizedDotComparison from "./CustomizedDotComparison";
 
 let start: number, end: number;
+let startComparison: number, endComparison: number;
 
 const Home = () => {
   const { getFeatures } = useFilterSTAC();
-  const { getTokenCollection } = useTokenCollection();
   const { getNDVI } = useNDVI();
 
   const map = useMapStore((state) => state.map);
@@ -101,7 +102,6 @@ const Home = () => {
   const responseFeatures = useMapStore((state) => state.responseFeatures);
   const errorFeatures = useMapStore((state) => state.errorFeatures);
   const errorNDVI = useMapStore((state) => state.errorNDVI);
-  const tokenCollection = useMapStore((state) => state.tokenCollection);
   const doneFeature = useMapStore((state) => state.doneFeature);
   const temporalOp = useMapStore((state) => state.temporalOp);
   const spatialOp = useMapStore((state) => state.spatialOp);
@@ -114,7 +114,9 @@ const Home = () => {
   const yAxis = useMapStore((state) => state.yAxis);
   const polygons = useMapStore((state) => state.polygons);
   const comparisonItem = useMapStore((state) => state.comparisonItem);
+  const latency = useMapStore((state) => state.latency);
 
+  const setLatency = useMapStore((state) => state.setLatency);
   const setComparisonItem = useMapStore((state) => state.setComparisonItem);
   const setPolygons = useMapStore((state) => state.setPolygons);
   const setNextPage = useMapStore((state) => state.setNextPage);
@@ -147,7 +149,7 @@ const Home = () => {
   const mapContainer = useRef<HTMLDivElement>(null);
   //const mapObject = useRef<MapLibre | null>(null);
 
-  const [latency, setLatency] = useState<number>();
+  //const [latency, setLatency] = useState<number>();
 
   // Create a stable debounced function that always calls the latest getFeatures:
   // - useRef stores the current getFeatures so we can access the latest version even if it changes each render
@@ -314,11 +316,11 @@ const Home = () => {
           map.removeLayer(a_PolygonId);
           map.removeSource(a_PolygonId);
 
-          const id = a_PolygonId.substring( a_PolygonId.indexOf("_") + 1 )
+          /* const id = a_PolygonId.substring( a_PolygonId.indexOf("_") + 1 )
           const polygon = polygonsRef.current.find( p => p.id == Number(id) )
           if(polygon){
             polygon.markers.forEach( m => m.marker.remove() )
-          }
+          } */
         }
       }
     },
@@ -422,30 +424,6 @@ const Home = () => {
     drawCircle(center);
   }, [markers, drawCircle]);
 
-  const addMarkersToMap = useCallback(() => {
-    setMarkers((prev) => {
-      const updated: IMarker[] = [];
-
-      for (const marker of prev) {
-        if (marker.marker._map) {
-          updated.push(marker);
-          continue;
-        }
-
-        const newMarkerWithMap = new maplibregl.Marker()
-          .setLngLat(marker.marker.getLngLat())
-          .addTo(map!);
-
-        updated.push({
-          type: marker.type,
-          marker: newMarkerWithMap,
-        });
-      }
-
-      return updated;
-    });
-  }, [map, setMarkers]);
-
   const getCoordinatesFromMarkers = useCallback((a_RequestContext: ERequestContext): [number, number][] => {
     let thisFetchFeatures = fetchFeaturesRef.current[a_RequestContext]
     if (thisFetchFeatures === EMarkerType.polygon) {
@@ -475,34 +453,6 @@ const Home = () => {
       return feature?.geometry?.coordinates?.[0] || [];
     }
   }, [map]);
-
-  const getCoordinatesFromComparisonItem = useCallback((a_ComparisonItem: IComparisonItem): [number, number][]=>{
-    if(a_ComparisonItem.type === EMarkerType.polygon){
-      const polygonLayer = polygonsRef.current.at(a_ComparisonItem.id-1);
-      if (!polygonLayer) return [];
-      let coordinates: [number, number][] = polygonLayer.markers
-        .filter((m) => m.type === EMarkerType.polygon)
-        .map((m) => {
-          const lng = m.marker.getLngLat().lng;
-          const lat = m.marker.getLngLat().lat;
-          return [lng, lat];
-        });
-
-      // Close the polygon
-      if (coordinates.length > 0) {
-        coordinates.push(coordinates[0]);
-      }
-
-      return coordinates;
-    } else {
-      const circleLayer = map!.getLayer("circle");
-      if (!circleLayer) return [];
-
-      const metadata = circleLayer.metadata as ILayerMetadata;
-      const feature = metadata?.feature;
-      return feature?.geometry?.coordinates?.[0] || [];
-    }
-  },[map])
 
   const getPostBody = useCallback((a_RequestContext: ERequestContext) => {
     const cloudCoverFilter: TCloudCoverFilter = {
@@ -579,22 +529,6 @@ const Home = () => {
     setGlobalLoading(true);
   }, [setShowError, setShowChart, setGlobalLoading]);
 
-  const mergeSamplesAndShowChartModal = useCallback(()=>{
-    const mainMergedSamples = getMergedSamples( samples[ERequestContext.main] )
-    const comparisonMergedSamples = getMergedSamples( samples[ERequestContext.comparison] )
-
-    setSamples({
-      main: mainMergedSamples.filter( s => s.meanNDVI !== null ),
-      comparison: comparisonMergedSamples.filter( s => s.meanNDVI !== null),
-    })
-    setNotValidSamples({
-      main: mainMergedSamples.filter( s => s.meanNDVI === null ),
-      comparison: comparisonMergedSamples.filter( s => s.meanNDVI === null ),
-    })
-    showChartModal();
-    end = Date.now();
-    setLatency(end - start);
-  },[samples, notValidSamples, setSamples, setLatency])
 
   const showChartModal = useCallback(() => {
     setShowError(false);
@@ -609,8 +543,15 @@ const Home = () => {
   }, [setShowError, setShowChart, setGlobalLoading]);
 
   const resetStates = useCallback((a_RequestContext: ERequestContext) => {
-    start = Date.now();
-    setLatency(0);
+    if(a_RequestContext == ERequestContext.main){
+      start = Date.now();
+    } else {
+      startComparison = Date.now();
+    }
+    setLatency(prev=>({
+      ...prev,
+      [a_RequestContext]: 0
+    }));
     setSamples(prev=>({
       ...prev,
       [a_RequestContext]: []
@@ -837,7 +778,7 @@ const Home = () => {
 
         setTimeout(() => {
           if (!map) {
-            console.warn("Failed to use URLParam: Map is not ready");
+            log("Read URLParams", "Failed to use URLParam: Map is not ready", ELogLevel.warning)
             return;
           }
           const parsedROI = JSON.parse(pointROI) as [[number, number], string];
@@ -847,7 +788,7 @@ const Home = () => {
           drawCircle(center);
         }, 100);
       } else {
-        console.warn("Failed to use URLParam: pointROI does not match");
+        log("Read URLParams", "Failed to use URLParam: pointROI does not match", ELogLevel.warning)
       }
     }
     if (zonalROIs.length > 0) {
@@ -861,7 +802,7 @@ const Home = () => {
             parsedROI.forEach((coordinate) => {
               const [lng, lat] = coordinate;
               if (!map) {
-                console.warn("Failed to use URLParam: Map is not ready");
+                log("Read URLParams", "Failed to use URLParam: Map is not ready", ELogLevel.warning)
                 return;
               }
               const markerElement = new maplibregl.Marker()
@@ -881,11 +822,9 @@ const Home = () => {
             ]);
           }, 100);
         } else {
-          console.warn(
-            "Failed to use URLParam: zonalROI-" +
+          log("Read URLParams", "Failed to use URLParam: zonalROI-" +
               (index + 1) +
-              " does not match",
-          );
+              " does not match", ELogLevel.warning)
         }
       });
     }
@@ -902,7 +841,8 @@ const Home = () => {
         setStartDate(startDateParam);
         isStartValid = true;
       } else {
-        console.warn("Failed to use URLParam: startdate does not match");
+        
+        log("Read URLParams", "Failed to use URLParam: startdate does not match", ELogLevel.warning);
       }
     }
     if (endDateParam) {
@@ -910,7 +850,7 @@ const Home = () => {
         setEndDate(endDateParam);
         isEndValid = true;
       } else {
-        console.warn("Failed to use URLParam: enddate does not match");
+        log("Read URLParams", "Failed to use URLParam: enddate does not match", ELogLevel.warning);
       }
     }
 
@@ -924,7 +864,7 @@ const Home = () => {
           )!.value,
         );
       } else {
-        console.warn("Failed to use URLParam: temporalOp does not match");
+        log("Read URLParams", "Failed to use URLParam: temporalOp does not match", ELogLevel.warning);
       }
     } else {
       if (isStartValid && isEndValid) {
@@ -949,7 +889,7 @@ const Home = () => {
           )!.value,
         );
       } else {
-        console.warn("Failed to use URLParam: spatialOp does not match");
+        log("Read URLParams", "Failed to use URLParam: spatialOp does not match", ELogLevel.warning);
       }
     }
 
@@ -959,7 +899,7 @@ const Home = () => {
       if (isValidRange(cloudParam, 0, 100)) {
         setCloudCover(cloudParam);
       } else {
-        console.warn("Failed to use URLParam: cloud does not match");
+        log("Read URLParams", "Failed to use URLParam: cloud does not match", ELogLevel.warning);
       }
     }
 
@@ -969,7 +909,7 @@ const Home = () => {
       if (isValidRange(snowParam, 0, 100)) {
         setSnowCover(snowParam);
       } else {
-        console.warn("Failed to use URLParam: snow does not match");
+        log("Read URLParams", "Failed to use URLParam: snow does not match", ELogLevel.warning);
       }
     }
 
@@ -979,7 +919,7 @@ const Home = () => {
       if (isValidRange(limitParam, 1, 50)) {
         setLimit(limitParam);
       } else {
-        console.warn("Failed to use URLParam: limit does not match");
+        log("Read URLParams", "Failed to use URLParam: limit does not match", ELogLevel.warning);
       }
     }
 
@@ -989,7 +929,7 @@ const Home = () => {
       if (isValidRange(coverageParam, 0, 100)) {
         setCoverageThreshold(coverageParam);
       } else {
-        console.warn("Failed to use URLParam: coverage does not match");
+        log("Read URLParams", "Failed to use URLParam: coverage does not match", ELogLevel.warning);
       }
     }
 
@@ -1003,7 +943,7 @@ const Home = () => {
           ) as ESampleFilter,
         );
       } else {
-        console.warn("Failed to use URLParam: filter does not match");
+        log("Read URLParams", "Failed to use URLParam: filter does not match", ELogLevel.warning);
       }
     }
   }, [map]);
@@ -1085,7 +1025,7 @@ const Home = () => {
     if(fetchFeatures[ERequestContext.comparison] !== null){
       const postBody = getPostBody(ERequestContext.comparison);
       resetStates(ERequestContext.comparison);
-      start = Date.now();
+      startComparison = Date.now();
       log("Request Body_"+ ERequestContext.comparison, postBody);
       debouncedGetFeatures(postBody, ERequestContext.comparison);
     } else if(fetchFeatures[ERequestContext.main] !== null){
@@ -1130,104 +1070,86 @@ const Home = () => {
 
   useEffect(() => {
     if (errorFeatures[ERequestContext.main]) {
-      console.error("Failed to get features");
-      console.error(errorFeatures);
-      //resetStates();
+      log("Failed to get features", errorFeatures, ELogLevel.error);
+      resetStates(ERequestContext.main);
       setNextPage(null);
       setPreviousPage(null);
       showErrorModal();
     }
   }, [errorFeatures]);
 
-  // 2. Get Token
+  // 2. Calculate NDVI
   useEffect(() => {
-    const isAnyResponseReceived = responseFeatures.comparison !== null || responseFeatures.main !== null
-    if (isAnyResponseReceived) {
-      if(responseFeatures[ERequestContext.main]){
-        const nextLink = responseFeatures[ERequestContext.main].links?.find(
-          (l) => l.rel == EStacLinkRel.next,
-        );
-        const previousLink = responseFeatures[ERequestContext.main].links?.find(
-          (l) => l.rel == EStacLinkRel.previous,
-        );
-        if (nextLink) {
-          setNextPage(nextLink);
-        } else {
-          setNextPage(null);
-        }
-        if (previousLink) {
-          setPreviousPage(previousLink);
-        } else {
-          setPreviousPage(null);
-        }
-      }
-
-      const hasResponseFeatureLength = 
-        responseFeatures.comparison?.features.length !== 0 
-        ||
-        responseFeatures.main?.features.length !== 0 
-      if (hasResponseFeatureLength) {
-        getTokenCollection();
+    if (responseFeatures.main) {
+      const nextLink = responseFeatures[ERequestContext.main].links?.find(
+        (l) => l.rel == EStacLinkRel.next,
+      );
+      const previousLink = responseFeatures[ERequestContext.main].links?.find(
+        (l) => l.rel == EStacLinkRel.previous,
+      );
+      if (nextLink) {
+        setNextPage(nextLink);
       } else {
-        showErrorModal();
+        setNextPage(null);
       }
-    }
-  }, [responseFeatures]);
+      if (previousLink) {
+        setPreviousPage(previousLink);
+      } else {
+        setPreviousPage(null);
+      }
 
-  // 3. Calculate NDVI
-  useEffect(() => {
-    if (tokenCollection) {
-      const isAnyResponseReceived = responseFeatures.comparison !== null || responseFeatures.main !== null
-      if (isAnyResponseReceived) {
+      const hasResponseFeatureLength = responseFeatures.main.features.length !== 0 
+      if (hasResponseFeatureLength) {
         const NDVIItem: INDVIPanel = {
           filter: sampleFilter,
           coverageThreshold: Number(coverageThreshold),
         };
         //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
-        if(responseFeatures[ERequestContext.comparison]){
-          if (responseFeatures[ERequestContext.comparison].features.length > 0) {
-
-            getNDVI(
-              responseFeatures[ERequestContext.comparison].features,
-              getCoordinatesFromMarkers(ERequestContext.comparison),
-              NDVIItem,
-              ERequestContext.comparison
-            );
-          }
-        } else if(responseFeatures[ERequestContext.main]){
-          if (responseFeatures[ERequestContext.main].features.length > 0) {
-
-            getNDVI(
-              responseFeatures[ERequestContext.main].features,
-              getCoordinatesFromMarkers(ERequestContext.main),
-              NDVIItem,
-              ERequestContext.main
-            );
-          }
-        }
-        
-      }
-    } else {
-      log("tokenCollection", responseFeatures);
-      
-      if (responseFeatures[ERequestContext.main] && responseFeatures[ERequestContext.main].features.length !== 0) {
+        getNDVI(
+          responseFeatures[ERequestContext.main].features,
+          getCoordinatesFromMarkers(ERequestContext.main),
+          NDVIItem,
+          ERequestContext.main
+        );
+      } else {
         showErrorModal();
-        resetStates(ERequestContext.main);
-      } 
+      }
     }
-  }, [tokenCollection]);
+  }, [responseFeatures.main]);
+
+  useEffect(() => {
+    if (responseFeatures.comparison) {
+      const hasResponseFeatureLength = responseFeatures.comparison.features.length !== 0 
+      if (hasResponseFeatureLength) {
+        const NDVIItem: INDVIPanel = {
+          filter: sampleFilter,
+          coverageThreshold: Number(coverageThreshold),
+        };
+        //console.log(new Date(Date.now()).toISOString()+" STAC item numbers: " + responseFeatures.features.length)
+        getNDVI(
+          responseFeatures[ERequestContext.comparison].features,
+          getCoordinatesFromMarkers(ERequestContext.comparison),
+          NDVIItem,
+          ERequestContext.comparison
+        );
+      } else {
+        log(`responseFeatures.comparison.features.length`, responseFeatures.comparison.features.length, ELogLevel.warning)
+        //showErrorModal();
+      }
+    }
+  }, [responseFeatures.comparison]);
+
   useEffect(() => {
     if (errorNDVI[ERequestContext.main]) {
-      console.error("Failed to calculate NDVI");
-      console.error(errorNDVI);
-      //resetStates();
+      log("Failed to calculate NDVI", errorNDVI, ELogLevel.error);
+      resetStates(ERequestContext.main);
       setNextPage(null);
       setPreviousPage(null);
       showErrorModal();
     }
   }, [errorNDVI]);
 
-  // 4. Show Chart
+  // 3. Show Chart
   useEffect(() => {
     if (globalLoading) {
       showLoadingModal();
@@ -1236,11 +1158,19 @@ const Home = () => {
       if (samples[ERequestContext.main].every((s) => !s.meanNDVI)) {
         showErrorModal();
         end = Date.now();
-        setLatency(end - start);
+        endComparison = Date.now();
+        setLatency({
+          main: end - start,
+          comparison: endComparison - startComparison
+        });
       } else {
         showChartModal();
         end = Date.now();
-        setLatency(end - start);
+        endComparison = Date.now();
+        setLatency({
+          main: end - start,
+          comparison: endComparison - startComparison
+        });
       }
     }
   }, [globalLoading]);
@@ -1287,7 +1217,6 @@ const Home = () => {
           onNext={handleNextPageChart}
           onPrevious={handlePreviousPageChart}
           items={responseFeatures[ERequestContext.main]?.features.length ?? 0}
-          latency={latency}
         >
           <ResponsiveContainer width="100%" height="90%">
             {/* resize automatically */}
@@ -1418,7 +1347,6 @@ const Home = () => {
           onClose={handleCloseChart}
           onNext={handleNextPageChart}
           onPrevious={handlePreviousPageChart}
-          latency={latency}
         >
           <div className={` ${mapStyle.errorWrapper}`}>
             <div className={` ${mapStyle.error}`}>

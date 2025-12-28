@@ -5,6 +5,7 @@ import {
   EStacAssetsKey,
   IStacItem,
   ESTACCollections,
+  ITokenCollection,
 } from "../types/apiTypes";
 import { CacheHandler } from "../utils/apiUtils";
 import {
@@ -18,6 +19,31 @@ import { ELogLevel, INDVIPanel } from "../types/generalTypes";
 import { log } from "../utils/generalUtils";
 
 const cache = new CacheHandler();
+let tokenCollection: ITokenCollection | null = null;
+let inFlight: Promise<ITokenCollection | null> | null = null;
+
+export const setTokenCollection = async (): Promise<ITokenCollection | null> => {
+  try {
+    if (
+      !tokenCollection ||
+      isTokenExpired(tokenCollection)
+    ) {
+      if (!inFlight) {
+        inFlight = getFeatureToken(ESTACCollections.Sentinel2l2a)
+          .finally(() => {
+            inFlight = null;
+          });
+      }
+      tokenCollection = await inFlight;
+    }
+    return tokenCollection;
+  } catch (error) {
+    log("setTokenCollection error", error, ELogLevel.error);
+    tokenCollection = null;
+    inFlight = null;
+    return null;
+  }
+};
 
 export const useFilterSTAC = () => {
   const setResponseFeatures = useMapStore((state) => state.setResponseFeatures);
@@ -27,6 +53,10 @@ export const useFilterSTAC = () => {
     if (cache.getCache(a_STACRequest)) {
       const respJSON = cache.getCache(a_STACRequest);
       log("Cached Features hit"+`_${a_RequestContext}`, respJSON);
+      const token = await setTokenCollection()
+      if(!token) {
+        throw new Error("[useFilterSTAC] Failed to get token")
+      }
       setResponseFeatures(prev=>({
         ...prev,
         [a_RequestContext]: respJSON
@@ -61,6 +91,10 @@ export const useFilterSTAC = () => {
         const respJSON = await resp.json();
         log("Cached Features missed"+`_${a_RequestContext}`, respJSON);
         cache.setCache(a_STACRequest, respJSON);
+        const token = await setTokenCollection()
+        if(!token) {
+          throw new Error("[useFilterSTAC] Failed to get token")
+        }
         setResponseFeatures(prev=>({
           ...prev,
           [a_RequestContext]: respJSON
@@ -86,7 +120,6 @@ export const useFilterSTAC = () => {
 };
 
 export const useNDVI = () => {
-  const tokenCollection = useMapStore((state) => state.tokenCollection);
   const setSamples = useMapStore((state) => state.setSamples);
   const setNotValidSamples = useMapStore((state) => state.setNotValidSamples);
   const doneFeature = useMapStore((state) => state.doneFeature);
@@ -163,12 +196,12 @@ export const useNDVI = () => {
           const bandURL = bandAsset.href;
 
           if (!bandURL) {
-            console.error(`${bandKey}: URL not defined`);
+            log("[getNDVI] BandURL not defined", `${bandKey}`, ELogLevel.error);
             continue;
           }
           const bandSignedURL = `${bandURL}?${tokenCollection?.token}`;
           if (bandSignedURL.length == 0) {
-            console.error(`${bandKey}: SignedURL not defined`);
+            log("[getNDVI] SignedURL not defined", `${bandKey}`, ELogLevel.error);
             continue;
           }
           const bandRasterResult = await readBandCOG(
@@ -266,34 +299,3 @@ export const useNDVI = () => {
   };
 };
 
-export const useTokenCollection = () => {
-  const tokenCollection = useMapStore((state) => state.tokenCollection);
-  const setTokenCollection = useMapStore((state) => state.setTokenCollection);
-
-  const getTokenCollection = async () => {
-    try {
-      if (!tokenCollection) {
-        const token = await getFeatureToken(ESTACCollections.Sentinel2l2a);
-        setTokenCollection(token);
-      } else if (isTokenExpired(tokenCollection)) {
-        const token = await getFeatureToken(ESTACCollections.Sentinel2l2a);
-        setTokenCollection(token);
-      } else {
-        setTokenCollection((prev) => {
-          const validToken = prev!.token;
-          return {
-            "msft:expiry": prev?.["msft:expiry"] ? prev?.["msft:expiry"] : "",
-            token: validToken,
-          };
-        });
-      }
-    } catch (error) {
-      log("useTokenCollection error", error, ELogLevel.error);
-      setTokenCollection(null);
-    }
-  };
-
-  return {
-    getTokenCollection,
-  };
-};

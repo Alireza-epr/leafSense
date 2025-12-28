@@ -9,6 +9,8 @@ import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
 import maplibregl from "maplibre-gl";
 import { validateImportedROI } from "../utils/calculationUtils";
 import { getLocaleISOString } from "../utils/dateUtils";
+import { ELogLevel } from "../types/generalTypes";
+import { log } from "../utils/generalUtils";
 
 export interface ICoordinate {
   id: number | string;
@@ -63,7 +65,7 @@ const Coordinates = (props: ICoordinatesProps) => {
     const isImportedROIValid = validateImportedROI(a_JSON);
 
     if (!isImportedROIValid.valid) {
-      console.error("Failed importing ROI: " + isImportedROIValid.message);
+      log("Failed importing ROI: ", isImportedROIValid.message, ELogLevel.error);
       return;
     }
 
