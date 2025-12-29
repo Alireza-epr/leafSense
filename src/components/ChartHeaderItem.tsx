@@ -24,6 +24,9 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
             : "",
         color: props.disabled ? "darkgray" : "",
         marginLeft: props.isClose ? "5%" : "",
+        flexGrow: props.isClose ? "0" : "",   
+        width: props.isClose ? "5%" : "",   
+        minWidth: props.isClose ? "5%" : "",   
       }}
       onClick={() => !props.disabled && props.onClick()}
     >
@@ -33,6 +36,12 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
         <></>
       )}
       {props.children ? <>{props.children}</> : <></>}
+      {!props.isClose ?
+        <div className={` ${chartHeaderItem.footer}`}>
+          {props.title}
+        </div>
+        : <></>
+      }
     </div>
   );
 };

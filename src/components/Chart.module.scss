@@ -6,7 +6,7 @@
   height: 80%;
   background-color: lightcyan;
   left: 10%;
-  top: 10%;
+  top: 17%;
   z-index: 2;
   display: flex;
   justify-content: center;
@@ -14,14 +14,31 @@
   gap: 1.5vh
 }
 
-.buttonsWrapper {
+.closeWrapper {
     position: absolute;
-    top: -6%;
+    top: -17%;
     right: 0%;
     width: 100%;
     height: 5%;
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    border: 1px solid white;
+    border-radius: 16px;
+    background-color: lightcyan;
+    display: flex;
+    color: white;
+    font-size: 2rem;
+}
+
+.buttonsWrapper {
+    position: absolute;
+    top: -11%;
+    right: 0%;
+    width: 100%;
+    height: 10%;
+    display: flex;
+    justify-content: space-between;
     align-items: center;
     border: 1px solid white;
     border-radius: 16px;

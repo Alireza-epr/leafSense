@@ -461,9 +461,26 @@ const Chart = (props: IChartProps) => {
 
   return (
     <div className={` ${chartStyles.wrapper}`}>
+      <div className={` ${chartStyles.closeWrapper}`}>
+        <ChartHeaderItem
+          title="Close Chart"
+          alt="Close"
+          onClick={props.onClose}
+          isClose
+        >
+          X
+        </ChartHeaderItem>
+      </div>
       <div className={` ${chartStyles.buttonsWrapper}`}>
         <ChartHeaderItem
-          title={"Comparison "}
+          title="Toggle Chart"
+          alt="Toggle Chart"
+          onClick={()=>handleToggleChart(toggleOptions)}
+          icon="toggle"
+          disabled={!enableHeaderOption}
+        />
+        <ChartHeaderItem
+          title={"Comparison With"}
           alt="Comparison"
           onClick={handleToggleComparisonOptions}
           icon="comparison"
@@ -481,20 +498,22 @@ const Chart = (props: IChartProps) => {
             <></>
           )}
         </ChartHeaderItem>
+
         <ChartHeaderItem
-          title="Series Summary"
-          alt="Series Summary"
-          onClick={() => handleToggleSummary(samples, notValidSamples)}
-          icon="info"
-          disabled={!enableHeaderOption}
-          active={showSummary}
+          title="Main List"
+          alt="Main List"
+          onClick={handleListItems}
+          icon="list"
+          active={showList}
         />
+
         <ChartHeaderItem
-          title="Export CSV"
-          alt="Export CSV"
-          onClick={() => handleExportCSV(samples, notValidSamples)}
-          icon="export-csv"
-          disabled={!enableHeaderOption}
+          title="Comparison List"
+          alt="Comparison List"
+          onClick={handleListComparisonItems}
+          icon="list-comparison"
+          active={showListComparison}
+          disabled={!enableHeaderOption || !fetchFeatures.comparison}
         />
         <ChartHeaderItem
           title={"Change Detection"}
@@ -513,13 +532,7 @@ const Chart = (props: IChartProps) => {
             <></>
           )}
         </ChartHeaderItem>
-        <ChartHeaderItem
-          title={"Switch Y Axis"}
-          alt="Aggregation"
-          onClick={handleToggleYAxis}
-          icon="y-axis"
-          disabled={!enableHeaderOption}
-        />
+        
         <ChartHeaderItem
           title="Smooth Chart"
           alt="Smooth Chart"
@@ -538,35 +551,27 @@ const Chart = (props: IChartProps) => {
           )}
         </ChartHeaderItem>
         <ChartHeaderItem
-          title="Toggle Chart"
-          alt="Toggle Chart"
-          onClick={()=>handleToggleChart(toggleOptions)}
-          icon="toggle"
+          title={"Switch Y Axis"}
+          alt="Aggregation"
+          onClick={handleToggleYAxis}
+          icon="y-axis"
           disabled={!enableHeaderOption}
         />
         <ChartHeaderItem
-          title="List"
-          alt="List"
-          onClick={handleListItems}
-          icon="list"
-          active={showList}
+          title="Export CSV"
+          alt="Export CSV"
+          onClick={() => handleExportCSV(samples, notValidSamples)}
+          icon="export-csv"
+          disabled={!enableHeaderOption}
         />
         <ChartHeaderItem
-          title="Comparison List"
-          alt="Comparison List"
-          onClick={handleListComparisonItems}
-          icon="list-comparison"
-          active={showListComparison}
-          disabled={!enableHeaderOption || !fetchFeatures.comparison}
+          title="Series Summary"
+          alt="Series Summary"
+          onClick={() => handleToggleSummary(samples, notValidSamples)}
+          icon="info"
+          disabled={!enableHeaderOption}
+          active={showSummary}
         />
-        <ChartHeaderItem
-          title="Close Chart"
-          alt="Close"
-          onClick={props.onClose}
-          isClose={true}
-        >
-          X
-        </ChartHeaderItem>
       </div>
       {showList ? (
         <div className={` ${chartStyles.listWrapper}`}>
