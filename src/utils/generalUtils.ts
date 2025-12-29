@@ -423,12 +423,13 @@ export const getSummaryInfo = (a_Samples: INDVISample[]) => {
   return { totalUsed, averageValidPixels, firstDate, lastDate }
 }
 
-export const getLatency = (a_RequestContext: ERequestContext, a_Latency: TLatency) =>
-  a_RequestContext === ERequestContext.main 
-  ?
-    a_Latency.main ? `${(a_Latency.main / 1000).toFixed(2)} s` : "-"
-  :
-    a_Latency.comparison ? `${(a_Latency.comparison / 1000).toFixed(2)} s` : "-"
+export const getLatency = (a_RequestContext: ERequestContext, a_Latency: TLatency) =>{
+  if(a_RequestContext === ERequestContext.main){
+    return a_Latency.main ? `${(a_Latency.main / 1000).toFixed(2)} s` : "-"
+  } else {
+    return a_Latency.comparison ? `${(a_Latency.comparison / 1000).toFixed(2)} s` : "-"
+  }
+} 
 
 export const getValidity = (a_ValidSamples: number, a_AllSamples: number | undefined) => {
   return a_AllSamples ? `${a_ValidSamples}/${a_AllSamples}` : "-";

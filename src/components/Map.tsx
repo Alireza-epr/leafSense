@@ -520,26 +520,38 @@ const Home = () => {
       "main": null,
       "comparison": null
     }); */
-    setGlobalLoading(false);
+    setGlobalLoading({
+      main: false,
+      comparison: false
+    });
   }, [setShowError, setShowChart, setFetchFeatures, setGlobalLoading]);
 
   const showLoadingModal = useCallback(() => {
     setShowError(false);
     setShowChart(false);
-    setGlobalLoading(true);
+    /* setGlobalLoading(prev=>({
+      ...prev,
+      [a_RequestContext]: true
+    })); */
   }, [setShowError, setShowChart, setGlobalLoading]);
 
 
   const showChartModal = useCallback(() => {
     setShowError(false);
     setShowChart(true);
-    setGlobalLoading(false);
+    setGlobalLoading({
+      main: false,
+      comparison: false
+    });
   }, [setShowError, setShowChart, setGlobalLoading]);
 
   const showErrorModal = useCallback(() => {
     setShowError(true);
     setShowChart(false);
-    setGlobalLoading(false);
+    setGlobalLoading({
+      main: false,
+      comparison: false
+    });
   }, [setShowError, setShowChart, setGlobalLoading]);
 
   const resetStates = useCallback((a_RequestContext: ERequestContext) => {
@@ -597,12 +609,15 @@ const Home = () => {
       };
 
       log("Next Request", postBody);
-      showLoadingModal();
+      setGlobalLoading(prev=>({
+        ...prev,
+        main: true
+      }));
       setComparisonItem(null)
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
-  }, [nextPage, showLoadingModal, resetStates, debouncedGetFeatures]);
+  }, [nextPage, resetStates, debouncedGetFeatures]);
 
   const handlePreviousPageChart = useCallback(async () => {
     if (previousPage?.body) {
@@ -612,12 +627,15 @@ const Home = () => {
       };
 
       log("Previous Request", postBody);
-      showLoadingModal();
+      setGlobalLoading(prev=>({
+        ...prev,
+        main: true
+      }));
       setComparisonItem(null)
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
-  }, [previousPage, showLoadingModal, resetStates, debouncedGetFeatures]);
+  }, [previousPage, resetStates, debouncedGetFeatures]);
 
   const handleFlyToROI = useCallback(
     (a_To: EMarkerType, a_Zoom: number) => {
@@ -1021,18 +1039,25 @@ const Home = () => {
     fetchFeaturesRef.current = fetchFeatures;
     const fetchAnyFeature = fetchFeatures.comparison !== null || fetchFeatures.main !== null
     if(!fetchAnyFeature) return
-    showLoadingModal();
+    
     if(fetchFeatures[ERequestContext.comparison] !== null){
       const postBody = getPostBody(ERequestContext.comparison);
       resetStates(ERequestContext.comparison);
       startComparison = Date.now();
       log("Request Body_"+ ERequestContext.comparison, postBody);
+      setGlobalLoading(prev=>({
+        ...prev,
+        comparison: true
+      }));
       debouncedGetFeatures(postBody, ERequestContext.comparison);
     } else if(fetchFeatures[ERequestContext.main] !== null){
       const postBody = getPostBody(ERequestContext.main);
       resetStates(ERequestContext.main);
-      start = Date.now();
       log("Request Body_"+ ERequestContext.main, postBody);
+      setGlobalLoading(prev=>({
+        ...prev,
+        main: true
+      }));
       debouncedGetFeatures(postBody, ERequestContext.main);
     } else if(fetchFeatures[ERequestContext.main] === null){
       resetStates(ERequestContext.main);
@@ -1151,29 +1176,41 @@ const Home = () => {
 
   // 3. Show Chart
   useEffect(() => {
-    if (globalLoading) {
+    if (globalLoading.main) {
+      start = Date.now();
       showLoadingModal();
     } else {
       if (responseFeatures[ERequestContext.main] == null) return; // avoding show Chart on mounting
       if (samples[ERequestContext.main].every((s) => !s.meanNDVI)) {
         showErrorModal();
         end = Date.now();
-        endComparison = Date.now();
-        setLatency({
+        setLatency(prev=>({
+          ...prev,
           main: end - start,
-          comparison: endComparison - startComparison
-        });
+        }));
       } else {
-        showChartModal();
         end = Date.now();
-        endComparison = Date.now();
-        setLatency({
+        setLatency(prev=>({
+          ...prev,
           main: end - start,
-          comparison: endComparison - startComparison
-        });
+        }));
+        showChartModal();
       }
     }
-  }, [globalLoading]);
+  }, [globalLoading.main]);
+
+  useEffect(() => {
+    if (globalLoading.comparison) {
+      startComparison = Date.now();
+    } else {
+      if (responseFeatures[ERequestContext.comparison] == null) return; // avoding show Chart on mounting
+      endComparison= Date.now();
+      setLatency(prev=>({
+        ...prev,
+        comparison: endComparison - startComparison,
+      }));
+    }
+  }, [globalLoading.comparison]);
 
   return (
     <div className={` ${mapStyle.wrapper}`}>
@@ -1361,7 +1398,7 @@ const Home = () => {
       ) : (
         <></>
       )}
-      {globalLoading ? (
+      {globalLoading.main ? (
         <Chart
           onClose={handleCloseChart}
           onNext={handleNextPageChart}

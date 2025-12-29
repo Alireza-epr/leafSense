@@ -73,9 +73,9 @@ const Chart = (props: IChartProps) => {
   const nextPage = useMapStore((state) => state.nextPage);
   const previousPage = useMapStore((state) => state.previousPage);
   const notValidSamples = useMapStore((state) => state.notValidSamples);
-  const [maxNDVI, setMaxNDVI] = useState<number>(0);
-  const [meanNDVI, setMeanNDVI] = useState<number>(0);
-  const [minNDVI, setMinNDVI] = useState<number>(0);
+  const [maxNDVI, setMaxNDVI] = useState<Record<ERequestContext ,number>>({main:0,comparison:0});
+  const [meanNDVI, setMeanNDVI] = useState<Record<ERequestContext ,number>>({main:0,comparison:0});
+  const [minNDVI, setMinNDVI] = useState<Record<ERequestContext ,number>>({main:0,comparison:0});
 
   const [showList, setShowList] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
@@ -104,15 +104,79 @@ const Chart = (props: IChartProps) => {
           ++count;
         }
       }
-      setMaxNDVI(max);
-      setMinNDVI(min);
-      setMeanNDVI(count > 0 ? sum / count : 0);
+      setMaxNDVI(prev=>({
+        ...prev,
+        main: max
+      }));
+      setMinNDVI(prev=>({
+        ...prev,
+        main: min
+      }));
+      setMeanNDVI(prev=>({
+        ...prev,
+        main: count > 0 ? sum / count : 0
+      }));
     } else {
-      setMaxNDVI(0);
-      setMeanNDVI(0);
-      setMinNDVI(0);
+      setMaxNDVI(prev=>({
+        ...prev,
+        main: 0
+      }));
+      setMinNDVI(prev=>({
+        ...prev,
+        main: 0
+      }));
+      setMeanNDVI(prev=>({
+        ...prev,
+        main: 0
+      }));
     }
-  }, [samples]);
+  }, [samples.main]);
+
+  useEffect(() => {
+    if (samples[ERequestContext.comparison].length !== 0) {
+      let max = -Infinity;
+      let min = Infinity;
+      let sum = 0;
+      let count = 0;
+      for (const s of samples[ERequestContext.comparison]) {
+        if (s.meanNDVI) {
+          if (s.meanNDVI > max) {
+            max = s.meanNDVI;
+          }
+          if (s.meanNDVI < min) {
+            min = s.meanNDVI;
+          }
+          sum += s.meanNDVI;
+          ++count;
+        }
+      }
+      setMaxNDVI(prev=>({
+        ...prev,
+        comparison: max
+      }));
+      setMinNDVI(prev=>({
+        ...prev,
+        comparison: min
+      }));
+      setMeanNDVI(prev=>({
+        ...prev,
+        comparison: count > 0 ? sum / count : 0
+      }));
+    } else {
+      setMaxNDVI(prev=>({
+        ...prev,
+        comparison: 0
+      }));
+      setMinNDVI(prev=>({
+        ...prev,
+        comparison: 0
+      }));
+      setMeanNDVI(prev=>({
+        ...prev,
+        comparison: 0
+      }));
+    }
+  }, [samples.comparison]);
 
   useEffect(() => {
     const hasPolygon = polygons.length > 0;
@@ -143,7 +207,7 @@ const Chart = (props: IChartProps) => {
   }, []);
 
   useEffect(() => {
-    if (!globalLoading && samples[ERequestContext.main].length > 0) {
+    if (!globalLoading.main && samples[ERequestContext.main].length > 0) {
       setEnableHeaderOption(true);
     } else {
       setEnableHeaderOption(false);
@@ -226,7 +290,7 @@ const Chart = (props: IChartProps) => {
           { id: 2, title: "Average Valid Pixels", value: averageValidPixels },
           { id: 3, title: "First Date", value: firstDate },
           { id: 4, title: "Last Date", value: lastDate },
-          { id: 5, title: "Latency", value: getLatency(ERequestContext.comparison, latency) },
+          { id: 5, title: "Latency", value: getLatency(ERequestContext.main, latency) },
         ],
         comparison: [
           { id: 1, title: "Used / Total Scenes", value: totalUsedComparison },
@@ -349,13 +413,13 @@ const Chart = (props: IChartProps) => {
   };
 
   const handlePrevious = () => {
-    if (!globalLoading && props.onPrevious) {
+    if (!globalLoading.main && props.onPrevious) {
       props.onPrevious();
     }
   };
 
   const handleNext = () => {
-    if (!globalLoading && props.onNext) {
+    if (!globalLoading.main && props.onNext) {
       props.onNext();
     }
   };
@@ -484,7 +548,7 @@ const Chart = (props: IChartProps) => {
             className={`${chartStyles.arrow} ${chartStyles.previous}`}
             onClick={handlePrevious}
             style={{
-              backgroundColor: globalLoading ? "grey" : "",
+              backgroundColor: globalLoading.main ? "grey" : "",
             }}
           >
             <img
@@ -500,7 +564,7 @@ const Chart = (props: IChartProps) => {
             className={`${chartStyles.arrow} ${chartStyles.next}`}
             onClick={handleNext}
             style={{
-              backgroundColor: globalLoading ? "grey" : "",
+              backgroundColor: globalLoading.main ? "grey" : "",
             }}
           >
             <img
@@ -512,14 +576,28 @@ const Chart = (props: IChartProps) => {
         )}
       </div>
       <div className={` ${chartStyles.footer}`}>
-        <ChartFooterItem title="Max NDVI" value={maxNDVI} />
-        <ChartFooterItem title="Mean NDVI" value={meanNDVI} />
-        <ChartFooterItem title="Min NDVI" value={minNDVI} />
-        <ChartFooterItem title="Latency" 
+        <ChartFooterItem 
+          title="Max NDVI" 
+          value={maxNDVI.main} 
+          subValue={comparisonItemRef.current ? maxNDVI.comparison : null}
+        />
+        <ChartFooterItem 
+          title="Mean NDVI" 
+          value={meanNDVI.main} 
+          subValue={comparisonItemRef.current ? meanNDVI.comparison : null}
+        />
+        <ChartFooterItem 
+          title="Min NDVI" 
+          value={minNDVI.main} 
+          subValue={comparisonItemRef.current ? minNDVI.comparison : null}
+        />
+        <ChartFooterItem 
+          title="Latency" 
           value={getLatency(ERequestContext.main, latency)} 
           subValue={comparisonItemRef.current ? getLatency(ERequestContext.comparison, latency) : null}
         />
-        <ChartFooterItem title="Validity" 
+        <ChartFooterItem 
+          title="Validity" 
           value={getValidity(samples.main.length, responseFeatures.main?.features.length)} 
           subValue={comparisonItemRef.current ? getValidity(samples.comparison.length, responseFeatures.comparison?.features.length) : null}
         />

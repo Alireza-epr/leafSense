@@ -291,7 +291,10 @@ export const useNDVI = () => {
         continue;
       }
     }
-    setGlobalLoading(false);
+    setGlobalLoading(prev=>({
+      ...prev,
+      [a_RequestContext]: false
+    }));
   };
 
   return {

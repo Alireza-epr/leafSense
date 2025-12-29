@@ -66,6 +66,7 @@ export type TDoneFeature = Record< ERequestContext, number >
 export type TChangePoint = Record< ERequestContext, IChangePoint[] >
 export type TSummaryItem = Record< ERequestContext, IChartSummaryRow[] >
 export type TLatency = Record< ERequestContext, number >
+export type TGlobalLoading = Record< ERequestContext, boolean >
 
 export type TMarker = Record<EMarkerType, boolean>;
 
@@ -88,7 +89,7 @@ export interface IMapStoreStates {
   showChart: boolean;
   showError: boolean;
   fetchFeatures: TFetchFeature;
-  globalLoading: boolean;
+  globalLoading: TGlobalLoading;
   smoothingWindow: IChartHeaderItemOption[];
   changeDetection: IChartHeaderItemOption[];
   comparisonOptions: IChartHeaderItemOption[];
@@ -133,7 +134,7 @@ export interface IMapStoreActions {
       | (TFetchFeature)
       | ((prev: TFetchFeature) => TFetchFeature),
   ) => void;
-  setGlobalLoading: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
+  setGlobalLoading: (a_Value: TGlobalLoading | ((prev: TGlobalLoading) => TGlobalLoading)) => void;
   setSmoothingWindow: (
     a_Value:
       | IChartHeaderItemOption[]
@@ -261,7 +262,10 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       },
       showChart: false,
       showError: false,
-      globalLoading: false,
+      globalLoading:{
+        "main": false,
+        "comparison": false,
+      },
       doneFeature: {
         "main": 1,
         "comparison": 1,
@@ -483,7 +487,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
               : a_Samples,
         })),
 
-      setGlobalLoading: (a_Value: boolean | ((prev: boolean) => boolean)) =>
+      setGlobalLoading: (a_Value) =>
         set((state) => ({
           globalLoading:
             typeof a_Value === "function"
