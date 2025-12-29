@@ -14,7 +14,7 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
       <div
         className={` ${customTooltipStyles.wrapper}`}
         style={{
-          backgroundColor: !ndviSample.meanNDVI ? "#f1b265ff" : "",
+          backgroundColor: !ndviSample.meanNDVI ? "#c8ab87ff" : "",
         }}
       >
         <CustumTooltipItem
