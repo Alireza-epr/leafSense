@@ -13,7 +13,7 @@ import ChartHeaderItem from "./ChartHeaderItem";
 import ChartListRows from "./ChartListRows";
 import ChartSummaryRows from "./ChartSummaryRows";
 import { IChartSummaryRow } from "./ChartSummaryRow";
-import { downloadCSV, getAllSamples, getLatency, getSummaryInfo, getValidity, toFirstLetterUppercase } from "../utils/generalUtils";
+import { downloadCSV, getAllSamples, getLatency, getMainItem, getSummaryInfo, getValidity, mapPolygonOptions, toFirstLetterUppercase } from "../utils/generalUtils";
 import {
   detectChangePointsZScore,
   getSmoothNDVISamples,
@@ -43,6 +43,7 @@ const Chart = (props: IChartProps) => {
   const globalLoading = useMapStore((state) => state.globalLoading);
   const latency = useMapStore((state) => state.latency);
   const setFetchFeatures = useMapStore((state) => state.setFetchFeatures);
+  const fetchFeaturesRef = useRef(fetchFeatures)
 
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const setSmoothingWindow = useMapStore((state) => state.setSmoothingWindow);
@@ -53,15 +54,11 @@ const Chart = (props: IChartProps) => {
   const changeDetection = useMapStore((state) => state.changeDetection);
   const setChangeDetection = useMapStore((state) => state.setChangeDetection);
 
-  const comparisonOptions = useMapStore((state) => state.comparisonOptions);
-  const setComparisonOptions = useMapStore(
-    (state) => state.setComparisonOptions,
+  const toggleOptions = useMapStore((state) => state.toggleOptions);
+  const setToggleOptions = useMapStore(
+    (state) => state.setToggleOptions,
   );
 
-  const comparisonItem = useMapStore((state) => state.comparisonItem);
-  const setComparisonItem = useMapStore((state) => state.setComparisonItem);
-  const comparisonItemRef = useRef(comparisonItem);
-  useEffect(()=>{comparisonItemRef.current = comparisonItem},[comparisonItem])
 
   const changePoints = useMapStore((state) => state.changePoints);
   const setChangePoints = useMapStore((state) => state.setChangePoints);
@@ -181,32 +178,29 @@ const Chart = (props: IChartProps) => {
   }, [samples.comparison]);
 
   useEffect(() => {
-    const hasPolygon = polygons.length > 0;
-    const hasPoint =
-      markers.filter((m) => m.type === EMarkerType.point).length === 1;
-    if (hasPolygon && hasPoint) {
-      setShowToggleChart(true);
-    } else {
-      setShowToggleChart(false);
+    fetchFeaturesRef.current = fetchFeatures
+    const mainItem = getMainItem(fetchFeaturesRef.current)
+    if(!mainItem) {
+      setToggleOptions([])
+      return 
     }
-    const polygonOptions = fetchFeatures[ERequestContext.main] !== EMarkerType.point ? polygons.slice(0, -1) : polygons
-    const chartHeaderOption: IChartHeaderItemOption[] = polygonOptions
-      .map((polygon) => {
-        return {
-          id: polygon.id,
-          title: `Polygon ${polygon.id}`,
-          value: `Polygon ${polygon.id}`,
-        };
-      });
-    if (hasPoint && fetchFeatures[ERequestContext.main] !== EMarkerType.point) {
-      chartHeaderOption.push({
-        id: chartHeaderOption.length + 1,
+
+    let options: IChartHeaderItemOption[] = [];
+
+    options = mapPolygonOptions(polygons);
+    const lastId = options.at(-1)?.id
+    const point = markers.find(m => m.type === EMarkerType.point);
+    if (point) {
+      options.push({
+        id: lastId ? lastId+1 : 1,
         title: "Point",
         value: "Point",
       });
     }
-    setComparisonOptions(chartHeaderOption);
-  }, []);
+
+    setToggleOptions(options);
+    
+  }, [fetchFeatures, polygons]);
 
   useEffect(() => {
     if (!globalLoading.main && samples[ERequestContext.main].length > 0) {
@@ -255,18 +249,24 @@ const Chart = (props: IChartProps) => {
     setShowListComparison(!showListComparison);
   };
 
-  const handleToggleChart = () => {
-    const nextFetchFeatures =
-      fetchFeatures[ERequestContext.main] === EMarkerType.polygon
-        ? EMarkerType.point
-        : EMarkerType.polygon;
-    setFetchFeatures(prev=>({
-      ...prev,
-      [ERequestContext.main]: nextFetchFeatures
-    }));
+  const handleToggleChart = (a_ToggleOptions: IChartHeaderItemOption[]) => {
+    const mainItem = fetchFeaturesRef.current.main 
+    if(!mainItem || a_ToggleOptions.length <= 1) return
+    const currentIndex = a_ToggleOptions.findIndex( o => o.id === mainItem.id )
+    const nextIndex = currentIndex === -1 || currentIndex === a_ToggleOptions.length - 1
+      ? 0
+      : currentIndex + 1;
+    const nextOption = a_ToggleOptions[nextIndex];
+    const nextMainItem = {
+      id: nextOption.id,
+      type:
+        nextOption.title === "Point" ? EMarkerType.point : EMarkerType.polygon,
+    }
+    setFetchFeatures({
+      [ERequestContext.main]: nextMainItem,
+      [ERequestContext.comparison]: null,
+    });
   };
-
-
 
   const handleToggleSummary = useCallback(
     (a_Samples: TSample, a_NotValidSamples: TSample) => {
@@ -396,17 +396,26 @@ const Chart = (props: IChartProps) => {
   }
 
   const handleChangeComparison = (a_Option: IChartHeaderItemOption) => {
-    if(comparisonItemRef.current && comparisonItemRef.current.id === a_Option.id){
-      setComparisonItem(null)
+    const comparisonItem = fetchFeaturesRef.current.comparison 
+    if(comparisonItem && comparisonItem.id === a_Option.id){
+      setFetchFeatures(prev=>({
+        ...prev,
+        comparison: null
+      }))
     } else {
       disableSmoothingDetection()
       disableChangePointDetection()
-      setComparisonItem({
+      const comparisonOption = {
         id: a_Option.id,
         type:
           a_Option.title === "Point" ? EMarkerType.point : EMarkerType.polygon,
-      });
+      }
+      setFetchFeatures(prev=>({
+        ...prev,
+        comparison: comparisonOption
+      }))
     }
+    setShowComparisonOptions(false)
   };
 
   const handleExportCSV = useCallback(
@@ -448,25 +457,25 @@ const Chart = (props: IChartProps) => {
     }
   };
 
+
+
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.buttonsWrapper}`}>
-        <div className={` ${chartStyles.title}`}>
-          {`Chart of ${fetchFeatures[ERequestContext.main] == EMarkerType.point ? toFirstLetterUppercase(fetchFeatures[ERequestContext.main]) : "Zonal Nr." + polygons.at(-1)?.id}`}
-        </div>
         <ChartHeaderItem
           title={"Comparison "}
           alt="Comparison"
           onClick={handleToggleComparisonOptions}
           icon="comparison"
-          disabled={!enableHeaderOption || comparisonOptions.length === 0}
-          active={comparisonItem !== null}
+          disabled={!enableHeaderOption || toggleOptions.filter( o => o.id !== fetchFeatures.main?.id ).length === 0}
+          active={fetchFeatures.comparison !== null}
         >
           {showComparisonOptions ? (
             <ChartHeaderItemOptions
-              options={comparisonOptions}
+              options={toggleOptions.filter( o => o.id !== fetchFeatures.main?.id )}
               onOption={handleChangeComparison}
               isList={true}
+              activeItem={fetchFeatures.comparison?.id}
             />
           ) : (
             <></>
@@ -531,9 +540,9 @@ const Chart = (props: IChartProps) => {
         <ChartHeaderItem
           title="Toggle Chart"
           alt="Toggle Chart"
-          onClick={handleToggleChart}
+          onClick={()=>handleToggleChart(toggleOptions)}
           icon="toggle"
-          disabled={!enableHeaderOption || !showToggleChart}
+          disabled={!enableHeaderOption}
         />
         <ChartHeaderItem
           title="List"
@@ -548,7 +557,7 @@ const Chart = (props: IChartProps) => {
           onClick={handleListComparisonItems}
           icon="list-comparison"
           active={showListComparison}
-          disabled={!enableHeaderOption || !comparisonItemRef.current}
+          disabled={!enableHeaderOption || !fetchFeatures.comparison}
         />
         <ChartHeaderItem
           title="Close Chart"
@@ -569,7 +578,7 @@ const Chart = (props: IChartProps) => {
       {showSummary ? (
         <div className={` ${chartStyles.summaryWrapper}`}>
           <ChartSummaryRows items={summaryItem.main} title={"Main Samples Summary"}/>
-          {comparisonItemRef.current ? <ChartSummaryRows items={summaryItem.comparison} title={"Comparison Samples Summary"}/> : <></>}
+          {fetchFeatures.comparison ? <ChartSummaryRows items={summaryItem.comparison} title={"Comparison Samples Summary"}/> : <></>}
         </div>
       ) : (
         <></>
@@ -618,27 +627,27 @@ const Chart = (props: IChartProps) => {
         <ChartFooterItem 
           title="Max NDVI" 
           value={maxNDVI.main} 
-          subValue={comparisonItemRef.current ? maxNDVI.comparison : null}
+          subValue={fetchFeatures.comparison ? maxNDVI.comparison : null}
         />
         <ChartFooterItem 
           title="Mean NDVI" 
           value={meanNDVI.main} 
-          subValue={comparisonItemRef.current ? meanNDVI.comparison : null}
+          subValue={fetchFeatures.comparison ? meanNDVI.comparison : null}
         />
         <ChartFooterItem 
           title="Min NDVI" 
           value={minNDVI.main} 
-          subValue={comparisonItemRef.current ? minNDVI.comparison : null}
+          subValue={fetchFeatures.comparison ? minNDVI.comparison : null}
         />
         <ChartFooterItem 
           title="Latency" 
           value={getLatency(ERequestContext.main, latency)} 
-          subValue={comparisonItemRef.current ? getLatency(ERequestContext.comparison, latency) : null}
+          subValue={fetchFeatures.comparison ? getLatency(ERequestContext.comparison, latency) : null}
         />
         <ChartFooterItem 
           title="Validity" 
           value={getValidity(samples.main.length, responseFeatures.main?.features.length)} 
-          subValue={comparisonItemRef.current ? getValidity(samples.comparison.length, responseFeatures.comparison?.features.length) : null}
+          subValue={fetchFeatures.comparison ? getValidity(samples.comparison.length, responseFeatures.comparison?.features.length) : null}
         />
       </div>
     </div>

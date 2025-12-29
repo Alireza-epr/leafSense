@@ -104,7 +104,7 @@ export enum EChartHeaderWindows {
   comparisonList = "comparisonList",
 }
 
-export interface IComparisonItem {
+export interface IFetchItem {
   type: EMarkerType;
   id: number;
 }

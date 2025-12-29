@@ -48,7 +48,6 @@ import {
   ELogLevel,
   ESampleFilter,
   EURLParams,
-  IComparisonItem,
   ILayerMetadata,
   INDVIPanel,
   Units,
@@ -71,6 +70,7 @@ import {
   getGapValue,
   getAllSamples,
   log,
+  toFirstLetterUppercase,
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
 import { getMean, getMeanNDVI } from "../utils/calculationUtils";
@@ -113,11 +113,9 @@ const Home = () => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const yAxis = useMapStore((state) => state.yAxis);
   const polygons = useMapStore((state) => state.polygons);
-  const comparisonItem = useMapStore((state) => state.comparisonItem);
   const latency = useMapStore((state) => state.latency);
 
   const setLatency = useMapStore((state) => state.setLatency);
-  const setComparisonItem = useMapStore((state) => state.setComparisonItem);
   const setPolygons = useMapStore((state) => state.setPolygons);
   const setNextPage = useMapStore((state) => state.setNextPage);
   const setPreviousPage = useMapStore((state) => state.setPreviousPage);
@@ -179,7 +177,6 @@ const Home = () => {
   const polygonsRef = useRef(polygons);
   const markersRef = useRef(markers);
   const radiusRef = useRef(radius);
-  const comparisonItemRef = useRef(comparisonItem);
   const fetchFeaturesRef = useRef(fetchFeatures);
 
   const addMarker = useCallback(
@@ -426,11 +423,12 @@ const Home = () => {
 
   const getCoordinatesFromMarkers = useCallback((a_RequestContext: ERequestContext): [number, number][] => {
     let thisFetchFeatures = fetchFeaturesRef.current[a_RequestContext]
-    if (thisFetchFeatures === EMarkerType.polygon) {
-      let index = a_RequestContext == ERequestContext.main ? -1 : (comparisonItemRef.current?.id ?? 1) -1
-      const lastPolygonLayer = polygonsRef.current.at(index);
-      if (!lastPolygonLayer) return [];
-      let coordinates: [number, number][] = lastPolygonLayer.markers
+    if(!thisFetchFeatures) return [];
+    if (thisFetchFeatures.type === EMarkerType.polygon) {
+      let index = polygonsRef.current.findIndex( p => p.id === thisFetchFeatures.id )
+      const thisPolygonLayer = polygonsRef.current.at(index);
+      if (!thisPolygonLayer) return [];
+      let coordinates: [number, number][] = thisPolygonLayer.markers
         .filter((m) => m.type === EMarkerType.polygon)
         .map((m) => {
           const lng = m.marker.getLngLat().lng;
@@ -589,7 +587,6 @@ const Home = () => {
   ]);
 
   const handleCloseChart = useCallback(() => {
-    setComparisonItem(null)
     setFetchFeatures({
       "main": null,
       "comparison": null
@@ -613,7 +610,10 @@ const Home = () => {
         ...prev,
         main: true
       }));
-      setComparisonItem(null)
+      setFetchFeatures(prev=>({
+        ...prev,
+        comparison: null
+      }))
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
@@ -631,7 +631,10 @@ const Home = () => {
         ...prev,
         main: true
       }));
-      setComparisonItem(null)
+      setFetchFeatures(prev=>({
+        ...prev,
+        comparison: null
+      }))
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
@@ -670,6 +673,15 @@ const Home = () => {
     const full = yAxisStatus + " - " + smoothingStatus;
     return full;
   };
+
+  const getChartLegend = (a_RequestContext: ERequestContext) => {
+    const thisFetchFeature = fetchFeaturesRef.current[a_RequestContext]
+    if(!thisFetchFeature) return 
+
+    return `${toFirstLetterUppercase(a_RequestContext)} Area NDVI (${thisFetchFeature.type == EMarkerType.point 
+      ? toFirstLetterUppercase(thisFetchFeature.type) 
+      : "Zonal Nr." + thisFetchFeature.id})`
+  }
 
   // Loading Map
   useEffect(() => {
@@ -1036,11 +1048,27 @@ const Home = () => {
 
   // 1. Get Features
   useEffect(() => {
-    fetchFeaturesRef.current = fetchFeatures;
-    const fetchAnyFeature = fetchFeatures.comparison !== null || fetchFeatures.main !== null
-    if(!fetchAnyFeature) return
-    
-    if(fetchFeatures[ERequestContext.comparison] !== null){
+    fetchFeaturesRef.current.main = fetchFeatures.main;
+   
+    if(fetchFeatures.main){
+      const postBody = getPostBody(ERequestContext.main);
+      resetStates(ERequestContext.main);
+      log("Request Body_"+ ERequestContext.main, postBody);
+      setGlobalLoading(prev=>({
+        ...prev,
+        main: true
+      }));
+      debouncedGetFeatures(postBody, ERequestContext.main);
+    } else {
+      resetStates(ERequestContext.main);
+      showMap();
+    }
+  }, [fetchFeatures.main]);
+
+  useEffect(()=>{
+    //comparisonItemRef.current = comparisonItem
+    fetchFeaturesRef.current.comparison = fetchFeatures.comparison;
+    if(fetchFeatures.comparison){
       const postBody = getPostBody(ERequestContext.comparison);
       resetStates(ERequestContext.comparison);
       startComparison = Date.now();
@@ -1050,48 +1078,10 @@ const Home = () => {
         comparison: true
       }));
       debouncedGetFeatures(postBody, ERequestContext.comparison);
-    } else if(fetchFeatures[ERequestContext.main] !== null){
-      const postBody = getPostBody(ERequestContext.main);
-      resetStates(ERequestContext.main);
-      log("Request Body_"+ ERequestContext.main, postBody);
-      setGlobalLoading(prev=>({
-        ...prev,
-        main: true
-      }));
-      debouncedGetFeatures(postBody, ERequestContext.main);
-    } else if(fetchFeatures[ERequestContext.main] === null){
-      resetStates(ERequestContext.main);
-      showMap();
-    }
-  }, [fetchFeatures]);
-
-  // 1.1 Comparison Mode
-  useEffect(()=>{
-    comparisonItemRef.current = comparisonItem
-    if(comparisonItem){
-      setFetchFeatures(prev=>({
-        ...prev,
-        [ERequestContext.comparison]: comparisonItem.type 
-      }))
     } else {
-      setFetchFeatures(prev=>({
-        ...prev,
-        [ERequestContext.comparison]: null
-      }))
-      setResponseFeatures(prev=>({
-        ...prev,
-        [ERequestContext.comparison]: null
-      }))
-      setSamples(prev=>({
-        ...prev,
-        [ERequestContext.comparison]: []
-      }))
-      setNotValidSamples(prev=>({
-        ...prev,
-        [ERequestContext.comparison]: []
-      }))
+      resetStates(ERequestContext.comparison);
     }
-  },[comparisonItem])
+  },[fetchFeatures.comparison])
 
   useEffect(() => {
     if (errorFeatures[ERequestContext.main]) {
@@ -1290,7 +1280,7 @@ const Home = () => {
                 stroke="#00ff1eff"
                 dot={CustomizedDot}
                 width={2}
-                name="Main Area NDVI"
+                name={getChartLegend(ERequestContext.main)}
                 legendType="line"
               />
 
@@ -1304,7 +1294,7 @@ const Home = () => {
                 legendType={'none'}
               />
               {
-                comparisonItem
+                fetchFeatures.comparison
                 ?
                 <>
                   <Line
@@ -1313,7 +1303,7 @@ const Home = () => {
                     stroke="#ffb300ff"
                     dot={CustomizedDotComparison}
                     width={2}
-                    name="Comparison Area NDVI"
+                    name={getChartLegend(ERequestContext.comparison)}
                     legendType="line"
                   />
 
@@ -1406,7 +1396,7 @@ const Home = () => {
         >
           <Loading
             text={
-              comparisonItem
+              fetchFeatures.comparison
               ?
                 responseFeatures[ERequestContext.comparison]?.features.length
                   ? `${doneFeature[ERequestContext.comparison]}/${responseFeatures[ERequestContext.comparison]?.features.length} `

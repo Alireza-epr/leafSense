@@ -1,7 +1,7 @@
 import { ESTACCollections, ITokenCollection, spatialItems } from "../types/apiTypes";
-import { EMarkerType, ERequestContext, INDVISample, TChangePoint, TLatency, TSample } from "../store/mapStore";
+import { EMarkerType, ERequestContext, INDVISample, IPolygon, TChangePoint, TFetchFeature, TLatency, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
-import { EAggregationMethod, ELogLevel, EURLParams, IChangePoint, IChartPoint } from "../types/generalTypes";
+import { EAggregationMethod, ELogLevel, EURLParams, IChangePoint, IChartPoint, IFetchItem } from "../types/generalTypes";
 import { getFeatureToken, getMean, isTokenExpired } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
@@ -435,6 +435,24 @@ export const getValidity = (a_ValidSamples: number, a_AllSamples: number | undef
   return a_AllSamples ? `${a_ValidSamples}/${a_AllSamples}` : "-";
 };
 
+export const getMainItem = (a_FetchFeature: TFetchFeature) => {
+  if(!a_FetchFeature.main) return null
+  return a_FetchFeature.main
+}
 
+export const getComparisonItem = (a_FetchFeature: TFetchFeature) => {
+  if(!a_FetchFeature.comparison) return null
+  return a_FetchFeature.comparison
+}
+
+export const mapPolygonOptions = (
+  polygons: IPolygon[],
+) =>
+  polygons
+    .map(p => ({
+      id: p.id,
+      title: `Zonal ${p.id}`,
+      value: `Zonal ${p.id}`,
+    }));
 
 

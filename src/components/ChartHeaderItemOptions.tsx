@@ -13,7 +13,6 @@ export interface ChartHeaderItemOptionsProps {
 }
 
 const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
-  const comparisonItem = useMapStore((state) => state.comparisonItem);
   const onSelectOption = useCallback((a_Option: IChartHeaderItemOption) => {
     props.onOption(a_Option);
   }, []);
@@ -39,7 +38,7 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
               title={option.title}
               key={index}
               onSection={() => onSelectOption(option)}
-              active={comparisonItem?.id == option.id}
+              active={props.activeItem == option.id}
             ></Section>
           ))
         : props.options.map((option, index) => (

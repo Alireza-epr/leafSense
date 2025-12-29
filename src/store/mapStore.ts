@@ -4,7 +4,7 @@ import {
   ESampleFilter,
   IChangePoint,
   IChartHeaderItemOption,
-  IComparisonItem,
+  IFetchItem,
 } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Map, Marker, Subscription } from "maplibre-gl";
@@ -58,7 +58,7 @@ export enum ERequestContext {
 }
 
 export type TSample = Record< ERequestContext, INDVISample[] >
-export type TFetchFeature = Record< ERequestContext, EMarkerType | null >
+export type TFetchFeature = Record< ERequestContext, IFetchItem | null >
 export type TResponseFeature = Record< ERequestContext, IStacSearchResponse | null>
 export type TErrorFeature = Record< ERequestContext, Error | null >
 export type TErrorNDVI = Record< ERequestContext, Error | null >
@@ -92,8 +92,7 @@ export interface IMapStoreStates {
   globalLoading: TGlobalLoading;
   smoothingWindow: IChartHeaderItemOption[];
   changeDetection: IChartHeaderItemOption[];
-  comparisonOptions: IChartHeaderItemOption[];
-  comparisonItem: IComparisonItem | null;
+  toggleOptions: IChartHeaderItemOption[];
   changePoints: TChangePoint;
   samples: TSample;
   notValidSamples: TSample;
@@ -194,15 +193,10 @@ export interface IMapStoreActions {
       | IChartHeaderItemOption[]
       | ((prev: IChartHeaderItemOption[]) => IChartHeaderItemOption[]),
   ) => void;
-  setComparisonOptions: (
+  setToggleOptions: (
     a_Value:
       | IChartHeaderItemOption[]
       | ((prev: IChartHeaderItemOption[]) => IChartHeaderItemOption[]),
-  ) => void;
-  setComparisonItem: (
-    a_Value:
-      | (IComparisonItem | null)
-      | ((prev: IComparisonItem | null) => IComparisonItem | null),
   ) => void;
   setChangePoints: (
     a_Value: TChangePoint | ((prev: TChangePoint) => TChangePoint),
@@ -245,8 +239,8 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       //features
       tokenCollection: null as ITokenCollection | null,
       fetchFeatures: {
-        "main": null as EMarkerType | null,
-        "comparison": null as EMarkerType | null,
+        "main": null as IFetchItem | null,
+        "comparison": null as IFetchItem | null,
       },
       responseFeatures:{
         "main": null as IStacSearchResponse | null,
@@ -324,8 +318,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         "main": [] as IChangePoint[],
         "comparison": [] as IChangePoint[],
       },
-      comparisonOptions: [] as IChartHeaderItemOption[],
-      comparisonItem: null as IComparisonItem | null,
+      toggleOptions: [] as IChartHeaderItemOption[],
       summaryItem: {
         main: [
           { id: 1, title: "Total / Used Scenes", value: "-" },
@@ -566,21 +559,14 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
               : a_Value,
         })),
 
-      setComparisonOptions: (a_Value) =>
+      setToggleOptions: (a_Value) =>
         set((state) => ({
-          comparisonOptions:
+          toggleOptions:
             typeof a_Value === "function"
-              ? a_Value(state.comparisonOptions)
+              ? a_Value(state.toggleOptions)
               : a_Value,
         })),
 
-      setComparisonItem: (a_Value) =>
-        set((state) => ({
-          comparisonItem:
-            typeof a_Value === "function"
-              ? a_Value(state.comparisonItem)
-              : a_Value,
-        })),
 
       setPolygons: (a_Value) =>
         set((state) => ({

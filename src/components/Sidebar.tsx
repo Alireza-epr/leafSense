@@ -125,18 +125,27 @@ const Sidebar = () => {
     setPolygons((prev) => prev.filter((p) => p.id !== lastPolygonLayer.id));
   };
 
-  const handleSetPolygonFetchFeatures = () => {
-    setFetchFeatures(prev=>({
-      ...prev,
-      [ERequestContext.main]: EMarkerType.polygon
-    }))
+  const handleSetPolygonFetchFeatures = (a_Polygons: IPolygon[]) => {
+    const lastPolygon = a_Polygons.at(-1)
+    if(!lastPolygon) return 
+    setFetchFeatures({
+      main: {
+        type: EMarkerType.polygon,
+        id: lastPolygon.id
+      },
+      comparison: null
+    })
   };
 
-  const handleSetPointFetchFeatures = () => {
-    setFetchFeatures(prev=>({
-      ...prev,
-      [ERequestContext.main]: EMarkerType.point
-    }))
+  const handleSetPointFetchFeatures = (a_Polygons: IPolygon[]) => {
+    const lastPolygon = a_Polygons.at(-1)
+    setFetchFeatures({
+      main: {
+        type: EMarkerType.point,
+        id: lastPolygon ? lastPolygon.id +1 : 1
+      },
+      comparison: null
+    })
   };
 
   const handleStartDateChange = (a_Date: string) => {
@@ -217,7 +226,7 @@ const Sidebar = () => {
                   ? "Chart of Zonal Nr." + polygons.at(-1)?.id
                   : "Chart of Zonal"
               }
-              onButtonClick={handleSetPolygonFetchFeatures}
+              onButtonClick={()=>handleSetPolygonFetchFeatures(polygons)}
               disable={polygons.length == 0 || isSidebarDisabled}
             />
           </div>
@@ -240,7 +249,7 @@ const Sidebar = () => {
             />
             <CButton
               title={"Chart of Point"}
-              onButtonClick={handleSetPointFetchFeatures}
+              onButtonClick={()=>handleSetPointFetchFeatures(polygons)}
               disable={
                 markers.filter((m) => m.type == EMarkerType.point).length ===
                   0 || isSidebarDisabled
