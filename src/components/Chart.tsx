@@ -21,6 +21,7 @@ import {
 import {
   EAggregationMethod,
   EChartHeaderOptions,
+  EChartHeaderWindows,
   IChartHeaderItemOption,
 } from "../types/generalTypes";
 import ChartHeaderItemOptions from "./ChartHeaderItemOptions";
@@ -78,6 +79,7 @@ const Chart = (props: IChartProps) => {
   const [minNDVI, setMinNDVI] = useState<Record<ERequestContext ,number>>({main:0,comparison:0});
 
   const [showList, setShowList] = useState(false);
+  const [showListComparison, setShowListComparison] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
   const [showSmoothingOptions, setShowSmoothingOptions] = useState(false);
@@ -244,8 +246,13 @@ const Chart = (props: IChartProps) => {
 
 
   const handleListItems = () => {
-    setShowSummary(false);
+    disappearWindowExcept(EChartHeaderWindows.mainList)
     setShowList(!showList);
+  };
+
+  const handleListComparisonItems = () => {
+    disappearWindowExcept(EChartHeaderWindows.comparisonList)
+    setShowListComparison(!showListComparison);
   };
 
   const handleToggleChart = () => {
@@ -263,7 +270,7 @@ const Chart = (props: IChartProps) => {
 
   const handleToggleSummary = useCallback(
     (a_Samples: TSample, a_NotValidSamples: TSample) => {
-      setShowList(false);
+      disappearWindowExcept(EChartHeaderWindows.summary)
       setShowSummary(!showSummary);
 
       const mainSamples = getAllSamples(
@@ -317,6 +324,23 @@ const Chart = (props: IChartProps) => {
       case EChartHeaderOptions.comparison:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
+        break;
+    }
+  };
+
+  const disappearWindowExcept = (a_Window: EChartHeaderWindows) => {
+    switch (a_Window) {
+      case EChartHeaderWindows.summary:
+        setShowList(false);
+        setShowListComparison(false)
+        break;
+      case EChartHeaderWindows.mainList:
+        setShowSummary(false);
+        setShowListComparison(false)
+        break;
+      case EChartHeaderWindows.comparisonList:
+        setShowSummary(false);
+        setShowList(false);
         break;
     }
   };
@@ -519,6 +543,14 @@ const Chart = (props: IChartProps) => {
           active={showList}
         />
         <ChartHeaderItem
+          title="Comparison List"
+          alt="Comparison List"
+          onClick={handleListComparisonItems}
+          icon="list-comparison"
+          active={showListComparison}
+          disabled={!enableHeaderOption || !comparisonItemRef.current}
+        />
+        <ChartHeaderItem
           title="Close Chart"
           alt="Close"
           onClick={props.onClose}
@@ -538,6 +570,13 @@ const Chart = (props: IChartProps) => {
         <div className={` ${chartStyles.summaryWrapper}`}>
           <ChartSummaryRows items={summaryItem.main} title={"Main Samples Summary"}/>
           {comparisonItemRef.current ? <ChartSummaryRows items={summaryItem.comparison} title={"Comparison Samples Summary"}/> : <></>}
+        </div>
+      ) : (
+        <></>
+      )}
+      {showListComparison ? (
+        <div className={` ${chartStyles.listWrapper}`}>
+          <ChartListRows items={[...samples[ERequestContext.comparison], ...notValidSamples[ERequestContext.comparison]]} />
         </div>
       ) : (
         <></>

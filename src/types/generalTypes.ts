@@ -98,6 +98,12 @@ export enum EChartHeaderOptions {
   comparison = "comparison",
 }
 
+export enum EChartHeaderWindows {
+  summary = "summary",
+  mainList = "mainList",
+  comparisonList = "comparisonList",
+}
+
 export interface IComparisonItem {
   type: EMarkerType;
   id: number;
