@@ -1,6 +1,6 @@
 import { INDVISample, TPercentage } from "../store/mapStore";
 import { ESTACURLS, IStacItem, ITokenCollection } from "../types/apiTypes";
-import { ELogLevel, ESampleFilter, IChangePoint, INDVIPanel } from "../types/generalTypes";
+import { ELogLevel, ERejection, ESampleFilter, IChangePoint, INDVIPanel, IRejection } from "../types/generalTypes";
 import GeoTIFF, {
   fromUrl,
   GeoTIFFImage,
@@ -177,7 +177,15 @@ export const getNDVISample = (
   const ndviArray = new Float32Array(len);
 
   let validPixels = 0;
-  let notValidPixels = 0;
+  let notValidPixels: IRejection = {
+    NO_DATA: 0,
+    SATURATED_OR_DEFECTIVE: 0,
+    CLOUD_SHADOWS: 0,
+    WATER: 0,
+    CLOUD_MEDIUM_PROBABILITY: 0,
+    CLOUD_HIGH_PROBABILITY: 0,
+    THIN_CIRRUS: 0
+  };
 
   // Masking bad pixels
   for (let i = 0; i < len; i++) {
@@ -185,11 +193,28 @@ export const getNDVISample = (
       ++validPixels;
       ndviArray[i] = (n[i] - r[i]) / (n[i] + r[i]);
     } else {
-      ++notValidPixels;
+      switch (scl[i]) {
+        case ERejection.NO_DATA: ++notValidPixels.NO_DATA; break;
+        case ERejection.SATURATED_OR_DEFECTIVE: ++notValidPixels.SATURATED_OR_DEFECTIVE; break;
+        case ERejection.CLOUD_SHADOWS: ++notValidPixels.CLOUD_SHADOWS; break;
+        case ERejection.WATER: ++notValidPixels.WATER; break;
+        case ERejection.CLOUD_MEDIUM_PROBABILITY: ++notValidPixels.CLOUD_MEDIUM_PROBABILITY; break;
+        case ERejection.CLOUD_HIGH_PROBABILITY: ++notValidPixels.CLOUD_HIGH_PROBABILITY; break;
+        case ERejection.THIN_CIRRUS: ++notValidPixels.THIN_CIRRUS; break;
+      }
       ndviArray[i] = NaN;
     }
   }
   const validPixelsPercentage = (validPixels / len) * 100;
+  const notValidPixelsPercentage = Object.keys(notValidPixels).reduce(
+    (acc, key) => {
+      const k = key as keyof IRejection;
+      acc[k] = (notValidPixels[k] / len) * 100;
+      return acc;
+    },
+    {} as IRejection
+  );
+
   const coverageThreshold = a_NDVIPanel.coverageThreshold;
   if (validPixelsPercentage < coverageThreshold) {
     const err = new Error(
@@ -199,6 +224,7 @@ export const getNDVISample = (
       ndviArray,
       n_valid: validPixels,
       valid_fraction: validPixelsPercentage,
+      not_valid_fraction: notValidPixelsPercentage,
     };
     throw err;
   }
@@ -237,6 +263,7 @@ export const getNDVISample = (
 
     n_valid: validPixels,
     valid_fraction: validPixelsPercentage,
+    not_valid_fraction: notValidPixelsPercentage,
 
     filter: a_NDVIPanel.filter,
     filter_fraction: filteredNDVIArray.fraction,

@@ -1,7 +1,7 @@
 import { ESTACCollections, ITokenCollection, spatialItems } from "../types/apiTypes";
 import { EMarkerType, ERequestContext, INDVISample, IPolygon, TChangePoint, TFetchFeature, TLatency, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
-import { EAggregationMethod, ELogLevel, EURLParams, IAnnotationItem, IChangePoint, IChartPoint, IFetchItem } from "../types/generalTypes";
+import { EAggregationMethod, ELogLevel, EURLParams, IAnnotationItem, IChangePoint, IChartPoint, IFetchItem, IRejection } from "../types/generalTypes";
 import { getFeatureToken, getMean, isTokenExpired } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
@@ -22,14 +22,17 @@ export const jsonToCsv = (
 
   const excludedSamples = a_NDVISamples.map(
     ({ ndviArray, preview, ...rest }) => {
+      const not_valid_fraction = getRejectionInfo(rest.not_valid_fraction).trim()
       let exportedSample = {
         ...rest,
         valid_fraction: rest.valid_fraction.toFixed(2) + "%",
         filter_fraction: rest.filter_fraction.toFixed(2) + "%",
+        not_valid_fraction: not_valid_fraction.length !== 0 ? not_valid_fraction : '0%' 
       };
       const changePoint = a_ChangePoints.find((p) => p.id === rest.id);
       return {
         ...exportedSample,
+        "Status": rest.meanNDVI !== null ? "Included" : "Excluded",
         "change point": !!changePoint,
         "Z-Score": changePoint
           ? changePoint.z >= 0
@@ -447,5 +450,13 @@ export const mapPolygonOptions = (
       title: `Zonal ${p.id}`,
       value: `Zonal ${p.id}`,
     }));
+
+export const getRejectionInfo = (a_NotValidFractions: IRejection) => {
+  const text = Object.entries(a_NotValidFractions).reduce( (acc, cur) => {
+    if(cur[1] === 0) return acc
+    return acc+"\r\n"+`${cur[0]}: ${cur[1].toFixed(2)}`
+  }, `` )
+  return text
+}
 
 

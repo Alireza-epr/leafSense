@@ -7,6 +7,7 @@ import {
   IChartHeaderItemOption,
   IFetchItem,
   INearestPoint,
+  IRejection,
 } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Map, Marker, Subscription } from "maplibre-gl";
@@ -50,6 +51,7 @@ export interface INDVISample {
   medianNDVISmoothed: number | null;
   n_valid: number;
   valid_fraction: number; // 0 - 100
+  not_valid_fraction: IRejection;
   filter: ESampleFilter;
   filter_fraction: number; // 0 - 100
 }

@@ -144,3 +144,23 @@ export interface INearestPoint {
   featureId:string
   datetime: string
 }
+
+export enum ERejection { 
+  NO_DATA= 0,
+  SATURATED_OR_DEFECTIVE= 1,
+  CLOUD_SHADOWS= 3,
+  WATER= 6,
+  CLOUD_MEDIUM_PROBABILITY= 8,
+  CLOUD_HIGH_PROBABILITY= 9,
+  THIN_CIRRUS= 10
+}
+
+export interface IRejection {
+  NO_DATA: number
+  SATURATED_OR_DEFECTIVE: number
+  CLOUD_SHADOWS: number
+  WATER: number
+  CLOUD_MEDIUM_PROBABILITY: number
+  CLOUD_HIGH_PROBABILITY: number
+  THIN_CIRRUS: number
+} 

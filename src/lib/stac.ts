@@ -276,6 +276,7 @@ export const useNDVI = () => {
           filter_fraction: 0,
           n_valid: error.cause.n_valid ?? 0,
           valid_fraction: error.cause.valid_fraction ?? 0,
+          not_valid_fraction: error.cause.not_valid_fraction ?? null,
         };
         log("Cached NDVI missed"+`_${a_RequestContext}`, ndviSampleNotValid);
         cache.setCache(cacheKey, ndviSampleNotValid);
