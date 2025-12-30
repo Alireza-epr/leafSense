@@ -2,9 +2,11 @@ import {
   EAggregationMethod,
   EPastTime,
   ESampleFilter,
+  IAnnotationItem,
   IChangePoint,
   IChartHeaderItemOption,
   IFetchItem,
+  INearestPoint,
 } from "../types/generalTypes";
 import { getLocaleISOString } from "../utils/dateUtils";
 import { Map, Marker, Subscription } from "maplibre-gl";
@@ -111,6 +113,8 @@ export interface IMapStoreStates {
   polygons: IPolygon[];
   summaryItem: TSummaryItem;
   latency: TLatency;
+  nearestPoint: INearestPoint
+  annotations: IAnnotationItem[]
 }
 
 export interface IMapStoreActions {
@@ -209,6 +213,12 @@ export interface IMapStoreActions {
   ) => void;
   setLatency: (
     a_Value: TLatency | ((prev: TLatency) => TLatency),
+  ) => void; 
+  setNearestPoint: (
+    a_Value: INearestPoint | ((prev: INearestPoint) => INearestPoint),
+  ) => void; 
+  setAnnotations: (
+    a_Value: IAnnotationItem[] | ((prev: IAnnotationItem[]) => IAnnotationItem[]),
   ) => void; 
 }
 
@@ -338,7 +348,15 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       latency: {
         main: 0,
         comparison: 0
-      }
+      },
+      nearestPoint: {
+        x:0,
+        y:0,
+        note:'',
+        featureId:'', 
+        datetime:''
+      } as INearestPoint,
+      annotations: [] as IAnnotationItem[]
     },
     (set) => ({
       // Actions
@@ -584,6 +602,18 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           latency:
             typeof a_Value === "function" ? a_Value(state.latency) : a_Value,
+        })),
+      
+      setNearestPoint: (a_Value) =>
+        set((state) => ({
+          nearestPoint:
+            typeof a_Value === "function" ? a_Value(state.nearestPoint) : a_Value,
+        })),
+      
+      setAnnotations: (a_Value) =>
+        set((state) => ({
+          annotations:
+            typeof a_Value === "function" ? a_Value(state.annotations) : a_Value,
         })),
     }),
   ),

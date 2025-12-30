@@ -63,7 +63,8 @@ export enum EURLParams {
   coverage = "coverage",
   smoothing = "smoothing",
   filter = "filter",
-  loglevel= "loglevel"
+  loglevel= "loglevel",
+  annotations= "annotations",
 }
 
 export enum ELogLevel {
@@ -123,6 +124,23 @@ export interface INDVISampleExtended {
   comparison_medianNDVISmoothed?: number | null;
   comparison_meanNDVI_gap?: number | null;
   comparison_id?: number;
+
+  // Additionals
+  note: string 
 }
 
 export type IChartPoint = INDVISample & INDVISampleExtended
+
+export interface IAnnotationItem {
+  featureId: string, 
+  datetime: string,
+  note: string
+}
+
+export interface INearestPoint {
+  x:number, 
+  y:number, 
+  note:string, 
+  featureId:string
+  datetime: string
+}

@@ -27,8 +27,9 @@ import {
   ReferenceLine,
   Bar,
   Cell,
-  Legend
-} from "recharts";
+  Legend,
+  LabelList,
+} from "recharts"; 
 import {
   ESTACCollections,
   EStacLinkRel,
@@ -71,10 +72,13 @@ import {
   getAllSamples,
   log,
   toFirstLetterUppercase,
+  isValidAnnotation,
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
 import { getMean, getMeanNDVI } from "../utils/calculationUtils";
 import CustomizedDotComparison from "./CustomizedDotComparison";
+import CustomNote from "./CustomNote";
+import ChartTextarea from "./ChartTextarea";
 
 let start: number, end: number;
 let startComparison: number, endComparison: number;
@@ -113,8 +117,11 @@ const Home = () => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const yAxis = useMapStore((state) => state.yAxis);
   const polygons = useMapStore((state) => state.polygons);
-  const latency = useMapStore((state) => state.latency);
-
+  const annotations = useMapStore((state) => state.annotations);
+  const nearestPoint = useMapStore((state) => state.nearestPoint);
+  
+  const setNearestPoint = useMapStore((state) => state.setNearestPoint);
+  const setAnnotations = useMapStore((state) => state.setAnnotations);
   const setLatency = useMapStore((state) => state.setLatency);
   const setPolygons = useMapStore((state) => state.setPolygons);
   const setNextPage = useMapStore((state) => state.setNextPage);
@@ -595,6 +602,13 @@ const Home = () => {
       "main": null,
       "comparison": null
     });
+    setNearestPoint({
+      x:0,
+      y:0,
+      note:'',
+      featureId:'',
+      datetime:''
+    })
     showMap();
   }, [setFetchFeatures, showMap]);
 
@@ -682,6 +696,68 @@ const Home = () => {
       ? toFirstLetterUppercase(thisFetchFeature.type) 
       : "Zonal Nr." + thisFetchFeature.id})`
   }
+
+  const getPoints = () => getChartPoints(samples, notValidSamples, annotations)
+
+  const handleChartClick = (e) => {
+    if (!e || !e.activeIndex) return;
+
+    const point = getPoints()[e.activeIndex]
+
+    setNearestPoint({
+      x: e.activeCoordinate.x,
+      y: e.activeCoordinate.y,
+      datetime: point.datetime,
+      note: point.note.trim(),
+      featureId: point.featureId
+    })
+  }
+
+  const handleChangeTextarea = (a_Text: string) => {
+    setNearestPoint(prev=>({
+      ...prev,
+      note: a_Text.trim()
+    }))
+  }
+
+  const handleCloseTextarea = () => {
+    setNearestPoint({
+      datetime: '',
+      note: '',
+      featureId: '', 
+      x: 0,
+      y: 0,
+    })
+  }
+
+  // Follow Annotation Note
+  useEffect(()=>{
+    if(nearestPoint.featureId === '') return
+    setAnnotations(prev=>{
+      const index = prev.findIndex(
+        a => a.featureId === nearestPoint.featureId
+      );
+
+      if (index !== -1) {
+        return prev.map(a =>
+          a.featureId === nearestPoint.featureId
+            ? { ...a, note: nearestPoint.note }
+            : a
+        );
+      }
+
+      if (!nearestPoint.note.trim()) {
+        return prev;
+      }
+
+      return [...prev, {
+        note: nearestPoint.note,
+        featureId: nearestPoint.featureId,
+        datetime: nearestPoint.datetime
+      }]
+
+    })
+  },[nearestPoint])
 
   // Loading Map
   useEffect(() => {
@@ -976,6 +1052,16 @@ const Home = () => {
         log("Read URLParams", "Failed to use URLParam: filter does not match", ELogLevel.warning);
       }
     }
+
+    const annotationsParam = params.get(EURLParams.annotations);
+    if(annotationsParam){
+      if(isValidAnnotation(annotationsParam)){
+        setAnnotations(JSON.parse(annotationsParam));
+      } else {
+        log("Read URLParams", "Failed to use URLParam: annotations does not match", ELogLevel.warning);
+      }
+    }
+
   }, [map]);
 
   // Write URLParams
@@ -1027,6 +1113,10 @@ const Home = () => {
     params.set(EURLParams.coverage, coverageThreshold);
     params.set(EURLParams.filter, sampleFilter);
 
+    if(annotations.length > 0){
+      params.set(EURLParams.annotations, JSON.stringify(annotations));
+    }
+
     window.history.replaceState(null, "", `?${params.toString()}`);
   }, [
     map,
@@ -1042,6 +1132,7 @@ const Home = () => {
     limit,
     coverageThreshold,
     sampleFilter,
+    annotations
   ]);
 
   // Get NDVI for STAC Items
@@ -1248,12 +1339,25 @@ const Home = () => {
           <ResponsiveContainer width="100%" height="90%">
             {/* resize automatically */}
             {/* array of objects */}
-            <LineChart data={getChartPoints(samples, notValidSamples)}>
+            {
+              nearestPoint.x !== 0 && nearestPoint.y !== 0
+              ?
+              <ChartTextarea 
+                value={nearestPoint.note}
+                x={nearestPoint.x}
+                y={nearestPoint.y}
+                onChange={handleChangeTextarea}
+                onClose={handleCloseTextarea}
+              />
+              :
+              <></>
+            }
+            <LineChart data={getPoints()} onClick={handleChartClick}>
               <XAxis
                 dataKey={"id"}
                 stroke="white"
                 tickFormatter={(id) =>
-                  getChartPoints(samples, notValidSamples)
+                  getPoints()
                     .find((d) => d.id === id)!
                     .datetime.substring(0, 10)
                 }
@@ -1271,7 +1375,7 @@ const Home = () => {
                 />
               </YAxis>
               {/* popup tooltip by hovering */}
-              <Tooltip content={CustomTooltip} />
+              <Tooltip content={CustomTooltip} reverseDirection={{"x":true,"y":true}}/>
               <Legend />
               {/* MAIN */}
               <Line
@@ -1282,7 +1386,9 @@ const Home = () => {
                 width={2}
                 name={getChartLegend(ERequestContext.main)}
                 legendType="line"
-              />
+              >
+                <LabelList dataKey="note" content={<CustomNote />} />
+              </Line>
 
               <Line
                 type="linear"
@@ -1325,7 +1431,7 @@ const Home = () => {
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height="10%">
             <BarChart
-              data={getChartPoints(samples, notValidSamples)}
+              data={getPoints()}
               margin={{ left: 60 }}
             >
               <XAxis
@@ -1351,7 +1457,7 @@ const Home = () => {
               </ReferenceLine>
 
               <Bar dataKey={"valid_fraction"} barSize={20}>
-                {getChartPoints(samples, notValidSamples).map((sample, index) => (
+                {getPoints().map((sample, index) => (
                   <Cell
                     key={sample.id}
                     fill={
