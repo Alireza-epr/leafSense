@@ -1487,7 +1487,7 @@ const Home = () => {
               </ReferenceLine>
 
               <Bar dataKey={"valid_fraction"} barSize={20}>
-                {getPoints().map((sample, index) => (
+                {getPoints(chartIndex.start, chartIndex.end).map((sample, index) => (
                   <Cell
                     key={sample.id}
                     fill={
