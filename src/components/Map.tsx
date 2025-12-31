@@ -723,6 +723,15 @@ const Home = () => {
     })
   }
 
+  const handleChartDbClick = (ee) => {
+    console.log("ee")
+    console.log(ee)
+    setChartIndex({
+      start: undefined,
+      end: undefined
+    })
+  }
+
   const handleChangeTextarea = (a_Text: string) => {
     setNearestPoint(prev=>({
       ...prev,
@@ -1455,6 +1464,7 @@ const Home = () => {
               <BarChart
               data={getPoints()}
               margin={{ left: 60 }}
+              onDoubleClick={handleChartDbClick}
             >
               <XAxis
                 dataKey={"id"}
