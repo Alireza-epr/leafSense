@@ -23,7 +23,6 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
             ? "rgb(28, 215, 206)"
             : "",
         color: props.disabled ? "darkgray" : "",
-        marginLeft: props.isClose ? "5%" : "",
         flexGrow: props.isClose ? "0" : "",   
         width: props.isClose ? "5%" : "",   
         minWidth: props.isClose ? "5%" : "",   

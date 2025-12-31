@@ -30,6 +30,9 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
   return (
     <div
       className={` ${chartHeaderItemOptionsStyle.wrapper}`}
+      style={{
+        right: props.options.every( o => o.subtitle ) ? 0 : ''
+      }}
       onClick={(e) => e.stopPropagation()}
     >
       {props.isList
@@ -39,7 +42,9 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
               key={index}
               onSection={() => onSelectOption(option)}
               active={props.activeItem == option.id}
-            ></Section>
+            >
+              {option.subtitle}
+            </Section>
           ))
         : props.options.map((option, index) => (
             <Section title={option.title + " - " + option.value} key={index}>

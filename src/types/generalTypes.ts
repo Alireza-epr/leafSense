@@ -88,6 +88,7 @@ export interface IChartHeaderItemOption {
   title: string;
   id: number;
   value: string;
+  subtitle?: string
   min?: number;
   max?: number;
   step?: number;
@@ -97,6 +98,7 @@ export enum EChartHeaderOptions {
   smoothing = "smoothing",
   detection = "detection",
   comparison = "comparison",
+  methods = "methods"
 }
 
 export enum EChartHeaderWindows {

@@ -76,6 +76,7 @@ const Chart = (props: IChartProps) => {
   const [minNDVI, setMinNDVI] = useState<Record<ERequestContext ,number>>({main:0,comparison:0});
 
   const [showList, setShowList] = useState(false);
+  const [showMethods, setShowMethods] = useState(false);
   const [showListComparison, setShowListComparison] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -314,16 +315,24 @@ const Chart = (props: IChartProps) => {
   const disappearOptionsExcept = (a_Option: EChartHeaderOptions) => {
     switch (a_Option) {
       case EChartHeaderOptions.smoothing:
+        setShowMethods(false)
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
         break;
       case EChartHeaderOptions.detection:
+        setShowMethods(false)
         setShowSmoothingOptions(false);
         setShowComparisonOptions(false);
         break;
       case EChartHeaderOptions.comparison:
+        setShowMethods(false)
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
+        break;
+      case EChartHeaderOptions.methods:
+        setShowSmoothingOptions(false);
+        setShowDetectionOptions(false);
+        setShowComparisonOptions(false);
         break;
     }
   };
@@ -457,11 +466,45 @@ const Chart = (props: IChartProps) => {
     }
   };
 
+  const methodsOptions: IChartHeaderItemOption[] = [
+    {id:1, title: '• NDVI:', subtitle: 'NDVI measures vegetation greenness using near-infrared and red light.', value:``},
+    {id:2, title: '• Formula:', subtitle: 'NDVI = (NIR − Red) / (NIR + Red)', value:``},
+    {id:3, title: '• Masking:', subtitle: 'Clouds, shadows, and water pixels are removed using Sentinel-2 scene classification.', value:``},
+    {id:4, title: '• Coverage:', subtitle: 'Scenes with too few valid pixels are excluded.', value:``},
+    {id:5, title: '• Smoothing:', subtitle: 'Optional smoothing reduces noise by averaging nearby dates.', value:``},
+    {id:6, title: '• Change detection:', subtitle: 'Sudden changes are detected when NDVI shifts more than expected.', value:``},
+  ]
+
+  const onMethods = () => {
+    disappearOptionsExcept(EChartHeaderOptions.methods)
+    setShowMethods(!showMethods)
+  }
+
 
 
   return (
     <div className={` ${chartStyles.wrapper}`}>
       <div className={` ${chartStyles.closeWrapper}`}>
+        <ChartHeaderItem
+          title="Methods"
+          alt="Methods"
+          onClick={onMethods}
+          icon="book"
+          active={showMethods}
+          isClose
+        >
+          {showMethods ? (
+            <ChartHeaderItemOptions
+              options={methodsOptions}
+              onOption={()=> undefined}
+              isList={true}
+            />
+          ) : (
+            <></>
+          )}
+        </ChartHeaderItem>
+        
+  
         <ChartHeaderItem
           title="Close Chart"
           alt="Close"
