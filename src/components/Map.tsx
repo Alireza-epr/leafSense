@@ -723,9 +723,7 @@ const Home = () => {
     })
   }
 
-  const handleChartDbClick = (ee) => {
-    console.log("ee")
-    console.log(ee)
+  const handleChartDbClick = () => {
     setChartIndex({
       start: undefined,
       end: undefined
@@ -1402,7 +1400,7 @@ const Home = () => {
                 />
               </YAxis>
               {/* popup tooltip by hovering */}
-              <Tooltip content={CustomTooltip} reverseDirection={{"x":true,"y":true}}/>
+              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}}/>
               <Legend />
               {/* MAIN */}
               <Line
@@ -1500,7 +1498,7 @@ const Home = () => {
                   />
                 ))}
               </Bar>
-              <Tooltip content={CustomTooltip} />
+              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}}/>
               <Brush 
                 dataKey="id" 
                 height={20} 
