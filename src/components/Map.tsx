@@ -29,6 +29,7 @@ import {
   Cell,
   Legend,
   LabelList,
+  Brush,
 } from "recharts"; 
 import {
   ESTACCollections,
@@ -119,7 +120,11 @@ const Home = () => {
   const polygons = useMapStore((state) => state.polygons);
   const annotations = useMapStore((state) => state.annotations);
   const nearestPoint = useMapStore((state) => state.nearestPoint);
+  const chartIndex = useMapStore((state) => state.chartIndex);
+  // Avoiding BarChart to reset after adding annotation
+  const [showBarChart, setShowBarChart] = useState(true)
   
+  const setChartIndex = useMapStore((state) => state.setChartIndex);
   const setNearestPoint = useMapStore((state) => state.setNearestPoint);
   const setAnnotations = useMapStore((state) => state.setAnnotations);
   const setLatency = useMapStore((state) => state.setLatency);
@@ -450,7 +455,8 @@ const Home = () => {
 
       return coordinates;
     } else {
-      const circleLayer = map!.getLayer("circle");
+      if(!map) return []
+      const circleLayer = map.getLayer("circle");
       if (!circleLayer) return [];
 
       const metadata = circleLayer.metadata as ILayerMetadata;
@@ -609,6 +615,10 @@ const Home = () => {
       featureId:'',
       datetime:''
     })
+    setChartIndex({
+      start: undefined,
+      end: undefined
+    });
     showMap();
   }, [setFetchFeatures, showMap]);
 
@@ -697,13 +707,13 @@ const Home = () => {
       : "Zonal Nr." + thisFetchFeature.id})`
   }
 
-  const getPoints = () => getChartPoints(samples, notValidSamples, annotations)
+  const getPoints = (a_StartIndex?: number, a_EndIndex?: number) => getChartPoints(samples, notValidSamples, annotations, a_StartIndex, a_EndIndex)
 
   const handleChartClick = (e) => {
     if (!e || !e.activeIndex) return;
 
     const point = getPoints()[e.activeIndex]
-
+    setShowBarChart(false)
     setNearestPoint({
       x: e.activeCoordinate.x,
       y: e.activeCoordinate.y,
@@ -727,6 +737,14 @@ const Home = () => {
       featureId: '', 
       x: 0,
       y: 0,
+    })
+    setShowBarChart(true)
+  }
+
+  const handleBrushChange = (ev) => {
+    setChartIndex({
+      start: ev.startIndex,
+      end: ev.endIndex
     })
   }
 
@@ -1336,7 +1354,7 @@ const Home = () => {
           onPrevious={handlePreviousPageChart}
           items={responseFeatures[ERequestContext.main]?.features.length ?? 0}
         >
-          <ResponsiveContainer width="100%" height="90%">
+          <ResponsiveContainer width="100%" height="80%">
             {/* resize automatically */}
             {/* array of objects */}
             {
@@ -1352,12 +1370,12 @@ const Home = () => {
               :
               <></>
             }
-            <LineChart data={getPoints()} onClick={handleChartClick}>
+            <LineChart data={getPoints(chartIndex.start, chartIndex.end)} onClick={handleChartClick}>
               <XAxis
                 dataKey={"id"}
                 stroke="white"
                 tickFormatter={(id) =>
-                  getPoints()
+                  getPoints(chartIndex.start, chartIndex.end)
                     .find((d) => d.id === id)!
                     .datetime.substring(0, 10)
                 }
@@ -1379,6 +1397,7 @@ const Home = () => {
               <Legend />
               {/* MAIN */}
               <Line
+                connectNulls
                 type="linear"
                 dataKey={getChartDataKey(ERequestContext.main, yAxis, smoothingWindow[0].value)}
                 stroke="#00ff1eff"
@@ -1394,7 +1413,7 @@ const Home = () => {
                 type="linear"
                 dataKey={getGapDataKey(ERequestContext.main, yAxis)}
                 stroke="#00ff1eff"
-                strokeDasharray="6 4"
+                strokeWidth={0}  
                 opacity={0.5}
                 width={2}
                 legendType={'none'}
@@ -1404,6 +1423,7 @@ const Home = () => {
                 ?
                 <>
                   <Line
+                    connectNulls
                     type="linear"
                     dataKey={getChartDataKey(ERequestContext.comparison, yAxis, smoothingWindow[0].value)}
                     stroke="#ffb300ff"
@@ -1417,8 +1437,8 @@ const Home = () => {
                     type="linear"
                     dataKey={getGapDataKey(ERequestContext.comparison, yAxis)}
                     stroke="#ffb300ff"
-                    strokeDasharray="6 4"
-                    opacity={0.4}
+                    strokeWidth={0}  
+                    opacity={0.5}
                     width={2}
                     legendType={'none'}
                   />
@@ -1429,15 +1449,17 @@ const Home = () => {
               
             </LineChart>
           </ResponsiveContainer>
-          <ResponsiveContainer width="100%" height="10%">
-            <BarChart
+          <ResponsiveContainer width="100%" height="20%">
+            {
+              showBarChart ? 
+              <BarChart
               data={getPoints()}
               margin={{ left: 60 }}
             >
               <XAxis
-                dataKey={"datetime"}
+                dataKey={"id"}
+                stroke="white"
                 hide
-                tickFormatter={(d) => d.substring(0, 10)}
               />
               <YAxis domain={[0, 100]} hide />
 
@@ -1469,7 +1491,22 @@ const Home = () => {
                 ))}
               </Bar>
               <Tooltip content={CustomTooltip} />
-            </BarChart>
+              <Brush 
+                dataKey="id" 
+                height={20} 
+                stroke="#b4e373ff" 
+                startIndex={chartIndex.start}
+                endIndex={chartIndex.end}
+                onChange={handleBrushChange}
+                tickFormatter={(id) =>
+                  getPoints()
+                    .find((d) => d.id === id)!
+                    .datetime.substring(0, 10)
+                }
+              /> 
+              </BarChart>
+              : <></>
+            }
           </ResponsiveContainer>
         </Chart>
       ) : (

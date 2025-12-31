@@ -262,7 +262,9 @@ export const getAllSamples = (a_ValidSamples: INDVISample[], a_NotValidSamples: 
 export const getChartPoints = (
   a_ValidSamples: TSample,
   a_NotValidSamples: TSample,
-  a_AnnotationItems: IAnnotationItem[]
+  a_AnnotationItems: IAnnotationItem[],
+  a_StartIndex?: number,
+  a_EndIndex?: number,
 ): IChartPoint[] => {
 
   const mainSamples = getAllSamples(
@@ -328,7 +330,7 @@ export const getChartPoints = (
     );
   }
 
-  return points;
+  return points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined);
 };
 
 

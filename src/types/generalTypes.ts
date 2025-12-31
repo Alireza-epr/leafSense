@@ -139,6 +139,11 @@ export interface IAnnotationItem {
   note: string
 }
 
+export interface IChartIndex {
+  start: number | undefined,
+  end: number | undefined
+}
+
 export interface INearestPoint {
   x:number, 
   y:number, 

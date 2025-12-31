@@ -5,6 +5,7 @@ import {
   IAnnotationItem,
   IChangePoint,
   IChartHeaderItemOption,
+  IChartIndex,
   IFetchItem,
   INearestPoint,
   IRejection,
@@ -116,7 +117,8 @@ export interface IMapStoreStates {
   summaryItem: TSummaryItem;
   latency: TLatency;
   nearestPoint: INearestPoint
-  annotations: IAnnotationItem[]
+  annotations: IAnnotationItem[],
+  chartIndex: IChartIndex
 }
 
 export interface IMapStoreActions {
@@ -222,6 +224,9 @@ export interface IMapStoreActions {
   setAnnotations: (
     a_Value: IAnnotationItem[] | ((prev: IAnnotationItem[]) => IAnnotationItem[]),
   ) => void; 
+  setChartIndex: (
+    a_Value: IChartIndex | ((prev: IChartIndex) => IChartIndex),
+  ) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -358,7 +363,11 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         featureId:'', 
         datetime:''
       } as INearestPoint,
-      annotations: [] as IAnnotationItem[]
+      annotations: [] as IAnnotationItem[],
+      chartIndex: {
+        start: undefined,
+        end: undefined 
+      } as IChartIndex
     },
     (set) => ({
       // Actions
@@ -616,6 +625,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           annotations:
             typeof a_Value === "function" ? a_Value(state.annotations) : a_Value,
+        })),
+      
+      setChartIndex: (a_Value) =>
+        set((state) => ({
+          chartIndex:
+            typeof a_Value === "function" ? a_Value(state.chartIndex) : a_Value,
         })),
     }),
   ),
