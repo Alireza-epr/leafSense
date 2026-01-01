@@ -707,7 +707,9 @@ const Home = () => {
       : "Zonal Nr." + thisFetchFeature.id})`
   }
 
-  const getPoints = (a_StartIndex?: number, a_EndIndex?: number) => getChartPoints(samples, notValidSamples, annotations, a_StartIndex, a_EndIndex)
+  const getPoints = useCallback((a_StartIndex?: number, a_EndIndex?: number) => getChartPoints(samples, notValidSamples, annotations, a_StartIndex, a_EndIndex),[
+    samples, notValidSamples, annotations
+  ]) 
 
   const handleChartClick = (e) => {
     if (!e || !e.activeIndex) return;
