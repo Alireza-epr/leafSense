@@ -118,6 +118,7 @@ export interface INDVISampleExtended {
   main_medianNDVI?: number | null;
   main_medianNDVISmoothed?: number | null;
   main_meanNDVI_gap?: number | null;
+  main_medianNDVI_gap?: number | null;
 
   // COMPARISON
   comparison_meanNDVI?: number | null;
@@ -125,10 +126,11 @@ export interface INDVISampleExtended {
   comparison_medianNDVI?: number | null;
   comparison_medianNDVISmoothed?: number | null;
   comparison_meanNDVI_gap?: number | null;
+  comparison_medianNDVI_gap?: number | null;
   comparison_id?: number;
 
   // Additionals
-  note: string 
+  note: string | null
 }
 
 export type IChartPoint = INDVISample & INDVISampleExtended
@@ -171,3 +173,8 @@ export interface IRejection {
   CLOUD_HIGH_PROBABILITY: number
   THIN_CIRRUS: number
 } 
+
+export enum ESampleStatus {
+  Included= "Included",
+  Excluded= "Excluded"
+}

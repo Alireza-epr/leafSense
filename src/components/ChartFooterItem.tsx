@@ -17,7 +17,7 @@ const ChartFooterItem = (props: IChartFooterItemProps) => {
       >
         {typeof props.value == "string" ? props.value : props.value.toFixed(3)}
       </div>
-      {props.subValue && props.subValue !== null
+      {props.subValue !== undefined && props.subValue !== null
       ?
         <div
           className={` ${chartFooterItemStyles.footerItemValue}`}

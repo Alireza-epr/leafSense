@@ -1,5 +1,5 @@
 import mapStyle from "./Map.module.scss";
-import { useRef, useEffect, useCallback, use, useState } from "react";
+import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
@@ -7,10 +7,7 @@ import {
   EMarkerType,
   ERequestContext,
   IMarker,
-  INDVISample,
   IPolygon,
-  TMarker,
-  TPercentage,
   useMapStore,
 } from "../store/mapStore";
 import type { Feature, Polygon } from "geojson";
@@ -38,7 +35,6 @@ import {
   ITemporalItem,
   spatialItems,
   TCloudCoverFilter,
-  TDateTimeFilter,
   temporalItems,
   TSnowCoverFilter,
   TSpatialFilter,
@@ -62,29 +58,29 @@ import {
   getChartDataKey,
   getChartPoints,
   getGapDataKey,
-  getMergedSamples,
   isDateValid,
   isOperatorValid,
   isROIValid,
-  isValidBoolean,
   isValidFilter,
   isValidRange,
-  getGapValue,
-  getAllSamples,
   log,
   toFirstLetterUppercase,
   isValidAnnotation,
 } from "../utils/generalUtils";
 import CustomizedDot from "./CustomizedDot";
-import { getMean, getMeanNDVI } from "../utils/calculationUtils";
 import CustomizedDotComparison from "./CustomizedDotComparison";
 import CustomNote from "./CustomNote";
 import ChartTextarea from "./ChartTextarea";
+import { useCurrentPng } from "recharts-to-png";
+import { getLocaleISOString } from "../utils/dateUtils";
 
 let start: number, end: number;
 let startComparison: number, endComparison: number;
 
 const Home = () => {
+  const [getPng, { ref }] = useCurrentPng({
+    backgroundColor: "#008b8b",
+  });
   const { getFeatures } = useFilterSTAC();
   const { getNDVI } = useNDVI();
 
@@ -720,7 +716,7 @@ const Home = () => {
       x: e.activeCoordinate.x,
       y: e.activeCoordinate.y,
       datetime: point.datetime,
-      note: point.note.trim(),
+      note: point.note ? point.note.trim() : '',
       featureId: point.featureId
     })
   }
@@ -735,7 +731,7 @@ const Home = () => {
   const handleChangeTextarea = (a_Text: string) => {
     setNearestPoint(prev=>({
       ...prev,
-      note: a_Text.trim()
+      note: a_Text
     }))
   }
 
@@ -755,6 +751,18 @@ const Home = () => {
       start: ev.startIndex,
       end: ev.endIndex
     })
+  }
+
+  const handleExportPNG = async () => {
+    const png = await getPng();
+    if (png) {
+      const link = document.createElement("a");
+      link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
+      link.href = png;
+      link.click();
+    } else {
+      log("Failed to export PNG", png, ELogLevel.error)
+    }
   }
 
   // Follow Annotation Note
@@ -1361,6 +1369,7 @@ const Home = () => {
           onClose={handleCloseChart}
           onNext={handleNextPageChart}
           onPrevious={handlePreviousPageChart}
+          onExportPNG={handleExportPNG}
           items={responseFeatures[ERequestContext.main]?.features.length ?? 0}
         >
           <ResponsiveContainer width="100%" height="80%">
@@ -1379,7 +1388,12 @@ const Home = () => {
               :
               <></>
             }
-            <LineChart data={getPoints(chartIndex.start, chartIndex.end)} onClick={handleChartClick}>
+            <LineChart 
+              data={getPoints(chartIndex.start, chartIndex.end)} 
+              onClick={handleChartClick} 
+              ref={ref}
+              margin={{right:150}}
+            >
               <XAxis
                 dataKey={"id"}
                 stroke="white"
@@ -1402,11 +1416,11 @@ const Home = () => {
                 />
               </YAxis>
               {/* popup tooltip by hovering */}
-              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}}/>
+              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}} wrapperStyle={{maxWidth: "15%"}}/>
               <Legend />
               {/* MAIN */}
               <Line
-                connectNulls
+                
                 type="linear"
                 dataKey={getChartDataKey(ERequestContext.main, yAxis, smoothingWindow[0].value)}
                 stroke="#00ff1eff"
@@ -1422,7 +1436,6 @@ const Home = () => {
                 type="linear"
                 dataKey={getGapDataKey(ERequestContext.main, yAxis)}
                 stroke="#00ff1eff"
-                strokeWidth={0}  
                 opacity={0.5}
                 width={2}
                 legendType={'none'}
@@ -1432,7 +1445,7 @@ const Home = () => {
                 ?
                 <>
                   <Line
-                    connectNulls
+                    
                     type="linear"
                     dataKey={getChartDataKey(ERequestContext.comparison, yAxis, smoothingWindow[0].value)}
                     stroke="#ffb300ff"
@@ -1446,7 +1459,6 @@ const Home = () => {
                     type="linear"
                     dataKey={getGapDataKey(ERequestContext.comparison, yAxis)}
                     stroke="#ffb300ff"
-                    strokeWidth={0}  
                     opacity={0.5}
                     width={2}
                     legendType={'none'}
@@ -1463,7 +1475,7 @@ const Home = () => {
               showBarChart ? 
               <BarChart
               data={getPoints()}
-              margin={{ left: 60 }}
+              margin={{ left: 60, right: 150 }}
               onDoubleClick={handleChartDbClick}
             >
               <XAxis
@@ -1500,7 +1512,7 @@ const Home = () => {
                   />
                 ))}
               </Bar>
-              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}}/>
+              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}} wrapperStyle={{maxWidth: "15%"}}/>
               <Brush 
                 dataKey="id" 
                 height={20} 

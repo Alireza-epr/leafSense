@@ -1,7 +1,7 @@
 import { ESTACCollections, ITokenCollection, spatialItems } from "../types/apiTypes";
 import { EMarkerType, ERequestContext, INDVISample, IPolygon, TChangePoint, TFetchFeature, TLatency, TSample } from "../store/mapStore";
 import { getLocaleISOString } from "./dateUtils";
-import { EAggregationMethod, ELogLevel, EURLParams, IAnnotationItem, IChangePoint, IChartPoint, IFetchItem, IRejection } from "../types/generalTypes";
+import { EAggregationMethod, ELogLevel, ESampleStatus, EURLParams, IAnnotationItem, IChangePoint, IChartPoint, IFetchItem, IRejection } from "../types/generalTypes";
 import { getFeatureToken, getMean, isTokenExpired } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
@@ -17,6 +17,7 @@ export const jsonToCsv = (
   a_Title: string,
   a_NDVISamples: INDVISample[],
   a_ChangePoints: IChangePoint[],
+  a_Annotations: IAnnotationItem[],
 ) => {
   if (!a_NDVISamples.length) return "";
 
@@ -30,15 +31,18 @@ export const jsonToCsv = (
         not_valid_fraction: not_valid_fraction.length !== 0 ? not_valid_fraction : '0%' 
       };
       const changePoint = a_ChangePoints.find((p) => p.id === rest.id);
+      const annotation = a_Annotations.find((a) => a.featureId === rest.featureId);
+
       return {
         ...exportedSample,
-        "Status": rest.meanNDVI !== null ? "Included" : "Excluded",
-        "change point": !!changePoint,
+        "Change point": !!changePoint,
         "Z-Score": changePoint
           ? changePoint.z >= 0
             ? `+${changePoint.z.toFixed(2)}`
             : changePoint.z.toFixed(2)
           : "N/A",
+        "Annotation": annotation && annotation.note.length > 0 ? annotation.note : "N/A",
+        "Status": rest.meanNDVI !== null ? ESampleStatus.Included : ESampleStatus.Excluded,
       };
     },
   );
@@ -70,11 +74,12 @@ export const downloadCSV = (
   a_AllMainSamples: INDVISample[],
   a_AllComparisonSamples: INDVISample[],
   a_ChangePoints: TChangePoint,
+  a_Annotations: IAnnotationItem[],
 ) => {
   const sections: string[] = [];
 
   sections.push(
-    jsonToCsv("MAIN SAMPLES", a_AllMainSamples, a_ChangePoints.main)
+    jsonToCsv("MAIN SAMPLES", a_AllMainSamples, a_ChangePoints.main, a_Annotations)
   );
 
   if (a_AllComparisonSamples.length > 0) {
@@ -85,7 +90,8 @@ export const downloadCSV = (
       jsonToCsv(
         "COMPARISON SAMPLES",
         a_AllComparisonSamples,
-        a_ChangePoints.comparison
+        a_ChangePoints.comparison,
+        a_Annotations
       )
     );
   }
@@ -290,7 +296,7 @@ export const getChartPoints = (
   let points: IChartPoint[] = mainSamples.map(main => {
     const list = comparisonByDatetime.get(main.datetime);
     const comparison = list?.shift(); 
-    let note = ''
+    let note: string | null = null
     const annotation = annotations.get(main.featureId)
     if(annotation){
       note = annotation.note
@@ -306,6 +312,7 @@ export const getChartPoints = (
       main_medianNDVI: main.medianNDVI,
       main_medianNDVISmoothed: main.medianNDVISmoothed,
       main_meanNDVI_gap: null,
+      main_medianNDVI_gap: null,
 
       // comparison
       ...(hasComparison && {
@@ -314,7 +321,8 @@ export const getChartPoints = (
         comparison_medianNDVI: comparison?.medianNDVI ?? null,
         comparison_medianNDVISmoothed: comparison?.medianNDVISmoothed ?? null,
         comparison_meanNDVI_gap: null,
-        comparison_id: comparison?.id
+        comparison_medianNDVI_gap: null,
+        comparison_id: comparison?.id,
       }),
 
       note: note
@@ -322,14 +330,20 @@ export const getChartPoints = (
   });
 
   points = withGapIndicator(points, "main_meanNDVI", "main_meanNDVI_gap");
+  points = withGapIndicator(points, "main_medianNDVI", "main_medianNDVI_gap");
   if (hasComparison) {
     points = withGapIndicator(
       points,
       "comparison_meanNDVI",
       "comparison_meanNDVI_gap"
     );
+    points = withGapIndicator(
+      points,
+      "comparison_medianNDVI",
+      "comparison_medianNDVI_gap"
+    );
   }
-
+  log("Chart Points", points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined))
   return points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined);
 };
 
@@ -456,9 +470,41 @@ export const mapPolygonOptions = (
 export const getRejectionInfo = (a_NotValidFractions: IRejection) => {
   const text = Object.entries(a_NotValidFractions).reduce( (acc, cur) => {
     if(cur[1] === 0) return acc
-    return acc+"\r\n"+`${cur[0]}: ${cur[1].toFixed(2)}`
+    return acc+"\r\n"+`${cur[0]}: ${cur[1].toFixed(2)}%`
   }, `` )
   return text
 }
 
+export const wrapText = (a_Text: string, a_MaxChars: number) => {
+  const words = a_Text.split(" ");
+  const lines: string[] = [];
+  let currentLine = "";
 
+  const pushLine = () => {
+    if (currentLine.trim()) {
+      lines.push(currentLine.trim());
+      currentLine = "";
+    }
+  };
+
+  words.forEach(word => {
+    if (word.length > a_MaxChars) {
+      pushLine();
+
+      for (let i = 0; i < word.length; i += a_MaxChars) {
+        lines.push(word.slice(i, i + a_MaxChars));
+      }
+      return;
+    }
+
+    if ((currentLine + word).length > a_MaxChars) {
+      pushLine();
+      currentLine = word + " ";
+    } else {
+      currentLine += word + " ";
+    }
+  });
+
+  pushLine();
+  return lines;
+};

@@ -31,6 +31,7 @@ export interface IChartProps {
   onClose: () => void;
   onNext?: () => void;
   onPrevious?: () => void;
+  onExportPNG?: () => void;
   items?: number;
 }
 
@@ -60,6 +61,7 @@ const Chart = (props: IChartProps) => {
   );
 
 
+  const annotations = useMapStore((state) => state.annotations);
   const changePoints = useMapStore((state) => state.changePoints);
   const setChangePoints = useMapStore((state) => state.setChangePoints);
 
@@ -440,10 +442,16 @@ const Chart = (props: IChartProps) => {
         a_NotValidSamples[ERequestContext.comparison]
       );
 
-      downloadCSV(mainSamples, comparisonSamples, changePoints);
+      downloadCSV(mainSamples, comparisonSamples, changePoints, annotations);
     },
-    [changePoints],
+    [changePoints, annotations],
   );
+
+  const handleExportPNG = useCallback(()=>{
+    if(props.onExportPNG){
+      props.onExportPNG()
+    }
+  },[])
   const handleToggleYAxis = () => {
     setYAxis((prev) => {
       if (prev == EAggregationMethod.Mean) {
@@ -520,14 +528,14 @@ const Chart = (props: IChartProps) => {
           alt="Toggle Chart"
           onClick={()=>handleToggleChart(toggleOptions)}
           icon="toggle"
-          disabled={!enableHeaderOption}
+          disabled={globalLoading.main || toggleOptions.filter( o => o.id !== fetchFeatures.main?.id ).length === 0}
         />
         <ChartHeaderItem
           title={"Comparison With"}
           alt="Comparison"
           onClick={handleToggleComparisonOptions}
           icon="comparison"
-          disabled={!enableHeaderOption || toggleOptions.filter( o => o.id !== fetchFeatures.main?.id ).length === 0}
+          disabled={globalLoading.main || toggleOptions.filter( o => o.id !== fetchFeatures.main?.id ).length === 0}
           active={fetchFeatures.comparison !== null}
         >
           {showComparisonOptions ? (
@@ -556,7 +564,7 @@ const Chart = (props: IChartProps) => {
           onClick={handleListComparisonItems}
           icon="list-comparison"
           active={showListComparison}
-          disabled={!enableHeaderOption || !fetchFeatures.comparison}
+          disabled={!fetchFeatures.comparison}
         />
         <ChartHeaderItem
           title={"Change Detection"}
@@ -605,14 +613,21 @@ const Chart = (props: IChartProps) => {
           alt="Export CSV"
           onClick={() => handleExportCSV(samples, notValidSamples)}
           icon="export-csv"
-          disabled={!enableHeaderOption}
+          disabled={globalLoading.main}
+        />
+        <ChartHeaderItem
+          title="Export PNG"
+          alt="Export PNG"
+          onClick={() => handleExportPNG()}
+          icon="export-png"
+          disabled={globalLoading.main}
         />
         <ChartHeaderItem
           title="Series Summary"
           alt="Series Summary"
           onClick={() => handleToggleSummary(samples, notValidSamples)}
           icon="info"
-          disabled={!enableHeaderOption}
+          disabled={globalLoading.main}
           active={showSummary}
         />
       </div>

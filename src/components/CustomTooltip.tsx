@@ -3,11 +3,12 @@ import customTooltipStyles from "./CustomTooltip.module.scss";
 import { TooltipContentProps } from "recharts";
 import CustumTooltipItem from "./CustumTooltipItem";
 import { getDatetime } from "../utils/dateUtils";
-import { IChartPoint } from "../types/generalTypes";
+import { ESampleStatus, IChartPoint } from "../types/generalTypes";
 
 const CustomTooltip = (props: TooltipContentProps<string, string>) => {
   const smoothingWindow = useMapStore((state) => state.smoothingWindow);
   const changePoints = useMapStore((state) => state.changePoints);
+  const annotations = useMapStore((state) => state.annotations);
   if (props.active && props.payload && props.payload.length) {
     const ndviSample: IChartPoint = props.payload[0].payload;
     return (
@@ -17,6 +18,10 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
           backgroundColor: !ndviSample.meanNDVI ? "#c8ab87ff" : "",
         }}
       >
+        <CustumTooltipItem
+          label={"Status"}
+          value={ndviSample.meanNDVI !== null ? ESampleStatus.Included : ESampleStatus.Excluded}
+        />
         <CustumTooltipItem
           label={"Date"}
           value={getDatetime(ndviSample.datetime)}
@@ -112,6 +117,17 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
             label={"Comparison Z-Score"}
             value={
               changePoints.comparison.find((p) => p.id == ndviSample.comparison_id)?.z.toFixed(2) ??
+              ""
+            }
+          />
+        ) : (
+          <></>
+        )}
+        {annotations.findIndex((a) => a.featureId == ndviSample.featureId) !== -1 ? (
+          <CustumTooltipItem
+            label={"Annotation"}
+            value={
+              annotations.find((a) => a.featureId == ndviSample.featureId)?.note ??
               ""
             }
           />
