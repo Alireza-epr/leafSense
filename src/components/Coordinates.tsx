@@ -5,7 +5,8 @@ import CButton from "./CButton";
 import BrowseButton from "./BrowseButton";
 import { LngLat, now } from "maplibre-gl";
 import { ECoordinate } from "../types/coordinateTypes";
-import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
+import { EMarkerType, IMarker } from "../types";
+import { useMapStore } from "../store/mapStore";
 import maplibregl from "maplibre-gl";
 import { validateImportedROI } from "../utils/calculationUtils";
 import { getLocaleISOString } from "../utils/dateUtils";
@@ -65,7 +66,11 @@ const Coordinates = (props: ICoordinatesProps) => {
     const isImportedROIValid = validateImportedROI(a_JSON);
 
     if (!isImportedROIValid.valid) {
-      log("Failed importing ROI: ", isImportedROIValid.message, ELogLevel.error);
+      log(
+        "Failed importing ROI: ",
+        isImportedROIValid.message,
+        ELogLevel.error,
+      );
       return;
     }
 

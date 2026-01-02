@@ -1,4 +1,4 @@
-import { INDVISample, useMapStore } from "../store/mapStore";
+import { useMapStore } from "../store/mapStore";
 import customTooltipStyles from "./CustomTooltip.module.scss";
 import { TooltipContentProps } from "recharts";
 import CustumTooltipItem from "./CustumTooltipItem";
@@ -20,7 +20,11 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
       >
         <CustumTooltipItem
           label={"Status"}
-          value={ndviSample.meanNDVI !== null ? ESampleStatus.Included : ESampleStatus.Excluded}
+          value={
+            ndviSample.meanNDVI !== null
+              ? ESampleStatus.Included
+              : ESampleStatus.Excluded
+          }
         />
         <CustumTooltipItem
           label={"Date"}
@@ -104,31 +108,36 @@ const CustomTooltip = (props: TooltipContentProps<string, string>) => {
           <CustumTooltipItem
             label={"Z-Score"}
             value={
-              changePoints.main.find((p) => p.id == ndviSample.id)?.z.toFixed(2) ??
-              ""
+              changePoints.main
+                .find((p) => p.id == ndviSample.id)
+                ?.z.toFixed(2) ?? ""
             }
           />
         ) : (
           <></>
         )}
-        {changePoints.comparison.findIndex((p) => p.id == ndviSample.comparison_id) !== -1 ? (
+        {changePoints.comparison.findIndex(
+          (p) => p.id == ndviSample.comparison_id,
+        ) !== -1 ? (
           <CustumTooltipItem
             isAbnormal={true}
             label={"Comparison Z-Score"}
             value={
-              changePoints.comparison.find((p) => p.id == ndviSample.comparison_id)?.z.toFixed(2) ??
-              ""
+              changePoints.comparison
+                .find((p) => p.id == ndviSample.comparison_id)
+                ?.z.toFixed(2) ?? ""
             }
           />
         ) : (
           <></>
         )}
-        {annotations.findIndex((a) => a.featureId == ndviSample.featureId) !== -1 ? (
+        {annotations.findIndex((a) => a.featureId == ndviSample.featureId) !==
+        -1 ? (
           <CustumTooltipItem
             label={"Annotation"}
             value={
-              annotations.find((a) => a.featureId == ndviSample.featureId)?.note ??
-              ""
+              annotations.find((a) => a.featureId == ndviSample.featureId)
+                ?.note ?? ""
             }
           />
         ) : (

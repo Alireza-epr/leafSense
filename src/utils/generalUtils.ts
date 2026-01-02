@@ -1,7 +1,30 @@
-import { ESTACCollections, ITokenCollection, spatialItems } from "../types/apiTypes";
-import { EMarkerType, ERequestContext, INDVISample, IPolygon, TChangePoint, TFetchFeature, TLatency, TSample } from "../store/mapStore";
+import {
+  ESTACCollections,
+  ITokenCollection,
+  spatialItems,
+} from "../types/apiTypes";
+import {
+  EMarkerType,
+  ERequestContext,
+  INDVISample,
+  IPolygon,
+  TChangePoint,
+  TFetchFeature,
+  TLatency,
+  TSample,
+} from "../types";
 import { getLocaleISOString } from "./dateUtils";
-import { EAggregationMethod, ELogLevel, ESampleStatus, EURLParams, IAnnotationItem, IChangePoint, IChartPoint, IFetchItem, IRejection } from "../types/generalTypes";
+import {
+  EAggregationMethod,
+  ELogLevel,
+  ESampleStatus,
+  EURLParams,
+  IAnnotationItem,
+  IChangePoint,
+  IChartPoint,
+  IFetchItem,
+  IRejection,
+} from "../types/generalTypes";
 import { getFeatureToken, getMean, isTokenExpired } from "./calculationUtils";
 
 export const toFirstLetterUppercase = (a_String: string | null) => {
@@ -23,15 +46,20 @@ export const jsonToCsv = (
 
   const excludedSamples = a_NDVISamples.map(
     ({ ndviArray, preview, ...rest }) => {
-      const not_valid_fraction = getRejectionInfo(rest.not_valid_fraction).trim()
+      const not_valid_fraction = getRejectionInfo(
+        rest.not_valid_fraction,
+      ).trim();
       let exportedSample = {
         ...rest,
         valid_fraction: rest.valid_fraction.toFixed(2) + "%",
         filter_fraction: rest.filter_fraction.toFixed(2) + "%",
-        not_valid_fraction: not_valid_fraction.length !== 0 ? not_valid_fraction : '0%' 
+        not_valid_fraction:
+          not_valid_fraction.length !== 0 ? not_valid_fraction : "0%",
       };
       const changePoint = a_ChangePoints.find((p) => p.id === rest.id);
-      const annotation = a_Annotations.find((a) => a.featureId === rest.featureId);
+      const annotation = a_Annotations.find(
+        (a) => a.featureId === rest.featureId,
+      );
 
       return {
         ...exportedSample,
@@ -41,8 +69,12 @@ export const jsonToCsv = (
             ? `+${changePoint.z.toFixed(2)}`
             : changePoint.z.toFixed(2)
           : "N/A",
-        "Annotation": annotation && annotation.note.length > 0 ? annotation.note : "N/A",
-        "Status": rest.meanNDVI !== null ? ESampleStatus.Included : ESampleStatus.Excluded,
+        Annotation:
+          annotation && annotation.note.length > 0 ? annotation.note : "N/A",
+        Status:
+          rest.meanNDVI !== null
+            ? ESampleStatus.Included
+            : ESampleStatus.Excluded,
       };
     },
   );
@@ -79,7 +111,12 @@ export const downloadCSV = (
   const sections: string[] = [];
 
   sections.push(
-    jsonToCsv("MAIN SAMPLES", a_AllMainSamples, a_ChangePoints.main, a_Annotations)
+    jsonToCsv(
+      "MAIN SAMPLES",
+      a_AllMainSamples,
+      a_ChangePoints.main,
+      a_Annotations,
+    ),
   );
 
   if (a_AllComparisonSamples.length > 0) {
@@ -91,8 +128,8 @@ export const downloadCSV = (
         "COMPARISON SAMPLES",
         a_AllComparisonSamples,
         a_ChangePoints.comparison,
-        a_Annotations
-      )
+        a_Annotations,
+      ),
     );
   }
 
@@ -198,7 +235,7 @@ export const isValidAnnotation = (a_Annotaions: string) => {
     return false;
   }
 
-  return annotations.every(a => {
+  return annotations.every((a) => {
     if (
       typeof a !== "object" ||
       a === null ||
@@ -218,7 +255,7 @@ export const isValidAnnotation = (a_Annotaions: string) => {
       note.length <= 120
     );
   });
-}
+};
 
 export const getGapValue = (a_AllSamples: INDVISample[]) => {
   let lastValid: number | null = null;
@@ -239,11 +276,11 @@ export const getGapValue = (a_AllSamples: INDVISample[]) => {
 export const withGapIndicator = (
   points: IChartPoint[],
   key: keyof IChartPoint,
-  gapKey: keyof IChartPoint
+  gapKey: keyof IChartPoint,
 ): IChartPoint[] => {
   let lastValid: number | null = null;
 
-  return points.map(p => {
+  return points.map((p) => {
     const value = p[key] as number | null;
 
     if (value != null) {
@@ -253,17 +290,20 @@ export const withGapIndicator = (
 
     return {
       ...p,
-      [gapKey]: lastValid
+      [gapKey]: lastValid,
     };
   });
 };
 
-export const getAllSamples = (a_ValidSamples: INDVISample[], a_NotValidSamples: INDVISample[]) => {
+export const getAllSamples = (
+  a_ValidSamples: INDVISample[],
+  a_NotValidSamples: INDVISample[],
+) => {
   const allSamples = [...a_ValidSamples, ...a_NotValidSamples].sort(
     (a, b) => a.id - b.id,
   );
   return allSamples;
-}
+};
 
 export const getChartPoints = (
   a_ValidSamples: TSample,
@@ -272,36 +312,36 @@ export const getChartPoints = (
   a_StartIndex?: number,
   a_EndIndex?: number,
 ): IChartPoint[] => {
-
   const mainSamples = getAllSamples(
     a_ValidSamples[ERequestContext.main],
-    a_NotValidSamples[ERequestContext.main]
+    a_NotValidSamples[ERequestContext.main],
   );
 
   const comparisonSamples = getAllSamples(
     a_ValidSamples[ERequestContext.comparison],
-    a_NotValidSamples[ERequestContext.comparison]
+    a_NotValidSamples[ERequestContext.comparison],
   );
 
   const hasComparison = comparisonSamples.length > 0;
 
   const comparisonByDatetime = new Map<string, INDVISample[]>();
-  const annotations = new Map<string, IAnnotationItem>(a_AnnotationItems.map( a => [a.featureId, a] ));
+  const annotations = new Map<string, IAnnotationItem>(
+    a_AnnotationItems.map((a) => [a.featureId, a]),
+  );
   for (const c of comparisonSamples) {
     const list = comparisonByDatetime.get(c.datetime) ?? [];
     list.push(c);
     comparisonByDatetime.set(c.datetime, list);
   }
 
-  let points: IChartPoint[] = mainSamples.map(main => {
+  let points: IChartPoint[] = mainSamples.map((main) => {
     const list = comparisonByDatetime.get(main.datetime);
-    const comparison = list?.shift(); 
-    let note: string | null = null
-    const annotation = annotations.get(main.featureId)
-    if(annotation){
-      note = annotation.note
+    const comparison = list?.shift();
+    let note: string | null = null;
+    const annotation = annotations.get(main.featureId);
+    if (annotation) {
+      note = annotation.note;
     }
-    
 
     return {
       ...main,
@@ -325,7 +365,7 @@ export const getChartPoints = (
         comparison_id: comparison?.id,
       }),
 
-      note: note
+      note: note,
     };
   });
 
@@ -335,20 +375,26 @@ export const getChartPoints = (
     points = withGapIndicator(
       points,
       "comparison_meanNDVI",
-      "comparison_meanNDVI_gap"
+      "comparison_meanNDVI_gap",
     );
     points = withGapIndicator(
       points,
       "comparison_medianNDVI",
-      "comparison_medianNDVI_gap"
+      "comparison_medianNDVI_gap",
     );
   }
-  log("Chart Points", points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined))
+  log(
+    "Chart Points",
+    points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined),
+  );
   return points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined);
 };
 
-
-export const getChartDataKey = (a_Context: ERequestContext, a_YAxis: EAggregationMethod, a_SmoothingWindow: string) => {
+export const getChartDataKey = (
+  a_Context: ERequestContext,
+  a_YAxis: EAggregationMethod,
+  a_SmoothingWindow: string,
+) => {
   const isSmoothed = a_SmoothingWindow !== "1";
 
   if (a_YAxis === EAggregationMethod.Mean) {
@@ -362,9 +408,12 @@ export const getChartDataKey = (a_Context: ERequestContext, a_YAxis: EAggregatio
     : `${a_Context}_medianNDVI`;
 };
 
-export const getGapDataKey = (a_Context: ERequestContext, a_YAxis: EAggregationMethod) => {
+export const getGapDataKey = (
+  a_Context: ERequestContext,
+  a_YAxis: EAggregationMethod,
+) => {
   return `${getChartDataKey(a_Context, a_YAxis, "1")}_gap`;
-}
+};
 
 export const getMergedSamples = (a_AllSamples: INDVISample[]) => {
   const map = new Map<string, INDVISample[]>();
@@ -381,39 +430,53 @@ export const getMergedSamples = (a_AllSamples: INDVISample[]) => {
 
     return {
       ...base,
-      meanNDVI: getMean(group.map(s => s.meanNDVI)),
-      medianNDVI: getMean(group.map(s => s.medianNDVI)),
-      meanNDVISmoothed: getMean(group.map(s => s.meanNDVISmoothed)),
-      medianNDVISmoothed: getMean(group.map(s => s.medianNDVISmoothed)),
+      meanNDVI: getMean(group.map((s) => s.meanNDVI)),
+      medianNDVI: getMean(group.map((s) => s.medianNDVI)),
+      meanNDVISmoothed: getMean(group.map((s) => s.meanNDVISmoothed)),
+      medianNDVISmoothed: getMean(group.map((s) => s.medianNDVISmoothed)),
     };
   });
-}
+};
 
 export const formatTimestamp = (a_Date?: Date): string => {
   const now = a_Date ?? new Date();
-  const timestamp = now.toISOString().replace('T', ' ').replace('Z', '');
+  const timestamp = now.toISOString().replace("T", " ").replace("Z", "");
   return timestamp.substring(0, 23);
 };
 
-export const log = (a_Title: string, a_Message: any, a_Type: ELogLevel = ELogLevel.message): void => {
+export const log = (
+  a_Title: string,
+  a_Message: any,
+  a_Type: ELogLevel = ELogLevel.message,
+): void => {
   const formattedMessage = `[${formatTimestamp()}] ${a_Title}`;
   const params = new URLSearchParams(window.location.search);
-  const logLevel = params.get( EURLParams.loglevel )
+  const logLevel = params.get(EURLParams.loglevel);
   if (logLevel && logLevel === "3") {
-    switch(a_Type){
-      case ELogLevel.message: console.log(formattedMessage, a_Message);break;
-      case ELogLevel.warning: console.warn(formattedMessage, a_Message);break;
-      case ELogLevel.error: console.error(formattedMessage, a_Message);break;
+    switch (a_Type) {
+      case ELogLevel.message:
+        console.log(formattedMessage, a_Message);
+        break;
+      case ELogLevel.warning:
+        console.warn(formattedMessage, a_Message);
+        break;
+      case ELogLevel.error:
+        console.error(formattedMessage, a_Message);
+        break;
     }
   }
 };
 
-
 export const getSummaryInfo = (a_Samples: INDVISample[]) => {
-
-  const allSamples = a_Samples
-  if(a_Samples.length === 0) return { totalUsed: "-" , averageValidPixels: "-", firstDate: "-", lastDate: "-" }
-  const validSamples = a_Samples.filter( s => s.meanNDVI !== null )
+  const allSamples = a_Samples;
+  if (a_Samples.length === 0)
+    return {
+      totalUsed: "-",
+      averageValidPixels: "-",
+      firstDate: "-",
+      lastDate: "-",
+    };
+  const validSamples = a_Samples.filter((s) => s.meanNDVI !== null);
   // Total / Used Scenes
   const validsLen = validSamples.length;
   const totalUsed = `${validsLen} / ${allSamples.length}`;
@@ -426,54 +489,58 @@ export const getSummaryInfo = (a_Samples: INDVISample[]) => {
     validsLen !== 0 ? (sumValidPixels / validsLen).toFixed(2) : "-";
 
   // First / Last Date
-  const sortedValids = validSamples
-    .sort((a, b) => a.id - b.id);
+  const sortedValids = validSamples.sort((a, b) => a.id - b.id);
 
   const firstDate = validsLen !== 0 ? sortedValids[0].datetime : "-";
   const lastDate = validsLen !== 0 ? sortedValids[validsLen - 1].datetime : "-";
 
-  return { totalUsed, averageValidPixels, firstDate, lastDate }
-}
+  return { totalUsed, averageValidPixels, firstDate, lastDate };
+};
 
-export const getLatency = (a_RequestContext: ERequestContext, a_Latency: TLatency) =>{
-  if(a_RequestContext === ERequestContext.main){
-    return a_Latency.main ? `${(a_Latency.main / 1000).toFixed(2)} s` : "-"
+export const getLatency = (
+  a_RequestContext: ERequestContext,
+  a_Latency: TLatency,
+) => {
+  if (a_RequestContext === ERequestContext.main) {
+    return a_Latency.main ? `${(a_Latency.main / 1000).toFixed(2)} s` : "-";
   } else {
-    return a_Latency.comparison ? `${(a_Latency.comparison / 1000).toFixed(2)} s` : "-"
+    return a_Latency.comparison
+      ? `${(a_Latency.comparison / 1000).toFixed(2)} s`
+      : "-";
   }
-} 
+};
 
-export const getValidity = (a_ValidSamples: number, a_AllSamples: number | undefined) => {
+export const getValidity = (
+  a_ValidSamples: number,
+  a_AllSamples: number | undefined,
+) => {
   return a_AllSamples ? `${a_ValidSamples}/${a_AllSamples}` : "-";
 };
 
 export const getMainItem = (a_FetchFeature: TFetchFeature) => {
-  if(!a_FetchFeature.main) return null
-  return a_FetchFeature.main
-}
+  if (!a_FetchFeature.main) return null;
+  return a_FetchFeature.main;
+};
 
 export const getComparisonItem = (a_FetchFeature: TFetchFeature) => {
-  if(!a_FetchFeature.comparison) return null
-  return a_FetchFeature.comparison
-}
+  if (!a_FetchFeature.comparison) return null;
+  return a_FetchFeature.comparison;
+};
 
-export const mapPolygonOptions = (
-  polygons: IPolygon[],
-) =>
-  polygons
-    .map(p => ({
-      id: p.id,
-      title: `Zonal ${p.id}`,
-      value: `Zonal ${p.id}`,
-    }));
+export const mapPolygonOptions = (polygons: IPolygon[]) =>
+  polygons.map((p) => ({
+    id: p.id,
+    title: `Zonal ${p.id}`,
+    value: `Zonal ${p.id}`,
+  }));
 
 export const getRejectionInfo = (a_NotValidFractions: IRejection) => {
-  const text = Object.entries(a_NotValidFractions).reduce( (acc, cur) => {
-    if(cur[1] === 0) return acc
-    return acc+"\r\n"+`${cur[0]}: ${cur[1].toFixed(2)}%`
-  }, `` )
-  return text
-}
+  const text = Object.entries(a_NotValidFractions).reduce((acc, cur) => {
+    if (cur[1] === 0) return acc;
+    return acc + "\r\n" + `${cur[0]}: ${cur[1].toFixed(2)}%`;
+  }, ``);
+  return text;
+};
 
 export const wrapText = (a_Text: string, a_MaxChars: number) => {
   const words = a_Text.split(" ");
@@ -487,7 +554,7 @@ export const wrapText = (a_Text: string, a_MaxChars: number) => {
     }
   };
 
-  words.forEach(word => {
+  words.forEach((word) => {
     if (word.length > a_MaxChars) {
       pushLine();
 

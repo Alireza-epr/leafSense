@@ -1,4 +1,5 @@
-import { ERequestContext, INDVISample, useMapStore } from "../store/mapStore";
+import { ERequestContext, INDVISample } from "../types";
+import { useMapStore } from "../store/mapStore";
 import {
   ESTACURLS,
   ISTACFilterRequest,
@@ -22,44 +23,46 @@ const cache = new CacheHandler();
 let tokenCollection: ITokenCollection | null = null;
 let inFlight: Promise<ITokenCollection | null> | null = null;
 
-export const setTokenCollection = async (): Promise<ITokenCollection | null> => {
-  try {
-    if (
-      !tokenCollection ||
-      isTokenExpired(tokenCollection)
-    ) {
-      if (!inFlight) {
-        inFlight = getFeatureToken(ESTACCollections.Sentinel2l2a)
-          .finally(() => {
-            inFlight = null;
-          });
+export const setTokenCollection =
+  async (): Promise<ITokenCollection | null> => {
+    try {
+      if (!tokenCollection || isTokenExpired(tokenCollection)) {
+        if (!inFlight) {
+          inFlight = getFeatureToken(ESTACCollections.Sentinel2l2a).finally(
+            () => {
+              inFlight = null;
+            },
+          );
+        }
+        tokenCollection = await inFlight;
       }
-      tokenCollection = await inFlight;
+      return tokenCollection;
+    } catch (error) {
+      log("setTokenCollection error", error, ELogLevel.error);
+      tokenCollection = null;
+      inFlight = null;
+      return null;
     }
-    return tokenCollection;
-  } catch (error) {
-    log("setTokenCollection error", error, ELogLevel.error);
-    tokenCollection = null;
-    inFlight = null;
-    return null;
-  }
-};
+  };
 
 export const useFilterSTAC = () => {
   const setResponseFeatures = useMapStore((state) => state.setResponseFeatures);
   const setErrorFeatures = useMapStore((state) => state.setErrorFeatures);
 
-  const getFeatures = async (a_STACRequest: ISTACFilterRequest, a_RequestContext: ERequestContext) => {
+  const getFeatures = async (
+    a_STACRequest: ISTACFilterRequest,
+    a_RequestContext: ERequestContext,
+  ) => {
     if (cache.getCache(a_STACRequest)) {
       const respJSON = cache.getCache(a_STACRequest);
-      log("Cached Features hit"+`_${a_RequestContext}`, respJSON);
-      const token = await setTokenCollection()
-      if(!token) {
-        throw new Error("[useFilterSTAC] Failed to get token")
+      log("Cached Features hit" + `_${a_RequestContext}`, respJSON);
+      const token = await setTokenCollection();
+      if (!token) {
+        throw new Error("[useFilterSTAC] Failed to get token");
       }
-      setResponseFeatures(prev=>({
+      setResponseFeatures((prev) => ({
         ...prev,
-        [a_RequestContext]: respJSON
+        [a_RequestContext]: respJSON,
       }));
       return;
     }
@@ -89,22 +92,22 @@ export const useFilterSTAC = () => {
         }
 
         const respJSON = await resp.json();
-        log("Cached Features missed"+`_${a_RequestContext}`, respJSON);
+        log("Cached Features missed" + `_${a_RequestContext}`, respJSON);
         cache.setCache(a_STACRequest, respJSON);
-        const token = await setTokenCollection()
-        if(!token) {
-          throw new Error("[useFilterSTAC] Failed to get token")
+        const token = await setTokenCollection();
+        if (!token) {
+          throw new Error("[useFilterSTAC] Failed to get token");
         }
-        setResponseFeatures(prev=>({
+        setResponseFeatures((prev) => ({
           ...prev,
-          [a_RequestContext]: respJSON
+          [a_RequestContext]: respJSON,
         }));
         return;
       } catch (err: any) {
         if (i == retry - 1) {
-          setErrorFeatures(prev=>({
+          setErrorFeatures((prev) => ({
             ...prev,
-            [a_RequestContext]: err
+            [a_RequestContext]: err,
           })); //give up
           throw err;
         }
@@ -130,7 +133,7 @@ export const useNDVI = () => {
     a_Features: IStacItem[],
     a_Coordinates: [number, number][],
     a_NDVIPanel: INDVIPanel,
-    a_RequestContext: ERequestContext
+    a_RequestContext: ERequestContext,
   ) => {
     const bandKeys = [
       EStacAssetsKey.nir,
@@ -146,20 +149,20 @@ export const useNDVI = () => {
       });
     let counter = {
       main: 1,
-      comparison: 1
+      comparison: 1,
     };
 
-    setDoneFeature(prev=>({
+    setDoneFeature((prev) => ({
       ...prev,
-      [a_RequestContext]: 1
+      [a_RequestContext]: 1,
     }));
-    setSamples(prev=>({
+    setSamples((prev) => ({
       ...prev,
-      [a_RequestContext]: []
+      [a_RequestContext]: [],
     }));
-    setNotValidSamples(prev=>({
+    setNotValidSamples((prev) => ({
       ...prev,
-      [a_RequestContext]: []
+      [a_RequestContext]: [],
     }));
     for (const feature of a_Features) {
       const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
@@ -171,22 +174,22 @@ export const useNDVI = () => {
             ...cachedNDVI,
             id: counter[a_RequestContext],
           };
-          log("Cached NDVI hit"+`_${a_RequestContext}`,updatedId);
+          log("Cached NDVI hit" + `_${a_RequestContext}`, updatedId);
           if (cachedNDVI.meanNDVI) {
-            setSamples(prev=>({
+            setSamples((prev) => ({
               ...prev,
-              [a_RequestContext]: [...prev[a_RequestContext], updatedId]
+              [a_RequestContext]: [...prev[a_RequestContext], updatedId],
             }));
           } else {
-            setNotValidSamples(prev=>({
+            setNotValidSamples((prev) => ({
               ...prev,
-              [a_RequestContext]: [...prev[a_RequestContext], updatedId]
+              [a_RequestContext]: [...prev[a_RequestContext], updatedId],
             }));
           }
           counter[a_RequestContext] = counter[a_RequestContext] + 1;
-          setDoneFeature(prev=>({
+          setDoneFeature((prev) => ({
             ...prev,
-            [a_RequestContext]: prev[a_RequestContext] + 1
+            [a_RequestContext]: prev[a_RequestContext] + 1,
           }));
           continue;
         }
@@ -201,7 +204,11 @@ export const useNDVI = () => {
           }
           const bandSignedURL = `${bandURL}?${tokenCollection?.token}`;
           if (bandSignedURL.length == 0) {
-            log("[getNDVI] SignedURL not defined", `${bandKey}`, ELogLevel.error);
+            log(
+              "[getNDVI] SignedURL not defined",
+              `${bandKey}`,
+              ELogLevel.error,
+            );
             continue;
           }
           const bandRasterResult = await readBandCOG(
@@ -241,25 +248,25 @@ export const useNDVI = () => {
           );
           //console.log(new Date(Date.now()).toISOString()+ " " +featureNDVI.length + " pixels from the Sentinel-2 image for the given ROI")
           //console.log(new Date(Date.now()).toISOString()+" NDVI for "+ feature.id)
-          log("Cached NDVI missed"+`_${a_RequestContext}`, ndviSample);
+          log("Cached NDVI missed" + `_${a_RequestContext}`, ndviSample);
           cache.setCache(cacheKey, ndviSample);
-          setSamples(prev=>({
+          setSamples((prev) => ({
             ...prev,
-            [a_RequestContext]: [...prev[a_RequestContext], ndviSample]
+            [a_RequestContext]: [...prev[a_RequestContext], ndviSample],
           }));
         } else {
           throw new Error("Scene rejected: rasters are undefined");
         }
 
-        counter[a_RequestContext] = counter[a_RequestContext] +1;
-        setDoneFeature(prev=>({
+        counter[a_RequestContext] = counter[a_RequestContext] + 1;
+        setDoneFeature((prev) => ({
           ...prev,
-          [a_RequestContext]: prev[a_RequestContext] + 1
+          [a_RequestContext]: prev[a_RequestContext] + 1,
         }));
       } catch (error: any) {
-        if(!error.cause){
-          log("Unexpected error getNDVI", error, ELogLevel.error)
-          continue
+        if (!error.cause) {
+          log("Unexpected error getNDVI", error, ELogLevel.error);
+          continue;
         }
 
         const ndviSampleNotValid: INDVISample = {
@@ -278,23 +285,23 @@ export const useNDVI = () => {
           valid_fraction: error.cause.valid_fraction ?? 0,
           not_valid_fraction: error.cause.not_valid_fraction ?? null,
         };
-        log("Cached NDVI missed"+`_${a_RequestContext}`, ndviSampleNotValid);
+        log("Cached NDVI missed" + `_${a_RequestContext}`, ndviSampleNotValid);
         cache.setCache(cacheKey, ndviSampleNotValid);
-        setNotValidSamples(prev=>({
-            ...prev,
-            [a_RequestContext]: [...prev[a_RequestContext], ndviSampleNotValid]
-          }));
-        counter[a_RequestContext] = counter[a_RequestContext] +1;
-        setDoneFeature(prev=>({
+        setNotValidSamples((prev) => ({
           ...prev,
-          [a_RequestContext]: prev[a_RequestContext] + 1
+          [a_RequestContext]: [...prev[a_RequestContext], ndviSampleNotValid],
+        }));
+        counter[a_RequestContext] = counter[a_RequestContext] + 1;
+        setDoneFeature((prev) => ({
+          ...prev,
+          [a_RequestContext]: prev[a_RequestContext] + 1,
         }));
         continue;
       }
     }
-    setGlobalLoading(prev=>({
+    setGlobalLoading((prev) => ({
       ...prev,
-      [a_RequestContext]: false
+      [a_RequestContext]: false,
     }));
   };
 
@@ -302,4 +309,3 @@ export const useNDVI = () => {
     getNDVI,
   };
 };
-

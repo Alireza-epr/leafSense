@@ -1,4 +1,4 @@
-import { EMarkerType, INDVISample } from "../store/mapStore";
+import { EMarkerType, INDVISample } from "../types";
 import { IFeature } from "./geoJSON";
 
 export enum EPastTime {
@@ -63,14 +63,14 @@ export enum EURLParams {
   coverage = "coverage",
   smoothing = "smoothing",
   filter = "filter",
-  loglevel= "loglevel",
-  annotations= "annotations",
+  loglevel = "loglevel",
+  annotations = "annotations",
 }
 
 export enum ELogLevel {
-  message= "message",
-  warning= "warning",
-  error= "error"
+  message = "message",
+  warning = "warning",
+  error = "error",
 }
 
 export enum EAggregationMethod {
@@ -88,7 +88,7 @@ export interface IChartHeaderItemOption {
   title: string;
   id: number;
   value: string;
-  subtitle?: string
+  subtitle?: string;
   min?: number;
   max?: number;
   step?: number;
@@ -98,7 +98,7 @@ export enum EChartHeaderOptions {
   smoothing = "smoothing",
   detection = "detection",
   comparison = "comparison",
-  methods = "methods"
+  methods = "methods",
 }
 
 export enum EChartHeaderWindows {
@@ -130,51 +130,51 @@ export interface INDVISampleExtended {
   comparison_id?: number;
 
   // Additionals
-  note: string | null
+  note: string | null;
 }
 
-export type IChartPoint = INDVISample & INDVISampleExtended
+export type IChartPoint = INDVISample & INDVISampleExtended;
 
 export interface IAnnotationItem {
-  featureId: string, 
-  datetime: string,
-  note: string
+  featureId: string;
+  datetime: string;
+  note: string;
 }
 
 export interface IChartIndex {
-  start: number | undefined,
-  end: number | undefined
+  start: number | undefined;
+  end: number | undefined;
 }
 
 export interface INearestPoint {
-  x:number, 
-  y:number, 
-  note:string, 
-  featureId:string
-  datetime: string
+  x: number;
+  y: number;
+  note: string;
+  featureId: string;
+  datetime: string;
 }
 
-export enum ERejection { 
-  NO_DATA= 0,
-  SATURATED_OR_DEFECTIVE= 1,
-  CLOUD_SHADOWS= 3,
-  WATER= 6,
-  CLOUD_MEDIUM_PROBABILITY= 8,
-  CLOUD_HIGH_PROBABILITY= 9,
-  THIN_CIRRUS= 10
+export enum ERejection {
+  NO_DATA = 0,
+  SATURATED_OR_DEFECTIVE = 1,
+  CLOUD_SHADOWS = 3,
+  WATER = 6,
+  CLOUD_MEDIUM_PROBABILITY = 8,
+  CLOUD_HIGH_PROBABILITY = 9,
+  THIN_CIRRUS = 10,
 }
 
 export interface IRejection {
-  NO_DATA: number
-  SATURATED_OR_DEFECTIVE: number
-  CLOUD_SHADOWS: number
-  WATER: number
-  CLOUD_MEDIUM_PROBABILITY: number
-  CLOUD_HIGH_PROBABILITY: number
-  THIN_CIRRUS: number
-} 
+  NO_DATA: number;
+  SATURATED_OR_DEFECTIVE: number;
+  CLOUD_SHADOWS: number;
+  WATER: number;
+  CLOUD_MEDIUM_PROBABILITY: number;
+  CLOUD_HIGH_PROBABILITY: number;
+  THIN_CIRRUS: number;
+}
 
 export enum ESampleStatus {
-  Included= "Included",
-  Excluded= "Excluded"
+  Included = "Included",
+  Excluded = "Excluded",
 }

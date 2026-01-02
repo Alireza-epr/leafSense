@@ -1,5 +1,6 @@
 import { DotItemDotProps } from "recharts";
-import { INDVISample, useMapStore } from "../store/mapStore";
+import { INDVISample } from "../types";
+import { useMapStore } from "../store/mapStore";
 
 const CustomizedDot = (props: DotItemDotProps) => {
   const { cx, cy, r, payload } = props;

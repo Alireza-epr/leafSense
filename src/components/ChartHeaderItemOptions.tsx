@@ -31,7 +31,7 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
     <div
       className={` ${chartHeaderItemOptionsStyle.wrapper}`}
       style={{
-        right: props.options.every( o => o.subtitle ) ? 0 : ''
+        right: props.options.every((o) => o.subtitle) ? 0 : "",
       }}
       onClick={(e) => e.stopPropagation()}
     >

@@ -1,4 +1,4 @@
-import { INDVISample } from "../store/mapStore";
+import { INDVISample } from "../types";
 import chartListItemsStyles from "./ChartListRows.module.scss";
 import ChartListRow from "./ChartListRow";
 import ChartListRowHeader from "./ChartListRowHeader";

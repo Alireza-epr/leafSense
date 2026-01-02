@@ -3,7 +3,7 @@ import ChartSummaryRow, { IChartSummaryRow } from "./ChartSummaryRow";
 import ChartListRowHeader from "./ChartListRowHeader";
 
 export interface IChartSummaryRowsProps {
-  title: string,
+  title: string;
   items: IChartSummaryRow[];
 }
 

@@ -1,6 +1,13 @@
-import { INDVISample, TPercentage } from "../store/mapStore";
+import { INDVISample, TPercentage } from "../types";
 import { ESTACURLS, IStacItem, ITokenCollection } from "../types/apiTypes";
-import { ELogLevel, ERejection, ESampleFilter, IChangePoint, INDVIPanel, IRejection } from "../types/generalTypes";
+import {
+  ELogLevel,
+  ERejection,
+  ESampleFilter,
+  IChangePoint,
+  INDVIPanel,
+  IRejection,
+} from "../types/generalTypes";
 import GeoTIFF, {
   fromUrl,
   GeoTIFFImage,
@@ -184,7 +191,7 @@ export const getNDVISample = (
     WATER: 0,
     CLOUD_MEDIUM_PROBABILITY: 0,
     CLOUD_HIGH_PROBABILITY: 0,
-    THIN_CIRRUS: 0
+    THIN_CIRRUS: 0,
   };
 
   // Masking bad pixels
@@ -194,13 +201,27 @@ export const getNDVISample = (
       ndviArray[i] = (n[i] - r[i]) / (n[i] + r[i]);
     } else {
       switch (scl[i]) {
-        case ERejection.NO_DATA: ++notValidPixels.NO_DATA; break;
-        case ERejection.SATURATED_OR_DEFECTIVE: ++notValidPixels.SATURATED_OR_DEFECTIVE; break;
-        case ERejection.CLOUD_SHADOWS: ++notValidPixels.CLOUD_SHADOWS; break;
-        case ERejection.WATER: ++notValidPixels.WATER; break;
-        case ERejection.CLOUD_MEDIUM_PROBABILITY: ++notValidPixels.CLOUD_MEDIUM_PROBABILITY; break;
-        case ERejection.CLOUD_HIGH_PROBABILITY: ++notValidPixels.CLOUD_HIGH_PROBABILITY; break;
-        case ERejection.THIN_CIRRUS: ++notValidPixels.THIN_CIRRUS; break;
+        case ERejection.NO_DATA:
+          ++notValidPixels.NO_DATA;
+          break;
+        case ERejection.SATURATED_OR_DEFECTIVE:
+          ++notValidPixels.SATURATED_OR_DEFECTIVE;
+          break;
+        case ERejection.CLOUD_SHADOWS:
+          ++notValidPixels.CLOUD_SHADOWS;
+          break;
+        case ERejection.WATER:
+          ++notValidPixels.WATER;
+          break;
+        case ERejection.CLOUD_MEDIUM_PROBABILITY:
+          ++notValidPixels.CLOUD_MEDIUM_PROBABILITY;
+          break;
+        case ERejection.CLOUD_HIGH_PROBABILITY:
+          ++notValidPixels.CLOUD_HIGH_PROBABILITY;
+          break;
+        case ERejection.THIN_CIRRUS:
+          ++notValidPixels.THIN_CIRRUS;
+          break;
       }
       ndviArray[i] = NaN;
     }
@@ -212,7 +233,7 @@ export const getNDVISample = (
       acc[k] = (notValidPixels[k] / len) * 100;
       return acc;
     },
-    {} as IRejection
+    {} as IRejection,
   );
 
   const coverageThreshold = a_NDVIPanel.coverageThreshold;
@@ -305,7 +326,7 @@ export const getMedianNDVI = (a_NDVI: Float32Array<ArrayBufferLike>) => {
   }
 };
 
-export const getMean = (a_Array: (number | null)[] ) => {
+export const getMean = (a_Array: (number | null)[]) => {
   let sum = 0;
   let count = 0;
 

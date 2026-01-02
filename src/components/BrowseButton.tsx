@@ -26,7 +26,7 @@ const BrowseButton = (props: IBrowseButtonProps) => {
   const onInputChange = async () => {
     setLoading(false);
     if (!inputFileRef.current?.files?.length) {
-      log("Failed to select file", "Selected File Length 0", ELogLevel.warning)
+      log("Failed to select file", "Selected File Length 0", ELogLevel.warning);
       return;
     }
 

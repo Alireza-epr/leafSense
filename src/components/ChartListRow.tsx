@@ -1,5 +1,5 @@
 import { getDatetime, getLocaleISOString } from "../utils/dateUtils";
-import { INDVISample } from "../store/mapStore";
+import { INDVISample } from "../types";
 import chartListItemStyles from "./ChartListRow.module.scss";
 import ChartListRowItem from "./ChartListRowItem";
 import { getRejectionInfo } from "../utils/generalUtils";
@@ -104,7 +104,14 @@ const ChartListRow = (props: IChartListItemProps) => {
         title={getRejectionInfo(props.item.not_valid_fraction)}
         isSceneNotValid={props.item.meanNDVI == null}
       >
-       {props.item.meanNDVI !== null ? ESampleStatus.Included : <><span id="excluded" >{ESampleStatus.Excluded} </span> <span id="icon">{"🛈"}</span></>}
+        {props.item.meanNDVI !== null ? (
+          ESampleStatus.Included
+        ) : (
+          <>
+            <span id="excluded">{ESampleStatus.Excluded} </span>{" "}
+            <span id="icon">{"🛈"}</span>
+          </>
+        )}
       </ChartListRowItem>
 
       <ChartListRowItem

@@ -4,14 +4,14 @@ export interface CustomNoteProps {
   x?: number;
   y?: number;
   value?: string;
-  index?: number
+  index?: number;
 }
 
 const MAX_CHARS_PER_LINE = 18;
 const LINE_HEIGHT = 14;
 const PADDING_X = 8;
 const PADDING_Y = 6;
-const OFFSET = 10;       // distance from the line
+const OFFSET = 10; // distance from the line
 
 const CustomNote = (props: CustomNoteProps) => {
   if (!props.value || props.x == null || props.y == null) return null;
@@ -23,10 +23,10 @@ const CustomNote = (props: CustomNoteProps) => {
   const startX = props.x + 10;
   let startY =
     props.index != null && props.index % 2 === 0
-      ? props.y - boxHeight - OFFSET   // above line
-      : props.y + OFFSET;              // below line
-  if(startY < 0) {
-    startY = 0 + OFFSET
+      ? props.y - boxHeight - OFFSET // above line
+      : props.y + OFFSET; // below line
+  if (startY < 0) {
+    startY = 0 + OFFSET;
   }
   return (
     <g>
@@ -46,18 +46,11 @@ const CustomNote = (props: CustomNoteProps) => {
         fontSize={12}
         fill="#333"
       >
-        <tspan
-          x={startX + PADDING_X}
-          dy={0}
-        >
-          {`[${(props.index as number)+1 }]`}
+        <tspan x={startX + PADDING_X} dy={0}>
+          {`[${(props.index as number) + 1}]`}
         </tspan>
         {lines.map((line, i) => (
-          <tspan
-            key={i}
-            x={startX + PADDING_X}
-            dy={LINE_HEIGHT}
-          >
+          <tspan key={i} x={startX + PADDING_X} dy={LINE_HEIGHT}>
             {line}
           </tspan>
         ))}

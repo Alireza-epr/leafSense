@@ -23,62 +23,23 @@ import {
   TSpatialComparison,
   TTemporalComparison,
 } from "../types/apiTypes";
-import { IChartSummaryRow } from "../components/ChartSummaryRow";
-
-export enum EMarkerType {
-  point = "point",
-  polygon = "zonal",
-}
-export interface IMarker {
-  type: EMarkerType;
-  marker: Marker;
-}
-
-export type TPercentage = `${number | string}%`;
-export interface INDVISmoothed {
-  meanNDVISmoothed: number | null;
-  medianNDVISmoothed: number | null;
-}
-
-export interface INDVISample {
-  featureId: string;
-  id: number;
-  datetime: string;
-  preview: string;
-  ndviArray: Float32Array<ArrayBuffer> | null;
-  meanNDVI: number | null;
-  meanNDVISmoothed: number | null;
-  medianNDVI: number | null;
-  medianNDVISmoothed: number | null;
-  n_valid: number;
-  valid_fraction: number; // 0 - 100
-  not_valid_fraction: IRejection;
-  filter: ESampleFilter;
-  filter_fraction: number; // 0 - 100
-}
-
-export enum ERequestContext {
-  main= "main",
-  comparison= "comparison"
-}
-
-export type TSample = Record< ERequestContext, INDVISample[] >
-export type TFetchFeature = Record< ERequestContext, IFetchItem | null >
-export type TResponseFeature = Record< ERequestContext, IStacSearchResponse | null>
-export type TErrorFeature = Record< ERequestContext, Error | null >
-export type TErrorNDVI = Record< ERequestContext, Error | null >
-export type TDoneFeature = Record< ERequestContext, number >
-export type TChangePoint = Record< ERequestContext, IChangePoint[] >
-export type TSummaryItem = Record< ERequestContext, IChartSummaryRow[] >
-export type TLatency = Record< ERequestContext, number >
-export type TGlobalLoading = Record< ERequestContext, boolean >
-
-export type TMarker = Record<EMarkerType, boolean>;
-
-export interface IPolygon {
-  id: number;
-  markers: IMarker[];
-}
+import {
+  TMarker,
+  IMarker,
+  TFetchFeature,
+  TGlobalLoading,
+  TChangePoint,
+  TSample,
+  TResponseFeature,
+  TErrorFeature,
+  TErrorNDVI,
+  TDoneFeature,
+  IPolygon,
+  TLatency,
+  TSummaryItem,
+  EMarkerType,
+  INDVISample,
+} from "../types";
 
 export interface IMapStoreStates {
   map: Map | null;
@@ -116,9 +77,9 @@ export interface IMapStoreStates {
   polygons: IPolygon[];
   summaryItem: TSummaryItem;
   latency: TLatency;
-  nearestPoint: INearestPoint
-  annotations: IAnnotationItem[],
-  chartIndex: IChartIndex
+  nearestPoint: INearestPoint;
+  annotations: IAnnotationItem[];
+  chartIndex: IChartIndex;
 }
 
 export interface IMapStoreActions {
@@ -137,39 +98,35 @@ export interface IMapStoreActions {
   setShowROI: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setShowError: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
   setFetchFeatures: (
-    a_Value:
-      | (TFetchFeature)
-      | ((prev: TFetchFeature) => TFetchFeature),
+    a_Value: TFetchFeature | ((prev: TFetchFeature) => TFetchFeature),
   ) => void;
-  setGlobalLoading: (a_Value: TGlobalLoading | ((prev: TGlobalLoading) => TGlobalLoading)) => void;
+  setGlobalLoading: (
+    a_Value: TGlobalLoading | ((prev: TGlobalLoading) => TGlobalLoading),
+  ) => void;
   setSmoothingWindow: (
     a_Value:
       | IChartHeaderItemOption[]
       | ((prev: IChartHeaderItemOption[]) => IChartHeaderItemOption[]),
   ) => void;
-  setSamples: (
-    a_Value: TSample | ((prev: TSample) => TSample),
-  ) => void;
-  setNotValidSamples: (
-    a_Value: TSample | ((prev: TSample) => TSample),
-  ) => void;
+  setSamples: (a_Value: TSample | ((prev: TSample) => TSample)) => void;
+  setNotValidSamples: (a_Value: TSample | ((prev: TSample) => TSample)) => void;
   setResponseFeatures: (
-    a_Value:
-      | (TResponseFeature)
-      | ((prev: TResponseFeature) => TResponseFeature),
+    a_Value: TResponseFeature | ((prev: TResponseFeature) => TResponseFeature),
   ) => void;
   setErrorFeatures: (
-    a_Value: (TErrorFeature) | ((prev: TErrorFeature) => TErrorFeature),
+    a_Value: TErrorFeature | ((prev: TErrorFeature) => TErrorFeature),
   ) => void;
   setErrorNDVI: (
-    a_Value: (TErrorNDVI) | ((prev: TErrorNDVI) => TErrorNDVI),
+    a_Value: TErrorNDVI | ((prev: TErrorNDVI) => TErrorNDVI),
   ) => void;
   setTokenCollection: (
     a_Value:
       | (ITokenCollection | null)
       | ((prev: ITokenCollection | null) => ITokenCollection | null),
   ) => void;
-  setDoneFeature: (a_Value: TDoneFeature | ((prev: TDoneFeature) => TDoneFeature)) => void;
+  setDoneFeature: (
+    a_Value: TDoneFeature | ((prev: TDoneFeature) => TDoneFeature),
+  ) => void;
   setLimit: (a_Value: string | ((prev: string) => string)) => void;
   setRadius: (a_Value: string | ((prev: string) => string)) => void;
   setTemporalOp: (
@@ -215,15 +172,15 @@ export interface IMapStoreActions {
   setSummaryItem: (
     a_Value: TSummaryItem | ((prev: TSummaryItem) => TSummaryItem),
   ) => void;
-  setLatency: (
-    a_Value: TLatency | ((prev: TLatency) => TLatency),
-  ) => void; 
+  setLatency: (a_Value: TLatency | ((prev: TLatency) => TLatency)) => void;
   setNearestPoint: (
     a_Value: INearestPoint | ((prev: INearestPoint) => INearestPoint),
-  ) => void; 
+  ) => void;
   setAnnotations: (
-    a_Value: IAnnotationItem[] | ((prev: IAnnotationItem[]) => IAnnotationItem[]),
-  ) => void; 
+    a_Value:
+      | IAnnotationItem[]
+      | ((prev: IAnnotationItem[]) => IAnnotationItem[]),
+  ) => void;
   setChartIndex: (
     a_Value: IChartIndex | ((prev: IChartIndex) => IChartIndex),
   ) => void;
@@ -256,43 +213,43 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       //features
       tokenCollection: null as ITokenCollection | null,
       fetchFeatures: {
-        "main": null as IFetchItem | null,
-        "comparison": null as IFetchItem | null,
+        main: null as IFetchItem | null,
+        comparison: null as IFetchItem | null,
       },
-      responseFeatures:{
-        "main": null as IStacSearchResponse | null,
-        "comparison": null as IStacSearchResponse | null,
-      }, 
+      responseFeatures: {
+        main: null as IStacSearchResponse | null,
+        comparison: null as IStacSearchResponse | null,
+      },
       errorFeatures: {
-        "main": null as Error | null,
-        "comparison": null as Error | null,
+        main: null as Error | null,
+        comparison: null as Error | null,
       },
-      errorNDVI:{
-        "main": null as Error | null,
-        "comparison": null as Error | null,
+      errorNDVI: {
+        main: null as Error | null,
+        comparison: null as Error | null,
       },
       showChart: false,
       showError: false,
-      globalLoading:{
-        "main": false,
-        "comparison": false,
+      globalLoading: {
+        main: false,
+        comparison: false,
       },
       doneFeature: {
-        "main": 1,
-        "comparison": 1,
+        main: 1,
+        comparison: 1,
       },
       showROI: false,
       nextPage: null as StacLink | null,
       previousPage: null as StacLink | null,
       //NDVI
       samples: {
-        "main": [] as INDVISample[],
-        "comparison": [] as INDVISample[],
+        main: [] as INDVISample[],
+        comparison: [] as INDVISample[],
       },
       sampleFilter: ESampleFilter.none,
       notValidSamples: {
-        "main": [] as INDVISample[],
-        "comparison": [] as INDVISample[],
+        main: [] as INDVISample[],
+        comparison: [] as INDVISample[],
       },
       smoothingWindow: [
         {
@@ -332,8 +289,8 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         },
       ] as IChartHeaderItemOption[],
       changePoints: {
-        "main": [] as IChangePoint[],
-        "comparison": [] as IChangePoint[],
+        main: [] as IChangePoint[],
+        comparison: [] as IChangePoint[],
       },
       toggleOptions: [] as IChartHeaderItemOption[],
       summaryItem: {
@@ -350,24 +307,24 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
           { id: 3, title: "First Date", value: "-" },
           { id: 4, title: "Last Date", value: "-" },
           { id: 5, title: "Latency", value: "-" },
-        ]
+        ],
       } as TSummaryItem,
       latency: {
         main: 0,
-        comparison: 0
+        comparison: 0,
       },
       nearestPoint: {
-        x:0,
-        y:0,
-        note:'',
-        featureId:'', 
-        datetime:''
+        x: 0,
+        y: 0,
+        note: "",
+        featureId: "",
+        datetime: "",
       } as INearestPoint,
       annotations: [] as IAnnotationItem[],
       chartIndex: {
         start: undefined,
-        end: undefined 
-      } as IChartIndex
+        end: undefined,
+      } as IChartIndex,
     },
     (set) => ({
       // Actions
@@ -596,37 +553,42 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
               : a_Value,
         })),
 
-
       setPolygons: (a_Value) =>
         set((state) => ({
           polygons:
             typeof a_Value === "function" ? a_Value(state.polygons) : a_Value,
         })),
-      
+
       setSummaryItem: (a_Value) =>
         set((state) => ({
           summaryItem:
-            typeof a_Value === "function" ? a_Value(state.summaryItem) : a_Value,
+            typeof a_Value === "function"
+              ? a_Value(state.summaryItem)
+              : a_Value,
         })),
-      
+
       setLatency: (a_Value) =>
         set((state) => ({
           latency:
             typeof a_Value === "function" ? a_Value(state.latency) : a_Value,
         })),
-      
+
       setNearestPoint: (a_Value) =>
         set((state) => ({
           nearestPoint:
-            typeof a_Value === "function" ? a_Value(state.nearestPoint) : a_Value,
+            typeof a_Value === "function"
+              ? a_Value(state.nearestPoint)
+              : a_Value,
         })),
-      
+
       setAnnotations: (a_Value) =>
         set((state) => ({
           annotations:
-            typeof a_Value === "function" ? a_Value(state.annotations) : a_Value,
+            typeof a_Value === "function"
+              ? a_Value(state.annotations)
+              : a_Value,
         })),
-      
+
       setChartIndex: (a_Value) =>
         set((state) => ({
           chartIndex:

@@ -3,13 +3,8 @@ import { useRef, useEffect, useCallback, useState } from "react";
 import maplibregl from "maplibre-gl";
 import { Map as MapLibre } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import {
-  EMarkerType,
-  ERequestContext,
-  IMarker,
-  IPolygon,
-  useMapStore,
-} from "../store/mapStore";
+import { EMarkerType, ERequestContext, IMarker, IPolygon } from "../types";
+import { useMapStore } from "../store/mapStore";
 import type { Feature, Polygon } from "geojson";
 import { useFilterSTAC, useNDVI } from "../lib/stac";
 import {
@@ -27,7 +22,7 @@ import {
   Legend,
   LabelList,
   Brush,
-} from "recharts"; 
+} from "recharts";
 import {
   ESTACCollections,
   EStacLinkRel,
@@ -118,8 +113,8 @@ const Home = () => {
   const nearestPoint = useMapStore((state) => state.nearestPoint);
   const chartIndex = useMapStore((state) => state.chartIndex);
   // Avoiding BarChart to reset after adding annotation
-  const [showBarChart, setShowBarChart] = useState(true)
-  
+  const [showBarChart, setShowBarChart] = useState(true);
+
   const setChartIndex = useMapStore((state) => state.setChartIndex);
   const setNearestPoint = useMapStore((state) => state.setNearestPoint);
   const setAnnotations = useMapStore((state) => state.setAnnotations);
@@ -168,17 +163,29 @@ const Home = () => {
   }, [getFeatures]);
 
   const debouncedGetFeatures = useCallback(
-    debounce((postBody, a_RequestContext) => getFeaturesRef.current(postBody, a_RequestContext), 300),
+    debounce(
+      (postBody, a_RequestContext) =>
+        getFeaturesRef.current(postBody, a_RequestContext),
+      300,
+    ),
     [],
   );
 
   const throttledGetFeatures = useCallback(
-    throttle((postBody, a_RequestContext) => getFeaturesRef.current(postBody, a_RequestContext), 10000),
+    throttle(
+      (postBody, a_RequestContext) =>
+        getFeaturesRef.current(postBody, a_RequestContext),
+      10000,
+    ),
     [],
   );
 
   const debouncedThrottledGetFeatures = throttle(
-    debounce((postBody, a_RequestContext) => getFeaturesRef.current(postBody, a_RequestContext), 300),
+    debounce(
+      (postBody, a_RequestContext) =>
+        getFeaturesRef.current(postBody, a_RequestContext),
+      300,
+    ),
     1000,
   );
 
@@ -232,7 +239,7 @@ const Home = () => {
 
   const drawCircle = useCallback(
     (a_Center: [number, number]) => {
-      if(!map) return 
+      if (!map) return;
       const radius = Number(radiusRef.current);
       const options = { units: "meters" as Units };
       const circleFeature = circle(a_Center, radius, options);
@@ -339,7 +346,7 @@ const Home = () => {
         .filter((l) => l.includes("polygon") && !l.includes("label"));
       if (polygonLayers) {
         polygonLayers.forEach((l) => {
-          removePolygonLayer(l)
+          removePolygonLayer(l);
         });
       }
     }
@@ -347,7 +354,7 @@ const Home = () => {
 
   const drawPolygon = useCallback(
     (a_Polygon: IPolygon) => {
-      if(!map) return 
+      if (!map) return;
       const polygonCoords = a_Polygon.markers.map((m) => {
         const lngLat = m.marker.getLngLat();
         return [lngLat.lng, lngLat.lat];
@@ -429,96 +436,104 @@ const Home = () => {
     drawCircle(center);
   }, [markers, drawCircle]);
 
-  const getCoordinatesFromMarkers = useCallback((a_RequestContext: ERequestContext): [number, number][] => {
-    let thisFetchFeatures = fetchFeaturesRef.current[a_RequestContext]
-    if(!thisFetchFeatures) return [];
-    if (thisFetchFeatures.type === EMarkerType.polygon) {
-      let index = polygonsRef.current.findIndex( p => p.id === thisFetchFeatures.id )
-      const thisPolygonLayer = polygonsRef.current.at(index);
-      if (!thisPolygonLayer) return [];
-      let coordinates: [number, number][] = thisPolygonLayer.markers
-        .filter((m) => m.type === EMarkerType.polygon)
-        .map((m) => {
-          const lng = m.marker.getLngLat().lng;
-          const lat = m.marker.getLngLat().lat;
-          return [lng, lat];
-        });
+  const getCoordinatesFromMarkers = useCallback(
+    (a_RequestContext: ERequestContext): [number, number][] => {
+      let thisFetchFeatures = fetchFeaturesRef.current[a_RequestContext];
+      if (!thisFetchFeatures) return [];
+      if (thisFetchFeatures.type === EMarkerType.polygon) {
+        let index = polygonsRef.current.findIndex(
+          (p) => p.id === thisFetchFeatures.id,
+        );
+        const thisPolygonLayer = polygonsRef.current.at(index);
+        if (!thisPolygonLayer) return [];
+        let coordinates: [number, number][] = thisPolygonLayer.markers
+          .filter((m) => m.type === EMarkerType.polygon)
+          .map((m) => {
+            const lng = m.marker.getLngLat().lng;
+            const lat = m.marker.getLngLat().lat;
+            return [lng, lat];
+          });
 
-      // Close the polygon
-      if (coordinates.length > 0) {
-        coordinates.push(coordinates[0]);
+        // Close the polygon
+        if (coordinates.length > 0) {
+          coordinates.push(coordinates[0]);
+        }
+
+        return coordinates;
+      } else {
+        if (!map) return [];
+        const circleLayer = map.getLayer("circle");
+        if (!circleLayer) return [];
+
+        const metadata = circleLayer.metadata as ILayerMetadata;
+        const feature = metadata?.feature;
+        return feature?.geometry?.coordinates?.[0] || [];
+      }
+    },
+    [map],
+  );
+
+  const getPostBody = useCallback(
+    (a_RequestContext: ERequestContext) => {
+      const cloudCoverFilter: TCloudCoverFilter = {
+        op: "<=",
+        args: [{ property: "eo:cloud_cover" }, Number(cloudCover)],
+      };
+
+      const snowCoverFilter: TSnowCoverFilter = {
+        op: "<=",
+        args: [{ property: "s2:snow_ice_percentage" }, Number(snowCover)],
+      };
+
+      const geometryFilter: TSpatialFilter = {
+        op: spatialOp,
+        args: [
+          { property: "geometry" },
+          {
+            type: "Polygon",
+            coordinates: [getCoordinatesFromMarkers(a_RequestContext)],
+          },
+        ],
+      };
+
+      let temporalFilter = "";
+
+      switch (temporalOp) {
+        case "t_during":
+          temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/${endDate.substring(0, endDate.indexOf("T"))}`;
+          break;
+        case "t_after":
+          temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/`;
+          break;
+        case "t_before":
+          temporalFilter = `/${endDate.substring(0, endDate.indexOf("T"))}`;
+          break;
       }
 
-      return coordinates;
-    } else {
-      if(!map) return []
-      const circleLayer = map.getLayer("circle");
-      if (!circleLayer) return [];
-
-      const metadata = circleLayer.metadata as ILayerMetadata;
-      const feature = metadata?.feature;
-      return feature?.geometry?.coordinates?.[0] || [];
-    }
-  }, [map]);
-
-  const getPostBody = useCallback((a_RequestContext: ERequestContext) => {
-    const cloudCoverFilter: TCloudCoverFilter = {
-      op: "<=",
-      args: [{ property: "eo:cloud_cover" }, Number(cloudCover)],
-    };
-
-    const snowCoverFilter: TSnowCoverFilter = {
-      op: "<=",
-      args: [{ property: "s2:snow_ice_percentage" }, Number(snowCover)],
-    };
-
-    const geometryFilter: TSpatialFilter = {
-      op: spatialOp,
-      args: [
-        { property: "geometry" },
-        {
-          type: "Polygon",
-          coordinates: [getCoordinatesFromMarkers(a_RequestContext)],
+      const postBody: ISTACFilterRequest = {
+        sortby: [{ field: "properties.datetime", direction: "asc" }],
+        collections: [ESTACCollections.Sentinel2l2a],
+        filter: {
+          op: "and",
+          args: [cloudCoverFilter, snowCoverFilter, geometryFilter],
         },
-      ],
-    };
+        datetime: temporalFilter,
+        limit: Number(limit),
+      };
 
-    let temporalFilter = "";
-
-    switch (temporalOp) {
-      case "t_during":
-        temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/${endDate.substring(0, endDate.indexOf("T"))}`;
-        break;
-      case "t_after":
-        temporalFilter = `${startDate.substring(0, startDate.indexOf("T"))}/`;
-        break;
-      case "t_before":
-        temporalFilter = `/${endDate.substring(0, endDate.indexOf("T"))}`;
-        break;
-    }
-
-    const postBody: ISTACFilterRequest = {
-      sortby: [{ field: "properties.datetime", direction: "asc" }],
-      collections: [ESTACCollections.Sentinel2l2a],
-      filter: {
-        op: "and",
-        args: [cloudCoverFilter, snowCoverFilter, geometryFilter],
-      },
-      datetime: temporalFilter,
-      limit: Number(limit),
-    };
-
-    return postBody;
-  }, [
-    cloudCover,
-    snowCover,
-    startDate,
-    endDate,
-    spatialOp,
-    temporalOp,
-    limit,
-    getCoordinatesFromMarkers,
-  ]);
+      return postBody;
+    },
+    [
+      cloudCover,
+      snowCover,
+      startDate,
+      endDate,
+      spatialOp,
+      temporalOp,
+      limit,
+      getCoordinatesFromMarkers,
+    ],
+  );
 
   const showMap = useCallback(() => {
     setShowError(false);
@@ -529,7 +544,7 @@ const Home = () => {
     }); */
     setGlobalLoading({
       main: false,
-      comparison: false
+      comparison: false,
     });
   }, [setShowError, setShowChart, setFetchFeatures, setGlobalLoading]);
 
@@ -542,13 +557,12 @@ const Home = () => {
     })); */
   }, [setShowError, setShowChart, setGlobalLoading]);
 
-
   const showChartModal = useCallback(() => {
     setShowError(false);
     setShowChart(true);
     setGlobalLoading({
       main: false,
-      comparison: false
+      comparison: false,
     });
   }, [setShowError, setShowChart, setGlobalLoading]);
 
@@ -557,63 +571,66 @@ const Home = () => {
     setShowChart(false);
     setGlobalLoading({
       main: false,
-      comparison: false
+      comparison: false,
     });
   }, [setShowError, setShowChart, setGlobalLoading]);
 
-  const resetStates = useCallback((a_RequestContext: ERequestContext) => {
-    if(a_RequestContext == ERequestContext.main){
-      start = Date.now();
-    } else {
-      startComparison = Date.now();
-    }
-    setLatency(prev=>({
-      ...prev,
-      [a_RequestContext]: 0
-    }));
-    setSamples(prev=>({
-      ...prev,
-      [a_RequestContext]: []
-    }));
-    setNotValidSamples(prev=>({
-      ...prev,
-      [a_RequestContext]: []
-    }));
-    setResponseFeatures(prev=>({
-      ...prev,
-      [a_RequestContext]: null
-    }));
-    setErrorFeatures(prev=>({
-      ...prev,
-      [a_RequestContext]: null
-    }));
-  }, [
-    setLatency,
-    setSamples,
-    setNotValidSamples,
-    setResponseFeatures,
-    setErrorFeatures,
-  ]);
+  const resetStates = useCallback(
+    (a_RequestContext: ERequestContext) => {
+      if (a_RequestContext == ERequestContext.main) {
+        start = Date.now();
+      } else {
+        startComparison = Date.now();
+      }
+      setLatency((prev) => ({
+        ...prev,
+        [a_RequestContext]: 0,
+      }));
+      setSamples((prev) => ({
+        ...prev,
+        [a_RequestContext]: [],
+      }));
+      setNotValidSamples((prev) => ({
+        ...prev,
+        [a_RequestContext]: [],
+      }));
+      setResponseFeatures((prev) => ({
+        ...prev,
+        [a_RequestContext]: null,
+      }));
+      setErrorFeatures((prev) => ({
+        ...prev,
+        [a_RequestContext]: null,
+      }));
+    },
+    [
+      setLatency,
+      setSamples,
+      setNotValidSamples,
+      setResponseFeatures,
+      setErrorFeatures,
+    ],
+  );
 
   const handleCloseChart = useCallback(() => {
     setFetchFeatures({
-      "main": null,
-      "comparison": null
+      main: null,
+      comparison: null,
     });
     setResponseFeatures({
-      "main": null,
-      "comparison": null
+      main: null,
+      comparison: null,
     });
     setNearestPoint({
-      x:0,
-      y:0,
-      note:'',
-      featureId:'',
-      datetime:''
-    })
+      x: 0,
+      y: 0,
+      note: "",
+      featureId: "",
+      datetime: "",
+    });
     setChartIndex({
       start: undefined,
-      end: undefined
+      end: undefined,
     });
     showMap();
   }, [setFetchFeatures, showMap]);
@@ -626,14 +643,14 @@ const Home = () => {
       };
 
       log("Next Request", postBody);
-      setGlobalLoading(prev=>({
+      setGlobalLoading((prev) => ({
         ...prev,
-        main: true
+        main: true,
       }));
-      setFetchFeatures(prev=>({
+      setFetchFeatures((prev) => ({
         ...prev,
-        comparison: null
-      }))
+        comparison: null,
+      }));
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
@@ -647,14 +664,14 @@ const Home = () => {
       };
 
       log("Previous Request", postBody);
-      setGlobalLoading(prev=>({
+      setGlobalLoading((prev) => ({
         ...prev,
-        main: true
+        main: true,
       }));
-      setFetchFeatures(prev=>({
+      setFetchFeatures((prev) => ({
         ...prev,
-        comparison: null
-      }))
+        comparison: null,
+      }));
       resetStates(ERequestContext.main);
       debouncedGetFeatures(postBody, ERequestContext.main);
     }
@@ -695,63 +712,73 @@ const Home = () => {
   };
 
   const getChartLegend = (a_RequestContext: ERequestContext) => {
-    const thisFetchFeature = fetchFeaturesRef.current[a_RequestContext]
-    if(!thisFetchFeature) return 
+    const thisFetchFeature = fetchFeaturesRef.current[a_RequestContext];
+    if (!thisFetchFeature) return;
 
-    return `${toFirstLetterUppercase(a_RequestContext)} Area NDVI (${thisFetchFeature.type == EMarkerType.point 
-      ? toFirstLetterUppercase(thisFetchFeature.type) 
-      : "Zonal Nr." + thisFetchFeature.id})`
-  }
+    return `${toFirstLetterUppercase(a_RequestContext)} Area NDVI (${
+      thisFetchFeature.type == EMarkerType.point
+        ? toFirstLetterUppercase(thisFetchFeature.type)
+        : "Zonal Nr." + thisFetchFeature.id
+    })`;
+  };
 
-  const getPoints = useCallback((a_StartIndex?: number, a_EndIndex?: number) => getChartPoints(samples, notValidSamples, annotations, a_StartIndex, a_EndIndex),[
-    samples, notValidSamples, annotations
-  ]) 
+  const getPoints = useCallback(
+    (a_StartIndex?: number, a_EndIndex?: number) =>
+      getChartPoints(
+        samples,
+        notValidSamples,
+        annotations,
+        a_StartIndex,
+        a_EndIndex,
+      ),
+    [samples, notValidSamples, annotations],
+  );
 
   const handleChartClick = (e) => {
     if (!e || !e.activeIndex) return;
 
-    const point = getPoints()[e.activeIndex]
-    setShowBarChart(false)
+    const point = getPoints()[e.activeIndex];
+    setShowBarChart(false);
     setNearestPoint({
       x: e.activeCoordinate.x,
       y: e.activeCoordinate.y,
       datetime: point.datetime,
-      note: point.note ? point.note.trim() : '',
-      featureId: point.featureId
-    })
-  }
+      note: point.note ? point.note.trim() : "",
+      featureId: point.featureId,
+    });
+  };
 
   const handleChartDbClick = () => {
     setChartIndex({
       start: undefined,
-      end: undefined
-    })
-  }
+      end: undefined,
+    });
+  };
 
   const handleChangeTextarea = (a_Text: string) => {
-    setNearestPoint(prev=>({
+    setNearestPoint((prev) => ({
       ...prev,
-      note: a_Text
-    }))
-  }
+      note: a_Text,
+    }));
+  };
 
   const handleCloseTextarea = () => {
     setNearestPoint({
-      datetime: '',
-      note: '',
-      featureId: '', 
+      datetime: "",
+      note: "",
+      featureId: "",
       x: 0,
       y: 0,
-    })
-    setShowBarChart(true)
-  }
+    });
+    setShowBarChart(true);
+  };
 
   const handleBrushChange = (ev) => {
     setChartIndex({
       start: ev.startIndex,
-      end: ev.endIndex
-    })
-  }
+      end: ev.endIndex,
+    });
+  };
 
   const handleExportPNG = async () => {
     const png = await getPng();
@@ -761,23 +788,23 @@ const Home = () => {
       link.href = png;
       link.click();
     } else {
-      log("Failed to export PNG", png, ELogLevel.error)
+      log("Failed to export PNG", png, ELogLevel.error);
     }
-  }
+  };
 
   // Follow Annotation Note
-  useEffect(()=>{
-    if(nearestPoint.featureId === '') return
-    setAnnotations(prev=>{
+  useEffect(() => {
+    if (nearestPoint.featureId === "") return;
+    setAnnotations((prev) => {
       const index = prev.findIndex(
-        a => a.featureId === nearestPoint.featureId
+        (a) => a.featureId === nearestPoint.featureId,
       );
 
       if (index !== -1) {
-        return prev.map(a =>
+        return prev.map((a) =>
           a.featureId === nearestPoint.featureId
             ? { ...a, note: nearestPoint.note }
-            : a
+            : a,
         );
       }
 
@@ -785,14 +812,16 @@ const Home = () => {
         return prev;
       }
 
-      return [...prev, {
-        note: nearestPoint.note,
-        featureId: nearestPoint.featureId,
-        datetime: nearestPoint.datetime
-      }]
-
-    })
-  },[nearestPoint])
+      return [
+        ...prev,
+        {
+          note: nearestPoint.note,
+          featureId: nearestPoint.featureId,
+          datetime: nearestPoint.datetime,
+        },
+      ];
+    });
+  }, [nearestPoint]);
 
   // Loading Map
   useEffect(() => {
@@ -919,7 +948,11 @@ const Home = () => {
 
         setTimeout(() => {
           if (!map) {
-            log("Read URLParams", "Failed to use URLParam: Map is not ready", ELogLevel.warning)
+            log(
+              "Read URLParams",
+              "Failed to use URLParam: Map is not ready",
+              ELogLevel.warning,
+            );
             return;
           }
           const parsedROI = JSON.parse(pointROI) as [[number, number], string];
@@ -929,11 +962,15 @@ const Home = () => {
           drawCircle(center);
         }, 100);
       } else {
-        log("Read URLParams", "Failed to use URLParam: pointROI does not match", ELogLevel.warning)
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: pointROI does not match",
+          ELogLevel.warning,
+        );
       }
     }
     if (zonalROIs.length > 0) {
-      setPolygons([])
+      setPolygons([]);
       zonalROIs.forEach((zonalROI, index) => {
         if (isROIValid(zonalROI, EMarkerType.polygon)) {
           removeMarker(EMarkerType.polygon);
@@ -943,7 +980,11 @@ const Home = () => {
             parsedROI.forEach((coordinate) => {
               const [lng, lat] = coordinate;
               if (!map) {
-                log("Read URLParams", "Failed to use URLParam: Map is not ready", ELogLevel.warning)
+                log(
+                  "Read URLParams",
+                  "Failed to use URLParam: Map is not ready",
+                  ELogLevel.warning,
+                );
                 return;
               }
               const markerElement = new maplibregl.Marker()
@@ -963,9 +1004,13 @@ const Home = () => {
             ]);
           }, 100);
         } else {
-          log("Read URLParams", "Failed to use URLParam: zonalROI-" +
+          log(
+            "Read URLParams",
+            "Failed to use URLParam: zonalROI-" +
               (index + 1) +
-              " does not match", ELogLevel.warning)
+              " does not match",
+            ELogLevel.warning,
+          );
         }
       });
     }
@@ -982,8 +1027,11 @@ const Home = () => {
         setStartDate(startDateParam);
         isStartValid = true;
       } else {
-        
-        log("Read URLParams", "Failed to use URLParam: startdate does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: startdate does not match",
+          ELogLevel.warning,
+        );
       }
     }
     if (endDateParam) {
@@ -991,7 +1039,11 @@ const Home = () => {
         setEndDate(endDateParam);
         isEndValid = true;
       } else {
-        log("Read URLParams", "Failed to use URLParam: enddate does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: enddate does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1005,7 +1057,11 @@ const Home = () => {
           )!.value,
         );
       } else {
-        log("Read URLParams", "Failed to use URLParam: temporalOp does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: temporalOp does not match",
+          ELogLevel.warning,
+        );
       }
     } else {
       if (isStartValid && isEndValid) {
@@ -1030,7 +1086,11 @@ const Home = () => {
           )!.value,
         );
       } else {
-        log("Read URLParams", "Failed to use URLParam: spatialOp does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: spatialOp does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1040,7 +1100,11 @@ const Home = () => {
       if (isValidRange(cloudParam, 0, 100)) {
         setCloudCover(cloudParam);
       } else {
-        log("Read URLParams", "Failed to use URLParam: cloud does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: cloud does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1050,7 +1114,11 @@ const Home = () => {
       if (isValidRange(snowParam, 0, 100)) {
         setSnowCover(snowParam);
       } else {
-        log("Read URLParams", "Failed to use URLParam: snow does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: snow does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1060,7 +1128,11 @@ const Home = () => {
       if (isValidRange(limitParam, 1, 50)) {
         setLimit(limitParam);
       } else {
-        log("Read URLParams", "Failed to use URLParam: limit does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: limit does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1070,7 +1142,11 @@ const Home = () => {
       if (isValidRange(coverageParam, 0, 100)) {
         setCoverageThreshold(coverageParam);
       } else {
-        log("Read URLParams", "Failed to use URLParam: coverage does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: coverage does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
@@ -1084,19 +1160,26 @@ const Home = () => {
           ) as ESampleFilter,
         );
       } else {
-        log("Read URLParams", "Failed to use URLParam: filter does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: filter does not match",
+          ELogLevel.warning,
+        );
       }
     }
 
     const annotationsParam = params.get(EURLParams.annotations);
-    if(annotationsParam){
-      if(isValidAnnotation(annotationsParam)){
+    if (annotationsParam) {
+      if (isValidAnnotation(annotationsParam)) {
         setAnnotations(JSON.parse(annotationsParam));
       } else {
-        log("Read URLParams", "Failed to use URLParam: annotations does not match", ELogLevel.warning);
+        log(
+          "Read URLParams",
+          "Failed to use URLParam: annotations does not match",
+          ELogLevel.warning,
+        );
       }
     }
-
   }, [map]);
 
   // Write URLParams
@@ -1107,10 +1190,10 @@ const Home = () => {
 
     const params = new URLSearchParams();
     const existingParams = new URLSearchParams(window.location.search);
-    const loglevel = existingParams.get(EURLParams.loglevel)
-    if(loglevel){
-      params.set(EURLParams.loglevel, loglevel)
-    } 
+    const loglevel = existingParams.get(EURLParams.loglevel);
+    if (loglevel) {
+      params.set(EURLParams.loglevel, loglevel);
+    }
 
     if (polygons.length > 0) {
       polygons.forEach((polygon) => {
@@ -1148,7 +1231,7 @@ const Home = () => {
     params.set(EURLParams.coverage, coverageThreshold);
     params.set(EURLParams.filter, sampleFilter);
 
-    if(annotations.length > 0){
+    if (annotations.length > 0) {
       params.set(EURLParams.annotations, JSON.stringify(annotations));
     }
 
@@ -1167,7 +1250,7 @@ const Home = () => {
     limit,
     coverageThreshold,
     sampleFilter,
-    annotations
+    annotations,
   ]);
 
   // Get NDVI for STAC Items
@@ -1175,14 +1258,14 @@ const Home = () => {
   // 1. Get Features
   useEffect(() => {
     fetchFeaturesRef.current.main = fetchFeatures.main;
-   
-    if(fetchFeatures.main){
+
+    if (fetchFeatures.main) {
       const postBody = getPostBody(ERequestContext.main);
       resetStates(ERequestContext.main);
-      log("Request Body_"+ ERequestContext.main, postBody);
-      setGlobalLoading(prev=>({
+      log("Request Body_" + ERequestContext.main, postBody);
+      setGlobalLoading((prev) => ({
         ...prev,
-        main: true
+        main: true,
       }));
       debouncedGetFeatures(postBody, ERequestContext.main);
     } else {
@@ -1191,23 +1274,23 @@ const Home = () => {
     }
   }, [fetchFeatures.main]);
 
-  useEffect(()=>{
+  useEffect(() => {
     //comparisonItemRef.current = comparisonItem
     fetchFeaturesRef.current.comparison = fetchFeatures.comparison;
-    if(fetchFeatures.comparison){
+    if (fetchFeatures.comparison) {
       const postBody = getPostBody(ERequestContext.comparison);
       resetStates(ERequestContext.comparison);
       startComparison = Date.now();
-      log("Request Body_"+ ERequestContext.comparison, postBody);
-      setGlobalLoading(prev=>({
+      log("Request Body_" + ERequestContext.comparison, postBody);
+      setGlobalLoading((prev) => ({
         ...prev,
-        comparison: true
+        comparison: true,
       }));
       debouncedGetFeatures(postBody, ERequestContext.comparison);
     } else {
       resetStates(ERequestContext.comparison);
     }
-  },[fetchFeatures.comparison])
+  }, [fetchFeatures.comparison]);
 
   useEffect(() => {
     if (errorFeatures[ERequestContext.main]) {
@@ -1239,7 +1322,8 @@ const Home = () => {
         setPreviousPage(null);
       }
 
-      const hasResponseFeatureLength = responseFeatures.main.features.length !== 0 
+      const hasResponseFeatureLength =
+        responseFeatures.main.features.length !== 0;
       if (hasResponseFeatureLength) {
         const NDVIItem: INDVIPanel = {
           filter: sampleFilter,
@@ -1250,7 +1334,7 @@ const Home = () => {
           responseFeatures[ERequestContext.main].features,
           getCoordinatesFromMarkers(ERequestContext.main),
           NDVIItem,
-          ERequestContext.main
+          ERequestContext.main,
         );
       } else {
         showErrorModal();
@@ -1260,7 +1344,8 @@ const Home = () => {
 
   useEffect(() => {
     if (responseFeatures.comparison) {
-      const hasResponseFeatureLength = responseFeatures.comparison.features.length !== 0 
+      const hasResponseFeatureLength =
+        responseFeatures.comparison.features.length !== 0;
       if (hasResponseFeatureLength) {
         const NDVIItem: INDVIPanel = {
           filter: sampleFilter,
@@ -1271,10 +1356,14 @@ const Home = () => {
           responseFeatures[ERequestContext.comparison].features,
           getCoordinatesFromMarkers(ERequestContext.comparison),
           NDVIItem,
-          ERequestContext.comparison
+          ERequestContext.comparison,
         );
       } else {
-        log(`responseFeatures.comparison.features.length`, responseFeatures.comparison.features.length, ELogLevel.warning)
+        log(
+          `responseFeatures.comparison.features.length`,
+          responseFeatures.comparison.features.length,
+          ELogLevel.warning,
+        );
         //showErrorModal();
       }
     }
@@ -1300,13 +1389,13 @@ const Home = () => {
       if (samples[ERequestContext.main].every((s) => !s.meanNDVI)) {
         showErrorModal();
         end = Date.now();
-        setLatency(prev=>({
+        setLatency((prev) => ({
           ...prev,
           main: end - start,
         }));
       } else {
         end = Date.now();
-        setLatency(prev=>({
+        setLatency((prev) => ({
           ...prev,
           main: end - start,
         }));
@@ -1320,8 +1409,8 @@ const Home = () => {
       startComparison = Date.now();
     } else {
       if (responseFeatures[ERequestContext.comparison] == null) return; // avoding show Chart on mounting
-      endComparison= Date.now();
-      setLatency(prev=>({
+      endComparison = Date.now();
+      setLatency((prev) => ({
         ...prev,
         comparison: endComparison - startComparison,
       }));
@@ -1375,24 +1464,22 @@ const Home = () => {
           <ResponsiveContainer width="100%" height="80%">
             {/* resize automatically */}
             {/* array of objects */}
-            {
-              nearestPoint.x !== 0 && nearestPoint.y !== 0
-              ?
-              <ChartTextarea 
+            {nearestPoint.x !== 0 && nearestPoint.y !== 0 ? (
+              <ChartTextarea
                 value={nearestPoint.note}
                 x={nearestPoint.x}
                 y={nearestPoint.y}
                 onChange={handleChangeTextarea}
                 onClose={handleCloseTextarea}
               />
-              :
+            ) : (
               <></>
-            }
-            <LineChart 
-              data={getPoints(chartIndex.start, chartIndex.end)} 
-              onClick={handleChartClick} 
+            )}
+            <LineChart
+              data={getPoints(chartIndex.start, chartIndex.end)}
+              onClick={handleChartClick}
               ref={ref}
-              margin={{right:150}}
+              margin={{ right: 150 }}
             >
               <XAxis
                 dataKey={"id"}
@@ -1416,13 +1503,20 @@ const Home = () => {
                 />
               </YAxis>
               {/* popup tooltip by hovering */}
-              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}} wrapperStyle={{maxWidth: "15%"}}/>
+              <Tooltip
+                content={CustomTooltip}
+                position={{ x: -200, y: -100 }}
+                wrapperStyle={{ maxWidth: "15%" }}
+              />
               <Legend />
               {/* MAIN */}
               <Line
-                
                 type="linear"
-                dataKey={getChartDataKey(ERequestContext.main, yAxis, smoothingWindow[0].value)}
+                dataKey={getChartDataKey(
+                  ERequestContext.main,
+                  yAxis,
+                  smoothingWindow[0].value,
+                )}
                 stroke="#00ff1eff"
                 dot={CustomizedDot}
                 width={2}
@@ -1438,16 +1532,17 @@ const Home = () => {
                 stroke="#00ff1eff"
                 opacity={0.5}
                 width={2}
-                legendType={'none'}
+                legendType={"none"}
               />
-              {
-                fetchFeatures.comparison
-                ?
+              {fetchFeatures.comparison ? (
                 <>
                   <Line
-                    
                     type="linear"
-                    dataKey={getChartDataKey(ERequestContext.comparison, yAxis, smoothingWindow[0].value)}
+                    dataKey={getChartDataKey(
+                      ERequestContext.comparison,
+                      yAxis,
+                      smoothingWindow[0].value,
+                    )}
                     stroke="#ffb300ff"
                     dot={CustomizedDotComparison}
                     width={2}
@@ -1461,74 +1556,75 @@ const Home = () => {
                     stroke="#ffb300ff"
                     opacity={0.5}
                     width={2}
-                    legendType={'none'}
+                    legendType={"none"}
                   />
-                  </>
-                : 
+                </>
+              ) : (
                 <></>
-              }
-              
+              )}
             </LineChart>
           </ResponsiveContainer>
           <ResponsiveContainer width="100%" height="20%">
-            {
-              showBarChart ? 
+            {showBarChart ? (
               <BarChart
-              data={getPoints()}
-              margin={{ left: 60, right: 150 }}
-              onDoubleClick={handleChartDbClick}
-            >
-              <XAxis
-                dataKey={"id"}
-                stroke="white"
-                hide
-              />
-              <YAxis domain={[0, 100]} hide />
-
-              <ReferenceLine
-                y={Number(coverageThreshold)}
-                stroke="#ff6b6b"
-                strokeDasharray="4 4"
+                data={getPoints()}
+                margin={{ left: 60, right: 150 }}
+                onDoubleClick={handleChartDbClick}
               >
-                <Label
-                  style={{
-                    textAnchor: "middle",
-                    fontSize: "1.01rem",
-                    fill: "#dad458ff",
-                  }}
-                  value={Number(coverageThreshold) + "%"}
-                />
-              </ReferenceLine>
+                <XAxis dataKey={"id"} stroke="white" hide />
+                <YAxis domain={[0, 100]} hide />
 
-              <Bar dataKey={"valid_fraction"} barSize={20}>
-                {getPoints(chartIndex.start, chartIndex.end).map((sample, index) => (
-                  <Cell
-                    key={sample.id}
-                    fill={
-                      sample.valid_fraction < Number(coverageThreshold)
-                        ? "rgba(255, 0, 0, 0.77)"
-                        : "rgba(56,161,105,0.8)"
-                    }
+                <ReferenceLine
+                  y={Number(coverageThreshold)}
+                  stroke="#ff6b6b"
+                  strokeDasharray="4 4"
+                >
+                  <Label
+                    style={{
+                      textAnchor: "middle",
+                      fontSize: "1.01rem",
+                      fill: "#dad458ff",
+                    }}
+                    value={Number(coverageThreshold) + "%"}
                   />
-                ))}
-              </Bar>
-              <Tooltip content={CustomTooltip} position={{x: -200, y: -100}} wrapperStyle={{maxWidth: "15%"}}/>
-              <Brush 
-                dataKey="id" 
-                height={20} 
-                stroke="#b4e373ff" 
-                startIndex={chartIndex.start}
-                endIndex={chartIndex.end}
-                onChange={handleBrushChange}
-                tickFormatter={(id) =>
-                  getPoints()
-                    .find((d) => d.id === id)!
-                    .datetime.substring(0, 10)
-                }
-              /> 
+                </ReferenceLine>
+
+                <Bar dataKey={"valid_fraction"} barSize={20}>
+                  {getPoints(chartIndex.start, chartIndex.end).map(
+                    (sample, index) => (
+                      <Cell
+                        key={sample.id}
+                        fill={
+                          sample.valid_fraction < Number(coverageThreshold)
+                            ? "rgba(255, 0, 0, 0.77)"
+                            : "rgba(56,161,105,0.8)"
+                        }
+                      />
+                    ),
+                  )}
+                </Bar>
+                <Tooltip
+                  content={CustomTooltip}
+                  position={{ x: -200, y: -100 }}
+                  wrapperStyle={{ maxWidth: "15%" }}
+                />
+                <Brush
+                  dataKey="id"
+                  height={20}
+                  stroke="#b4e373ff"
+                  startIndex={chartIndex.start}
+                  endIndex={chartIndex.end}
+                  onChange={handleBrushChange}
+                  tickFormatter={(id) =>
+                    getPoints()
+                      .find((d) => d.id === id)!
+                      .datetime.substring(0, 10)
+                  }
+                />
               </BarChart>
-              : <></>
-            }
+            ) : (
+              <></>
+            )}
           </ResponsiveContainer>
         </Chart>
       ) : (
@@ -1562,12 +1658,10 @@ const Home = () => {
           <Loading
             text={
               fetchFeatures.comparison
-              ?
-                responseFeatures[ERequestContext.comparison]?.features.length
+                ? responseFeatures[ERequestContext.comparison]?.features.length
                   ? `${doneFeature[ERequestContext.comparison]}/${responseFeatures[ERequestContext.comparison]?.features.length} `
                   : "N/A"
-              :
-                responseFeatures[ERequestContext.main]?.features.length
+                : responseFeatures[ERequestContext.main]?.features.length
                   ? `${doneFeature[ERequestContext.main]}/${responseFeatures[ERequestContext.main]?.features.length} `
                   : "N/A"
             }

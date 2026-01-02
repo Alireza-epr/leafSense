@@ -1,5 +1,5 @@
 import { DotItemDotProps } from "recharts";
-import { INDVISample, useMapStore } from "../store/mapStore";
+import { useMapStore } from "../store/mapStore";
 import { IChartPoint } from "../types/generalTypes";
 
 const CustomizedDotComparison = (props: DotItemDotProps) => {
@@ -12,7 +12,7 @@ const CustomizedDotComparison = (props: DotItemDotProps) => {
   }
 
   const changePoint = changePoints.comparison.find(
-    (p) => p.id === (payload as IChartPoint).comparison_id
+    (p) => p.id === (payload as IChartPoint).comparison_id,
   );
 
   if (changePoint) {

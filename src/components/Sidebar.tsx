@@ -1,7 +1,8 @@
 import sidebarStyles from "./Sidebar.module.scss";
 import CButton from "../components/CButton";
 import Section from "./Section";
-import { EMarkerType, ERequestContext, IPolygon, TMarker, useMapStore } from "../store/mapStore";
+import { EMarkerType, ERequestContext, IPolygon, TMarker } from "../types";
+import { useMapStore } from "../store/mapStore";
 import { useEffect, useState } from "react";
 import DateInput from "./DateInput";
 import RangeInput from "./RangeInput";
@@ -126,26 +127,26 @@ const Sidebar = () => {
   };
 
   const handleSetPolygonFetchFeatures = (a_Polygons: IPolygon[]) => {
-    const lastPolygon = a_Polygons.at(-1)
-    if(!lastPolygon) return 
+    const lastPolygon = a_Polygons.at(-1);
+    if (!lastPolygon) return;
     setFetchFeatures({
       main: {
         type: EMarkerType.polygon,
-        id: lastPolygon.id
+        id: lastPolygon.id,
       },
-      comparison: null
-    })
+      comparison: null,
+    });
   };
 
   const handleSetPointFetchFeatures = (a_Polygons: IPolygon[]) => {
-    const lastPolygon = a_Polygons.at(-1)
+    const lastPolygon = a_Polygons.at(-1);
     setFetchFeatures({
       main: {
         type: EMarkerType.point,
-        id: lastPolygon ? lastPolygon.id +1 : 1
+        id: lastPolygon ? lastPolygon.id + 1 : 1,
       },
-      comparison: null
-    })
+      comparison: null,
+    });
   };
 
   const handleStartDateChange = (a_Date: string) => {
@@ -191,7 +192,8 @@ const Sidebar = () => {
   const [isSidebarDisabled, setIsSidebarDisabled] = useState(false);
 
   useEffect(() => {
-    const fetchAnyFeature = fetchFeatures.comparison !== null || fetchFeatures.main !== null
+    const fetchAnyFeature =
+      fetchFeatures.comparison !== null || fetchFeatures.main !== null;
     if (fetchAnyFeature) {
       setIsSidebarDisabled(true);
     } else {
@@ -226,7 +228,7 @@ const Sidebar = () => {
                   ? "Chart of Zonal Nr." + polygons.at(-1)?.id
                   : "Chart of Zonal"
               }
-              onButtonClick={()=>handleSetPolygonFetchFeatures(polygons)}
+              onButtonClick={() => handleSetPolygonFetchFeatures(polygons)}
               disable={polygons.length == 0 || isSidebarDisabled}
             />
           </div>
@@ -249,7 +251,7 @@ const Sidebar = () => {
             />
             <CButton
               title={"Chart of Point"}
-              onButtonClick={()=>handleSetPointFetchFeatures(polygons)}
+              onButtonClick={() => handleSetPointFetchFeatures(polygons)}
               disable={
                 markers.filter((m) => m.type == EMarkerType.point).length ===
                   0 || isSidebarDisabled
