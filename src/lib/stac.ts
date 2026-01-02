@@ -14,7 +14,7 @@ import {
   getFeatureToken,
   isTokenExpired,
   getNDVISample,
-} from "../utils/calculationUtils";
+} from "../utils";
 import { ReadRasterResult, TypedArray } from "geotiff";
 import { ELogLevel, INDVIPanel } from "../types/generalTypes";
 import { log } from "../utils/generalUtils";
