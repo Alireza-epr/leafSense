@@ -20,7 +20,7 @@ const CustomNote = (props: CustomNoteProps) => {
   const boxHeight = lines.length * LINE_HEIGHT + PADDING_Y * 2 + LINE_HEIGHT;
   const boxWidth = 140;
 
-  const startX = props.x + 10;
+  const startX = props.x;
   let startY =
     props.index != null && props.index % 2 === 0
       ? props.y - boxHeight - OFFSET // above line

@@ -325,7 +325,7 @@ const Sidebar = () => {
             <RangeInput
               value={limit}
               onRangeChange={handleLimitChange}
-              max={50}
+              max={100}
               min={1}
             />
           </Section>
