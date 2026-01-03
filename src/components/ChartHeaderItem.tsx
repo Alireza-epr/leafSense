@@ -9,6 +9,7 @@ export interface IChartHeaderItemProps {
   active?: boolean;
   disabled?: boolean;
   isClose?: boolean;
+  "data-testid"?: string
 }
 
 const ChartHeaderItem = (props: IChartHeaderItemProps) => {
@@ -28,6 +29,7 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
         minWidth: props.isClose ? "5%" : "",
       }}
       onClick={() => !props.disabled && props.onClick()}
+      data-testid={props["data-testid"]}
     >
       {props.icon ? (
         <img src={`/images/${props.icon}.svg`} alt={props.alt} />

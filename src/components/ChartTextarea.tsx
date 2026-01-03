@@ -53,6 +53,7 @@ const ChartTextarea = (props: ChartTextareaProps) => {
           top: 0,
         }}
         onKeyDown={(ev) => handleKeyDown(ev)}
+        data-testid="chart-textarea"
       />
     </div>
   );

@@ -649,11 +649,13 @@ const Chart = (props: IChartProps) => {
           icon="detection"
           disabled={!enableHeaderOption}
           active={changeDetection[0].value !== "1"}
+          data-testid="change-point"
         >
           {showDetectionOptions ? (
             <ChartHeaderItemOptions
               options={changeDetection}
               onOption={handleChangeDetection}
+              data-testid="change-point-window"
             />
           ) : (
             <></>
@@ -690,6 +692,7 @@ const Chart = (props: IChartProps) => {
           onClick={() => handleExportCSV(samples, notValidSamples)}
           icon="export-csv"
           disabled={globalLoading.main}
+          data-testid="export-csv"
         />
         <ChartHeaderItem
           title="Export PNG"
@@ -697,6 +700,7 @@ const Chart = (props: IChartProps) => {
           onClick={() => handleExportPNG()}
           icon="export-png"
           disabled={globalLoading.main}
+          data-testid="export-png"
         />
         <ChartHeaderItem
           title="Series Summary"
@@ -749,7 +753,7 @@ const Chart = (props: IChartProps) => {
       ) : (
         <></>
       )}
-      <div className={` ${chartStyles.children}`}>
+      <div className={` ${chartStyles.children}`} data-testid="chart-area">
         {previousPage && props.onPrevious && (
           <div
             className={`${chartStyles.arrow} ${chartStyles.previous}`}

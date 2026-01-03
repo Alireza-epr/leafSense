@@ -8,6 +8,7 @@ export interface IRangeInput {
   min?: number;
   max?: number;
   step?: number;
+  "data-testid"?: string
 }
 
 const RangeInput = (props: IRangeInput) => {
@@ -20,6 +21,7 @@ const RangeInput = (props: IRangeInput) => {
   return (
     <div className={` ${rangeInputStyles.wrapper}`}>
       <input
+        data-testid={props["data-testid"]}
         type="range"
         value={props.value}
         onChange={(v) => onRangeChange(v)}

@@ -30,5 +30,6 @@ yarn-error.log*
 
 # Test 
 /test-results
+/test-artifacts
 
 weekly_summary.md

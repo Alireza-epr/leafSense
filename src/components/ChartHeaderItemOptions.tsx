@@ -10,6 +10,7 @@ export interface ChartHeaderItemOptionsProps {
   isList?: boolean;
   options: IChartHeaderItemOption[];
   onOption: (a_Valud: IChartHeaderItemOption) => void;
+  "data-testid"?: string
 }
 
 const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
@@ -54,6 +55,7 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
                 max={option.max}
                 min={option.min}
                 step={option.step}
+                data-testid={index == 0 ? props["data-testid"]: ""}
               ></RangeInput>
             </Section>
           ))}

@@ -240,6 +240,7 @@ const Sidebar = () => {
               onButtonClick={handlePointClick}
               disable={isSidebarDisabled}
               icon="point"
+              data-testid="draw-point-roi"
             />
             <CButton
               title={"Remove Point"}
@@ -256,6 +257,7 @@ const Sidebar = () => {
                 markers.filter((m) => m.type == EMarkerType.point).length ===
                   0 || isSidebarDisabled
               }
+              data-testid="compute-ndvi"
             />
           </div>
           {`Radius - ${radius} meter(s)`}

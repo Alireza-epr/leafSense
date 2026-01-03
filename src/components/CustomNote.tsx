@@ -29,7 +29,7 @@ const CustomNote = (props: CustomNoteProps) => {
     startY = 0 + OFFSET;
   }
   return (
-    <g>
+    <g data-testid={`chart-label-${props.index}`}>
       <rect
         x={startX}
         y={startY}
