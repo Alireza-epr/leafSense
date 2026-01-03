@@ -1,7 +1,47 @@
-## Project
+## Methods
 
-This project is part of a coaching assignment.  
-It demonstrates a modern TypeScript + React setup with testing, CI/CD, and clean code structure.
+This application computes NDVI (Normalized Difference Vegetation Index) time series
+from Sentinel-2 L2A data using STAC items and Cloud-Optimized GeoTIFFs (COGs).
+
+For each scene:
+- Red (B04) and NIR (B08) bands are read from GeoTIFFs.
+- NDVI is computed per pixel using the formula:  
+  NDVI = (NIR − Red) / (NIR + Red)
+- Scene Classification Layer (SCL) is used to mask clouds, shadows, water, and invalid pixels.
+- NDVI is aggregated over a point or polygon (zonal) using mean or median.
+- Scenes below a minimum valid-pixel coverage threshold are excluded.
+- Optional outlier rejection (IQR or z-score) and rolling-median smoothing can be applied.
+- Results are assembled into a chronological time series and visualized.
+
+## Parameters
+
+The following parameters control data selection, filtering, and visualization:
+
+- **AOI (Area of Interest)**: Point or polygon selected on the map.
+- **Date range**: Start and end dates for STAC search.
+- **Max cloud cover (%)**: Pre-filter scenes using STAC cloud cover metadata.
+- **Coverage threshold (%)**: Minimum fraction of valid pixels required per scene.
+- **Mode**: Point or zonal (polygon) sampling.
+- **Aggregation**: Mean or median NDVI.
+- **Outlier filter**: On/off (IQR or z-score based).
+- **Smoothing window**: Rolling median window size (1 disables smoothing).
+- **Change-point detection**: Enable/disable with sensitivity controls.
+
+All parameters are persisted in the URL so the view can be restored via copy/paste.
+
+## Limitations
+
+- GeoTIFFs may use projected coordinate systems (e.g. UTM); map coordinates must be
+  reprojected before pixel sampling.
+- Zonal results depend on raster resolution (10 m vs 20 m); up/down-sampling can affect precision.
+- Aggressive cloud masking or high coverage thresholds may remove many scenes.
+- Outlier detection assumes reasonable temporal continuity and may misclassify abrupt but real changes.
+- Client-side processing performance depends on AOI size and number of scenes.
+
+## Masking Details
+
+Cloud, shadow, and quality masking rules are documented separately.  
+See: [`docs/data/masking.md`](docs/data/masking.md)
 
 ---
 
@@ -10,10 +50,13 @@ It demonstrates a modern TypeScript + React setup with testing, CI/CD, and clean
 ```js
 
 /src
+    /assets
     /components
-    /features/map
-    /features/series
+    /hooks
     /lib
+    /store
+    /types
+    /utils
 /public
 /tests
 /e2e
@@ -52,7 +95,7 @@ This repository uses **GitHub Actions** to automatically:
 - TypeScript  
 - React  
 - ESLint + Prettier  
-- Jest + RTL + Playwright  
+- Jest + Playwright  
 - GitHub Actions CI/CD  
 
 ---
