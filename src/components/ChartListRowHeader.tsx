@@ -36,6 +36,10 @@ const ChartListRowHeader = () => {
         Filter Fraction
       </ChartListRowItem>
 
+      <ChartListRowItem title="Status" isHeaderItem={true}>
+        Status
+      </ChartListRowItem>
+
       <ChartListRowItem title="Download" isHeaderItem={true}>
         Download
       </ChartListRowItem>

@@ -1,11 +1,12 @@
+import { log } from "./generalUtils";
+
 export const parseURL = (a_Search: string) => {
   const params = new URLSearchParams(a_Search);
   const roi = params.get("roi");
   const startDate = params.get("startDate");
   const endDate = params.get("endDate");
 
-  console.log("parseURL");
-  console.log({
+  log("parseURL", {
     roi: roi ? JSON.parse(roi) : [],
     startDate: startDate || "",
     endDate: endDate || "",
@@ -27,7 +28,6 @@ export const serializeURL = (
   if (a_ROI) params.set("roi", JSON.stringify(a_ROI));
   if (a_StartDate) params.set("startDate", a_StartDate);
   if (a_EndDate) params.set("endDate", a_EndDate);
-  console.log("serializeURL");
-  console.log(`?${params.toString()}`);
+  log("serializeURL", `?${params.toString()}`);
   return `?${params.toString()}`;
 };

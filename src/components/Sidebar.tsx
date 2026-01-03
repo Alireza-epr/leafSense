@@ -1,7 +1,8 @@
 import sidebarStyles from "./Sidebar.module.scss";
 import CButton from "../components/CButton";
 import Section from "./Section";
-import { EMarkerType, TMarker, useMapStore } from "../store/mapStore";
+import { EMarkerType, ERequestContext, IPolygon, TMarker } from "../types";
+import { useMapStore } from "../store/mapStore";
 import { useEffect, useState } from "react";
 import DateInput from "./DateInput";
 import RangeInput from "./RangeInput";
@@ -15,6 +16,7 @@ import {
 import { ESampleFilter } from "../types/generalTypes";
 
 const Sidebar = () => {
+  const map = useMapStore((state) => state.map);
   const marker = useMapStore((state) => state.marker);
   const setMarker = useMapStore((state) => state.setMarker);
 
@@ -56,8 +58,8 @@ const Sidebar = () => {
   const sampleFilter = useMapStore((state) => state.sampleFilter);
   const setSampleFilter = useMapStore((state) => state.setSampleFilter);
 
-  const smoothing = useMapStore((state) => state.smoothing);
-  const setSmoothing = useMapStore((state) => state.setSmoothing);
+  const polygons = useMapStore((state) => state.polygons);
+  const setPolygons = useMapStore((state) => state.setPolygons);
 
   const handlePointClick = () => {
     setMarker((prev) => {
@@ -82,7 +84,7 @@ const Sidebar = () => {
       if (prev.zonal) {
         return {
           ...prev,
-          polygon: false,
+          zonal: false,
         };
       } else {
         const markerKeys = Object.keys(prev);
@@ -104,21 +106,47 @@ const Sidebar = () => {
     });
   };
 
-  const handleClearZonal = () => {
-    setMarkers((prev) => {
-      const toRemove = prev.filter((m) => m.type === EMarkerType.polygon);
-      toRemove.forEach((m) => m.marker.remove());
+  const handleClearZonal = (a_Polygons: IPolygon[]) => {
+    const lastPolygonLayer = a_Polygons.at(-1);
+    if (!map || !lastPolygonLayer) return;
 
-      return prev.filter((m) => m.type !== EMarkerType.polygon);
+    lastPolygonLayer.markers.forEach((m) => {
+      m.marker.remove();
+    });
+
+    const polygonId = "polygon_" + lastPolygonLayer.id;
+
+    const polygonLayer = map.getLayer(polygonId);
+    if (polygonLayer) {
+      map.removeLayer(`${polygonId}_label`);
+      map.removeLayer(polygonId);
+      map.removeSource(polygonId);
+    }
+
+    setPolygons((prev) => prev.filter((p) => p.id !== lastPolygonLayer.id));
+  };
+
+  const handleSetPolygonFetchFeatures = (a_Polygons: IPolygon[]) => {
+    const lastPolygon = a_Polygons.at(-1);
+    if (!lastPolygon) return;
+    setFetchFeatures({
+      main: {
+        type: EMarkerType.polygon,
+        id: lastPolygon.id,
+      },
+      comparison: null,
     });
   };
 
-  const handleSetPolygonFetchFeatures = () => {
-    setFetchFeatures(EMarkerType.polygon);
-  };
-
-  const handleSetPointFetchFeatures = () => {
-    setFetchFeatures(EMarkerType.point);
+  const handleSetPointFetchFeatures = (a_Polygons: IPolygon[]) => {
+    const lastPolygon = a_Polygons.at(-1);
+    setFetchFeatures({
+      main: {
+        type: EMarkerType.point,
+        id: lastPolygon ? lastPolygon.id + 1 : 1,
+      },
+      comparison: null,
+    });
   };
 
   const handleStartDateChange = (a_Date: string) => {
@@ -161,14 +189,12 @@ const Sidebar = () => {
     setSampleFilter(a_Type);
   };
 
-  const handleChangeSmoothing = (a_State: boolean) => {
-    setSmoothing(a_State);
-  };
-
   const [isSidebarDisabled, setIsSidebarDisabled] = useState(false);
 
   useEffect(() => {
-    if (fetchFeatures !== null) {
+    const fetchAnyFeature =
+      fetchFeatures.comparison !== null || fetchFeatures.main !== null;
+    if (fetchAnyFeature) {
       setIsSidebarDisabled(true);
     } else {
       setIsSidebarDisabled(false);
@@ -188,20 +214,22 @@ const Sidebar = () => {
               icon="polygon"
             />
             <CButton
-              title={"Remove Zonal"}
-              onButtonClick={handleClearZonal}
-              disable={
-                markers.filter((m) => m.type == EMarkerType.polygon).length ==
-                  0 || isSidebarDisabled
+              title={
+                polygons.length > 0
+                  ? "Remove Zonal Nr." + polygons.at(-1)?.id
+                  : "Remove Zonal"
               }
+              onButtonClick={() => handleClearZonal(polygons)}
+              disable={polygons.length == 0 || isSidebarDisabled}
             />
             <CButton
-              title={"Chart of Zonal"}
-              onButtonClick={handleSetPolygonFetchFeatures}
-              disable={
-                markers.filter((m) => m.type == EMarkerType.polygon).length <
-                  4 || isSidebarDisabled
+              title={
+                polygons.length > 0
+                  ? "Chart of Zonal Nr." + polygons.at(-1)?.id
+                  : "Chart of Zonal"
               }
+              onButtonClick={() => handleSetPolygonFetchFeatures(polygons)}
+              disable={polygons.length == 0 || isSidebarDisabled}
             />
           </div>
 
@@ -212,6 +240,7 @@ const Sidebar = () => {
               onButtonClick={handlePointClick}
               disable={isSidebarDisabled}
               icon="point"
+              data-testid="draw-point-roi"
             />
             <CButton
               title={"Remove Point"}
@@ -223,11 +252,12 @@ const Sidebar = () => {
             />
             <CButton
               title={"Chart of Point"}
-              onButtonClick={handleSetPointFetchFeatures}
+              onButtonClick={() => handleSetPointFetchFeatures(polygons)}
               disable={
                 markers.filter((m) => m.type == EMarkerType.point).length ===
                   0 || isSidebarDisabled
               }
+              data-testid="compute-ndvi"
             />
           </div>
           {`Radius - ${radius} meter(s)`}
@@ -297,7 +327,7 @@ const Sidebar = () => {
             <RangeInput
               value={limit}
               onRangeChange={handleLimitChange}
-              max={50}
+              max={100}
               min={1}
             />
           </Section>
@@ -331,22 +361,6 @@ const Sidebar = () => {
                 title={"IQR"}
                 onButtonClick={() => handleSampleFilter(ESampleFilter.IQR)}
                 active={sampleFilter == ESampleFilter.IQR}
-                disable={isSidebarDisabled}
-              />
-            </div>
-          </Section>
-          <Section title="Smoothing" disabled={isSidebarDisabled}>
-            <div className={` ${sidebarStyles.buttonRowWrapper}`}>
-              <CButton
-                title={"Yes"}
-                onButtonClick={() => handleChangeSmoothing(true)}
-                active={smoothing}
-                disable={isSidebarDisabled}
-              />
-              <CButton
-                title={"No"}
-                onButtonClick={() => handleChangeSmoothing(false)}
-                active={!smoothing}
                 disable={isSidebarDisabled}
               />
             </div>

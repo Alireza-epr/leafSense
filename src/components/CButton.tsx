@@ -7,6 +7,7 @@ export interface ICButtonProps {
   onButtonClick: () => void;
   disable?: boolean;
   icon?: string;
+  "data-testid"?: string
 }
 const CButton = (props: ICButtonProps) => {
   const handleButtonClick = () => {
@@ -21,6 +22,7 @@ const CButton = (props: ICButtonProps) => {
     <div
       className={` ${buttonStyles.wrapper}`}
       onClick={handleButtonClick}
+      data-testid={props["data-testid"]}
       style={{
         backgroundColor: props.disable
           ? "grey"

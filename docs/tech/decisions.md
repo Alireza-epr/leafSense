@@ -50,16 +50,16 @@ point-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C100%5D
 ---
 
 #### 2) `zonal-roi`
-Defines a polygonal ROI using multiple vertices.
+Defines polygonal ROIs using multiple vertices.
 
 **Format**:
 ```
-zonal-roi = [ [lon1, lat1], [lon2, lat2], [lon3, lat3], [lon4, lat4] ]
+zonal-roi-1 = [ [lon1, lat1], [lon2, lat2], [lon3, lat3], [lon4, lat4] ]
 ```
 
 **Example (decoded)**:
 ```
-zonal-roi=[
+zonal-roi-1=[
   [7.463714645476074,51.366522261452275],
   [7.466654346556197,51.36654905504389],
   [7.466611431211817,51.36500839803321],
@@ -151,6 +151,12 @@ cloud=33&snow=44&coverage=70&limit=22
 
 ### Additional Options
 
+- `annotations`: note assiged to a specific STAC scene
+  - Values: {
+    featureId: string, 
+    datetime: string,
+    note: string // Up to 120 char
+  }
 - `filter`: additional predefined filter
   - Values: `none | z-score | iqr`
 - `smoothing`: enable or disable smoothing
@@ -160,6 +166,7 @@ cloud=33&snow=44&coverage=70&limit=22
 ```
 filter=none
 smoothing=false
+annotations=[{"note":"sample text","featureId":"S2A_MSIL2A_20251226T103501_R108_T32ULC_20251226T115008","datetime":"2025-12-26T10:35:01.024000Z"}]
 ```
 
 ---
@@ -168,7 +175,7 @@ smoothing=false
 
 ```
 ?point-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C50%5D
-&zonal-roi=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C%5B7.466654346556197%2C51.36654905504389%5D%2C%5B7.466611431211817%2C51.36500839803321%5D%2C%5B7.4642510872788534%2C51.36437872329046%5D%5D
+&zonal-roi-1=%5B%5B7.463714645476074%2C51.366522261452275%5D%2C%5B7.466654346556197%2C51.36654905504389%5D%2C%5B7.466611431211817%2C51.36500839803321%5D%2C%5B7.4642510872788534%2C51.36437872329046%5D%5D
 &startdate=2025-10-01T00%3A00%3A00
 &enddate=2025-12-15T00%3A00%3A00
 &spatialop=within

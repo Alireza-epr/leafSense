@@ -10,7 +10,7 @@ export interface ILoadingProps {
 
 const Loading = (props: ILoadingProps) => {
   return (
-    <div className={` ${loadingStyle.wrapper}`}>
+    <div className={` ${loadingStyle.wrapper}`} data-testid="main-loading">
       {props.text && props.text ? (
         <div className={` ${loadingStyle.text}`}>{props.text}</div>
       ) : (

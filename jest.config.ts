@@ -5,14 +5,14 @@ const config: Config = {
   preset: 'ts-jest',
   testEnvironment: 'jest-environment-jsdom',
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest'
+    '^.+\\.(ts|tsx)$': ['ts-jest', { tsconfig: 'tsconfig.app.json' }],
   },
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-  globals: {
+  /* globals: {
     'ts-jest': {
       tsconfig: 'tsconfig.app.json' 
     }
-  },
+  }, */
   moduleNameMapper: {
     "\\.(css|scss)$": "<rootDir>/tests/__mocks__/styleMock.js",
   },

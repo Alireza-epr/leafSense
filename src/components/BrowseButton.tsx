@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import browseButtonStyle from "./BrowseButton.module.scss";
+import { log } from "../utils/generalUtils";
+import { ELogLevel } from "../types/generalTypes";
 
 export interface IBrowseButtonProps {
   title: string;
@@ -24,7 +26,7 @@ const BrowseButton = (props: IBrowseButtonProps) => {
   const onInputChange = async () => {
     setLoading(false);
     if (!inputFileRef.current?.files?.length) {
-      console.warn("Selected File Length 0");
+      log("Failed to select file", "Selected File Length 0", ELogLevel.warning);
       return;
     }
 
@@ -34,7 +36,7 @@ const BrowseButton = (props: IBrowseButtonProps) => {
       const json = JSON.parse(text);
       props.onFileSelect(json);
     } catch (err) {
-      console.error("Invalid JSON file", err);
+      log("Invalid JSON file", err, ELogLevel.error);
     }
   };
 

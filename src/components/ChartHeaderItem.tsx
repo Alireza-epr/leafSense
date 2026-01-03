@@ -8,6 +8,8 @@ export interface IChartHeaderItemProps {
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
+  isClose?: boolean;
+  "data-testid"?: string
 }
 
 const ChartHeaderItem = (props: IChartHeaderItemProps) => {
@@ -22,8 +24,12 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
             ? "rgb(28, 215, 206)"
             : "",
         color: props.disabled ? "darkgray" : "",
+        flexGrow: props.isClose ? "0" : "",
+        width: props.isClose ? "5%" : "",
+        minWidth: props.isClose ? "5%" : "",
       }}
       onClick={() => !props.disabled && props.onClick()}
+      data-testid={props["data-testid"]}
     >
       {props.icon ? (
         <img src={`/images/${props.icon}.svg`} alt={props.alt} />
@@ -31,6 +37,11 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
         <></>
       )}
       {props.children ? <>{props.children}</> : <></>}
+      {!props.isClose ? (
+        <div className={` ${chartHeaderItem.footer}`}>{props.title}</div>
+      ) : (
+        <></>
+      )}
     </div>
   );
 };

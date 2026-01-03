@@ -23,9 +23,11 @@
 .value {
     flex: 1 1 0px;
     display: flex;
+    container-type: inline-size;
 }
 
 input[type="number"] {
+    font-size: 7cqw;
     //height: 100%;
     flex: 1 1 0px;
     border-radius: 16px;

@@ -5,10 +5,13 @@ import CButton from "./CButton";
 import BrowseButton from "./BrowseButton";
 import { LngLat, now } from "maplibre-gl";
 import { ECoordinate } from "../types/coordinateTypes";
-import { EMarkerType, IMarker, useMapStore } from "../store/mapStore";
+import { EMarkerType, IMarker } from "../types";
+import { useMapStore } from "../store/mapStore";
 import maplibregl from "maplibre-gl";
 import { validateImportedROI } from "../utils/calculationUtils";
 import { getLocaleISOString } from "../utils/dateUtils";
+import { ELogLevel } from "../types/generalTypes";
+import { log } from "../utils/generalUtils";
 
 export interface ICoordinate {
   id: number | string;
@@ -26,41 +29,48 @@ export interface ICoordinatesProps {
 const Coordinates = (props: ICoordinatesProps) => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
+  const map = useMapStore((state) => state.map);
+  const setPolygons = useMapStore((state) => state.setPolygons);
 
   const handleDrawROI = (a_Coordinates: ICoordinate[]) => {
-    const markersWithoutMap: IMarker[] = a_Coordinates.map((c) => {
+    if (!map) return;
+
+    const importedMarkers: IMarker[] = a_Coordinates.map((c) => {
       const markerWithThisCoordinate =
         markers.find((m) => m.marker.getLngLat().lng === c.lngLat[0]) &&
         markers.find((m) => m.marker.getLngLat().lat === c.lngLat[1]);
 
-      const markerElement = new maplibregl.Marker().setLngLat(c.lngLat);
+      if (markerWithThisCoordinate) {
+        return markerWithThisCoordinate;
+      }
 
-      const markerWithoutMap = {
+      const markerElement = new maplibregl.Marker()
+        .setLngLat(c.lngLat)
+        .addTo(map);
+
+      const markerWithMap = {
         type: EMarkerType.polygon,
         marker: markerElement,
       };
 
-      return markerWithThisCoordinate
-        ? markerWithThisCoordinate
-        : markerWithoutMap;
+      return markerWithMap;
     });
 
-    setMarkers((prev) => {
-      const existingPointMarkers = prev.filter(
-        (m) => m.type === EMarkerType.point,
-      );
-      prev.forEach((m) => {
-        m.marker.remove();
-      });
-      return [...existingPointMarkers, ...markersWithoutMap];
-    });
+    setPolygons((prev) => [
+      ...prev,
+      { id: prev.length + 1, markers: importedMarkers },
+    ]);
   };
 
   const handleSelectFile = (a_JSON: Record<string, any>) => {
     const isImportedROIValid = validateImportedROI(a_JSON);
 
     if (!isImportedROIValid.valid) {
-      console.error("Failed importing ROI: " + isImportedROIValid.message);
+      log(
+        "Failed importing ROI: ",
+        isImportedROIValid.message,
+        ELogLevel.error,
+      );
       return;
     }
 
