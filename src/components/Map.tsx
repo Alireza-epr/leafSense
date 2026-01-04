@@ -296,10 +296,20 @@ const Home = () => {
           (m) => m.type == EMarkerType.polygon,
         );
         if (polygonMarkers.length >= 3) {
-          setPolygons((prev) => [
-            ...prev,
-            { id: prev.length + 1, markers: polygonMarkers },
-          ]);
+          setPolygons((prev) => {
+
+            let lastId = 0
+            for(const p of prev){
+              if(p.id > lastId){
+                lastId= p.id
+              }
+            }
+
+            return [
+              ...prev,
+              { id: lastId+1, markers: polygonMarkers },
+            ]
+          });
           setMarker((prev) => {
             return {
               ...prev,
@@ -885,6 +895,8 @@ const Home = () => {
     if (polygons.length === 0) {
       removePolygonLayers();
     } else {
+      console.log("polygons")
+      console.log(polygons)
       drawPolygons();
     }
   }, [polygons]);
@@ -932,13 +944,11 @@ const Home = () => {
 
     // point or zonal
     const pointROI = params.get(EURLParams.pointROI);
-    let zonalROIs: string[] = [];
-    let i = 1;
-    while (params.get(EURLParams.zonalROI + "-" + i) !== null) {
-      let zonalROI = params.get(EURLParams.zonalROI + "-" + i);
-      if (!zonalROI) continue;
-      zonalROIs.push(zonalROI);
-      i++;
+    let zonalROIs = new Map<string, string>();
+    for (const [key, value] of params.entries()) {
+      if (key.startsWith(EURLParams.zonalROI + "-") && value) {
+        zonalROIs.set(key, value);
+      }
     }
 
     if (pointROI) {
@@ -969,9 +979,10 @@ const Home = () => {
         );
       }
     }
-    if (zonalROIs.length > 0) {
+    if (zonalROIs.size > 0) {
       setPolygons([]);
-      zonalROIs.forEach((zonalROI, index) => {
+       
+      zonalROIs.forEach((zonalROI, key) => {
         if (isROIValid(zonalROI, EMarkerType.polygon)) {
           removeMarker(EMarkerType.polygon);
           setTimeout(() => {
@@ -1000,14 +1011,14 @@ const Home = () => {
             });
             setPolygons((prev) => [
               ...prev,
-              { id: prev.length + 1, markers: thisPolygonMarkers },
+              { id: +key.substring( key.lastIndexOf("-")+1 ), markers: thisPolygonMarkers },
             ]);
           }, 100);
         } else {
           log(
             "Read URLParams",
-            "Failed to use URLParam: zonalROI-" +
-              (index + 1) +
+            "Failed to use URLParam: "+
+              (key) +
               " does not match",
             ELogLevel.warning,
           );
