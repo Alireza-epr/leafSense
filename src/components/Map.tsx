@@ -556,7 +556,7 @@ const Home = () => {
       main: false,
       comparison: false,
     });
-  }, [setShowError, setShowChart, setFetchFeatures, setGlobalLoading]);
+  }, [setShowError, setShowChart, setGlobalLoading]);
 
   const showLoadingModal = useCallback(() => {
     setShowError(false);
@@ -643,7 +643,7 @@ const Home = () => {
       end: undefined,
     });
     showMap();
-  }, [setFetchFeatures, showMap]);
+  }, [setFetchFeatures, setResponseFeatures, setNearestPoint, setChartIndex, showMap]);
 
   const handleNextPageChart = useCallback(async () => {
     if (nextPage?.body) {
@@ -895,8 +895,6 @@ const Home = () => {
     if (polygons.length === 0) {
       removePolygonLayers();
     } else {
-      console.log("polygons")
-      console.log(polygons)
       drawPolygons();
     }
   }, [polygons]);
@@ -1460,7 +1458,7 @@ const Home = () => {
       )}
       <div
         className={` ${mapStyle.mapWrapper}`}
-        style={{ width: "100%", height: "100%" }}
+        style={{ width: "100%", height: "100%", pointerEvents: fetchFeatures.comparison !== null || fetchFeatures.main !== null ? 'none' : 'auto' }}
         ref={mapContainer}
         data-testid="map-container"
       />
