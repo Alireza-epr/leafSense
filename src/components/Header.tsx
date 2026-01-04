@@ -5,11 +5,11 @@ const Header = () => {
     <div className={` ${headerStyle.wrapper}`}>
       <div className={` ${headerStyle.headerItem}`}>
         <img src="/images/leaf.svg" alt="LeafSense" title="LeafSense" />
+        <div className={` ${headerStyle.headerItem}`}>LeafSense</div>
       </div>
-      <div className={` ${headerStyle.headerItem}`}>LeafSense</div>
-      <div className={` ${headerStyle.headerItem}`}>
+      {/* <div className={` ${headerStyle.headerItem}`}>
         <img src="/images/history.svg" alt="History" title="History" />
-      </div>
+      </div> */}
     </div>
   );
 };
