@@ -70,13 +70,9 @@ const Coordinates = (props: ICoordinatesProps) => {
 
     const importedPolygons: IPolygon[] = [];
 
-    const markerLookup = new Map<string, IMarker>();
 
     for (const polygon of polygons) {
-      for (const m of polygon.markers) {
-        const { lng, lat } = m.marker.getLngLat();
-        markerLookup.set(`${lng},${lat}`, m);
-      }
+      polygon.markers.forEach( m => m.marker.remove() )
     }
 
     for (const roi of a_ImportedROI) {
@@ -84,9 +80,6 @@ const Coordinates = (props: ICoordinatesProps) => {
       if (!key.startsWith("zonal")) continue;
 
       const markers: IMarker[] = roi[key].coordinates.map(([lng, lat]) => {
-        const existing = markerLookup.get(`${lng},${lat}`);
-        if (existing) return existing;
-
         const marker = new maplibregl.Marker()
           .setLngLat([lng, lat])
           .addTo(map);
@@ -103,20 +96,7 @@ const Coordinates = (props: ICoordinatesProps) => {
       });
     }
 
-    setPolygons(prev => {
-      const polygonMap = new Map<number, IPolygon>();
-
-      for (const p of prev) {
-        polygonMap.set(p.id, p);
-      }
-
-      for (const ip of importedPolygons) {
-        polygonMap.set(ip.id, ip);
-      }
-
-      return Array.from(polygonMap.values());
-    });
-
+    setPolygons(importedPolygons)
   };
 
   const handleSelectFile = (a_JSON: TImportedROI[]) => {
