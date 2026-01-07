@@ -95,6 +95,7 @@ const Chart = (props: IChartProps) => {
 
   const [showList, setShowList] = useState(false);
   const [showMethods, setShowMethods] = useState(false);
+  const [showCaveats, setShowCaveats] = useState(false);
   const [showListComparison, setShowListComparison] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -354,21 +355,31 @@ const Chart = (props: IChartProps) => {
         setShowMethods(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false)
         break;
       case EChartHeaderOptions.detection:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false)
         break;
       case EChartHeaderOptions.comparison:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
+        setShowCaveats(false)
         break;
       case EChartHeaderOptions.methods:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false)
+        break;
+      case EChartHeaderOptions.caveats:
+        setShowSmoothingOptions(false);
+        setShowDetectionOptions(false);
+        setShowComparisonOptions(false);
+        setShowMethods(false)
         break;
     }
   };
@@ -570,6 +581,70 @@ const Chart = (props: IChartProps) => {
     },
   ];
 
+  const caveatsOptions: IChartHeaderItemOption[] = [
+    {
+      id: 1,
+      title: "",
+      subtitle:
+        "GeoTIFFs may use projected coordinate systems (e.g. UTM); map coordinates must be reprojected before pixel sampling.",
+      value: ``,
+    },
+    {
+      id: 2,
+      title: "",
+      subtitle: 
+        "Zonal results depend on raster resolution (10 m vs 20 m); up/down-sampling can affect precision.",
+      value: ``,
+    },
+    {
+      id: 3,
+      title: "",
+      subtitle:
+        "Aggressive cloud masking or high coverage thresholds may remove many scenes.",
+      value: ``,
+    },
+    {
+      id: 4,
+      title: "",
+      subtitle: 
+        "Outlier detection assumes reasonable temporal continuity and may misclassify abrupt but real changes.",
+      value: ``,
+    },
+    {
+      id: 5,
+      title: "",
+      subtitle: 
+        "Client-side processing performance depends on AOI size and number of scenes.",
+      value: ``,
+    },
+    {
+      id: 6,
+      title: "",
+      subtitle:
+        "Smoothing reduces spikes but may hide abrupt changes.",
+      value: ``,
+    },
+    {
+      id: 7,
+      title: "",
+      subtitle: 
+        "Time gaps in valid scenes may affect interpretation.",
+      value: ``,
+    },
+    {
+      id: 8,
+      title: "",
+      subtitle:
+        "The results are not absolute measurements; they are relative vegetation indicators.",
+      value: ``,
+    },
+  ];
+
+  const onCaveats = () => {
+    disappearOptionsExcept(EChartHeaderOptions.caveats);
+    setShowCaveats(!showCaveats);
+  };
+
   const onMethods = () => {
     disappearOptionsExcept(EChartHeaderOptions.methods);
     setShowMethods(!showMethods);
@@ -623,6 +698,25 @@ const Chart = (props: IChartProps) => {
           {showMethods ? (
             <ChartHeaderItemOptions
               options={methodsOptions}
+              onOption={() => undefined}
+              isList={true}
+            />
+          ) : (
+            <></>
+          )}
+        </ChartHeaderItem>
+
+        <ChartHeaderItem
+          title="Caveat"
+          alt="Caveat"
+          onClick={onCaveats}
+          icon="caveat"
+          active={showCaveats}
+          isClose
+        >
+          {showCaveats ? (
+            <ChartHeaderItemOptions
+              options={caveatsOptions}
               onOption={() => undefined}
               isList={true}
             />

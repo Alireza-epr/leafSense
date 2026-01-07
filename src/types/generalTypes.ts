@@ -99,6 +99,7 @@ export enum EChartHeaderOptions {
   detection = "detection",
   comparison = "comparison",
   methods = "methods",
+  caveats = "caveats",
 }
 
 export enum EChartHeaderWindows {
