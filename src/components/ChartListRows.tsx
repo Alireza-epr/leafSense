@@ -9,7 +9,11 @@ export interface IChartListItemsProps {
 
 const ChartListRows = (props: IChartListItemsProps) => {
   return (
-    <div className={` ${chartListItemsStyles.wrapper}`}>
+    <div 
+      className={` ${chartListItemsStyles.wrapper}`}
+      role="list" // marks it as a list for screen readers
+      aria-label="Chart items list"
+    >
       <ChartListRowHeader />
       {props.items
         .sort((a, b) => a.id - b.id)

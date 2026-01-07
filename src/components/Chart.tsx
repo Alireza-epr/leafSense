@@ -557,8 +557,42 @@ const Chart = (props: IChartProps) => {
     setShowMethods(!showMethods);
   };
 
+  const chartRef = useRef<HTMLDivElement>(null)
+
+  useEffect(()=>{
+    if(chartRef.current){
+      chartRef.current.focus()
+    }
+  },[])
+
+  useEffect(() => {
+
+    const handleFocusOut = (e) => {
+      if (e.target.role === "slider" ) {
+        console.log("role slider")
+          chartRef.current?.focus();
+      }
+    };
+
+    document.addEventListener("focusout", handleFocusOut);
+
+    return () => {
+      document.removeEventListener("focusout", handleFocusOut);
+    };
+  }, []);
+
   return (
-    <div className={` ${chartStyles.wrapper}`}>
+    <div className={` ${chartStyles.wrapper}`} 
+      ref={chartRef}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          props.onClose()
+        }
+      }}
+      role="application"
+      aria-label="Chart showing data trends"
+    > 
       <div className={` ${chartStyles.closeWrapper}`}>
         <ChartHeaderItem
           title="Methods"
@@ -761,11 +795,21 @@ const Chart = (props: IChartProps) => {
             style={{
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " ) {
+                handlePrevious()
+              }
+            }}
+            tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled
+            role="button" // announce as button
+            aria-label="Previous page" // screen reader label
+            aria-disabled={globalLoading.main ? true : false}
           >
             <img
               src="/images/prev-page.svg"
               alt="previous-page"
               title="Previous Page"
+              aria-hidden="true"
             />
           </div>
         )}
@@ -777,11 +821,21 @@ const Chart = (props: IChartProps) => {
             style={{
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " " ) {
+                handleNext()
+              }
+            }}
+            tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled
+            role="button" // announce as button
+            aria-label="Next page" // screen reader label
+            aria-disabled={globalLoading.main ? true : false}
           >
             <img
               src="/images/next-page.svg"
               alt="next-page"
               title="Next Page"
+              aria-hidden="true" // hide image from screen readers
             />
           </div>
         )}

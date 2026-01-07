@@ -87,8 +87,19 @@ const BrowseButton = (props: IBrowseButtonProps) => {
             : "",
         color: props.disabled ? "darkgray" : "",
       }}
+      tabIndex={props.disabled ? -1 : 0}
+      aria-label={props.title} // screen reader label
+      aria-disabled={props.disabled ?? false} // disabled state
+      role="button"
     >
-      <div onClick={onSelectFile}>
+      <div 
+        onClick={onSelectFile}
+        onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+            onSelectFile();
+          }
+        }}
+      >
         {props.help && props.help.length > 0 ? (
           <>
             <span className={` ${browseButtonStyle.help}`} ref={helpRef}>

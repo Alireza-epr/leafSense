@@ -50,6 +50,7 @@ const ChartHeaderItemOptions = (props: ChartHeaderItemOptionsProps) => {
         : props.options.map((option, index) => (
             <Section title={option.title + " - " + option.value} key={index}>
               <RangeInput
+                title={option.title}
                 value={option.value}
                 onRangeChange={(v) => onChangeOption(v, option)}
                 max={option.max}

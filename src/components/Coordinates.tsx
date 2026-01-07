@@ -210,13 +210,6 @@ const Coordinates = (props: ICoordinatesProps) => {
         disable={isExportDisabled() || props.disable}
         title="Export ROI"
       />
-      {/* {markers.map((m, index) => (
-        <Coordinate
-          lngLat={[m.marker.getLngLat().lng, m.marker.getLngLat().lat]}
-          key={index}
-          id={index + 1}
-        />
-      ))} */}
     </div>
   );
 };

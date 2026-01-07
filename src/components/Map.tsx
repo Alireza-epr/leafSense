@@ -1427,11 +1427,20 @@ const Home = () => {
   }, [globalLoading.comparison]);
 
   return (
-    <div className={` ${mapStyle.wrapper}`}>
+    <div className={` ${mapStyle.wrapper}`} 
+      role="application" // interactive widget
+      aria-label="Interactive map showing locations and markers"
+    >
       {polygons.length !== 0 ? (
         <div
           className={` ${mapStyle.flyTo}`}
           onClick={() => handleFlyToROI(EMarkerType.polygon, map!.getZoom())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleFlyToROI(EMarkerType.polygon, map!.getZoom())
+            }
+          }}
+          tabIndex={0}
         >
           <img
             src="/images/go_polygon.svg"
@@ -1446,6 +1455,12 @@ const Home = () => {
         <div
           className={` ${mapStyle.flyTo} ${mapStyle.flyToPoint}`}
           onClick={() => handleFlyToROI(EMarkerType.point, map!.getZoom())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleFlyToROI(EMarkerType.point, map!.getZoom())
+            }
+          }}
+          tabIndex={0}
         >
           <img
             src="/images/go_point.svg"

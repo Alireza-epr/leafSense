@@ -202,7 +202,11 @@ const Sidebar = () => {
   }, [fetchFeatures]);
 
   return (
-    <div className={` ${sidebarStyles.wrapper}`}>
+    <div 
+      className={` ${sidebarStyles.wrapper}`}
+      role="complementary" // landmark role for side content
+      aria-label="Sidebar with navigation and filters"
+    >
       <div className={` ${sidebarStyles.buttonsWrapper}`}>
         <Section title="Drawing" disabled={isSidebarDisabled}>
           <div className={` ${sidebarStyles.buttonRowWrapper}`}>
@@ -212,6 +216,7 @@ const Sidebar = () => {
               onButtonClick={handlePolygonClick}
               disable={isSidebarDisabled}
               icon="polygon"
+              isFocused={!isSidebarDisabled}
             />
             <CButton
               title={
@@ -262,6 +267,7 @@ const Sidebar = () => {
           </div>
           {`Radius - ${radius} meter(s)`}
           <RangeInput
+            title={"Radius"}
             min={10}
             value={radius}
             onRangeChange={handleRadiusChange}
@@ -308,6 +314,7 @@ const Sidebar = () => {
             disabled={isSidebarDisabled}
           >
             <RangeInput
+              title={"Cloud Cover"}
               value={cloudCover}
               onRangeChange={handleCloudCoverChange}
             />
@@ -318,6 +325,7 @@ const Sidebar = () => {
             disabled={isSidebarDisabled}
           >
             <RangeInput
+              title="Snow Cover"
               value={snowCover}
               onRangeChange={handleSnowCoverChange}
             />
@@ -325,6 +333,7 @@ const Sidebar = () => {
 
           <Section title={`Page Limit - ${limit}`} disabled={isSidebarDisabled}>
             <RangeInput
+              title="Limit"
               value={limit}
               onRangeChange={handleLimitChange}
               max={100}
@@ -339,6 +348,7 @@ const Sidebar = () => {
             disabled={isSidebarDisabled}
           >
             <RangeInput
+              title="Coverage Threshold"
               value={coverageThreshold}
               onRangeChange={handleCoverageThresholdChange}
             />
