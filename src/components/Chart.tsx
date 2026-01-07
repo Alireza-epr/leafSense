@@ -72,7 +72,7 @@ const Chart = (props: IChartProps) => {
   const changePoints = useMapStore((state) => state.changePoints);
   const setChangePoints = useMapStore((state) => state.setChangePoints);
 
-  const yAxis = useMapStore((state) => state.yAxis);
+  const nearestPoint = useMapStore((state) => state.nearestPoint);
   const setYAxis = useMapStore((state) => state.setYAxis);
 
   const polygons = useMapStore((state) => state.polygons);
@@ -680,6 +680,7 @@ const Chart = (props: IChartProps) => {
       tabIndex={-1}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
+          if(nearestPoint.x === 0 && nearestPoint.y === 0)
           props.onClose()
         }
       }}

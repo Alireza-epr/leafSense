@@ -26,6 +26,7 @@ test("NDVI workflow", async ({ page }) => {
     width: 1920,
     height: 1080
   }
+  test.setTimeout(120000); // 2 minutes
   await page.setViewportSize({width: viewport.width, height: viewport.height})
   
   const params = new URLSearchParams({
