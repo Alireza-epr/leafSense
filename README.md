@@ -135,6 +135,13 @@ The key for this cache is based on:
 
 ---
 
+## Privacy Note
+
+- This app does **not collect personal user data**.  
+- No analytics or tracking is implemented.  
+- All user interactions remain local to the app. 
+
+---
 ## Demo
 
 ![Demo](./demo.gif)
