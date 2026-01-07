@@ -864,8 +864,8 @@ const Home = () => {
           },
         ],
       },
-      center: [7.4711617988066905, 51.36223529413988], // [lng, lat]
-      zoom: 15,
+      center: [13.4050, 52.5200], // Berlin
+      zoom: 12,
       maxZoom: 18,
       dragRotate: false,
     });
