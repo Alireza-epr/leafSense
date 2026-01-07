@@ -793,10 +793,35 @@ const Home = () => {
   const handleExportPNG = async () => {
     const png = await getPng();
     if (png) {
-      const link = document.createElement("a");
-      link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
-      link.href = png;
-      link.click();
+      const img = new Image();
+      img.src = png;
+
+      img.onload = () => {
+        // Create a canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+
+        if(!ctx) return
+        // Draw the chart image
+        ctx.drawImage(img, 0, 0);
+
+        // Add watermark
+        const date = getLocaleISOString(new Date(Date.now()));
+        const watermarkText = `LeafSense – ${date}`;
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(watermarkText, canvas.width - 10, canvas.height - 2);
+
+        // Download the result
+        const link = document.createElement("a");
+        link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
+        link.href = canvas.toDataURL("image/png");;
+        link.click();
+      };
     } else {
       log("Failed to export PNG", png, ELogLevel.error);
     }
