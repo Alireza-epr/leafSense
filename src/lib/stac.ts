@@ -79,7 +79,7 @@ export const useFilterSTAC = () => {
     for (let i = 0; i <= retry; i++) {
       const { globalLoading } = useMapStore.getState();
 
-      if(!globalLoading.main){
+      if(!globalLoading[a_RequestContext]){
         setResponseFeatures((prev) => ({
           ...prev,
           [a_RequestContext]: null,
@@ -175,7 +175,7 @@ export const useNDVI = () => {
     }));
     for (const feature of a_Features) {
       const { globalLoading } = useMapStore.getState();
-      if(!globalLoading.main){
+      if(!globalLoading[a_RequestContext]){
         setSamples((prev) => ({
           ...prev,
           [a_RequestContext]: [],

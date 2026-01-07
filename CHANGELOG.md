@@ -12,3 +12,6 @@ All notable changes to this project will be documented in this file.
 ### Fixed
 - Correct CRS reprojection from MapLibre to GeoTIFF
 - Stable cache keys for ROIs
+
+### Known Issues
+- Keyboard flow needs improvement 

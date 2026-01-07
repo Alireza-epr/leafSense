@@ -20,6 +20,7 @@ import {
   getMainItem,
   getSummaryInfo,
   getValidity,
+  handleCopyProvenance,
   mapPolygonOptions,
   toFirstLetterUppercase,
 } from "../utils/generalUtils";
@@ -483,6 +484,23 @@ const Chart = (props: IChartProps) => {
     [changePoints, annotations],
   );
 
+  const handleCopyList = useCallback(
+    (a_Samples: TSample, a_NotValidSamples: TSample) => {
+      const mainSamples = getAllSamples(
+        a_Samples[ERequestContext.main],
+        a_NotValidSamples[ERequestContext.main],
+      );
+
+      const comparisonSamples = getAllSamples(
+        a_Samples[ERequestContext.comparison],
+        a_NotValidSamples[ERequestContext.comparison],
+      );
+
+      handleCopyProvenance(mainSamples, comparisonSamples);
+    },
+    [changePoints, annotations],
+  );
+
   const handleExportPNG = useCallback(() => {
     if (props.onExportPNG) {
       props.onExportPNG();
@@ -661,16 +679,16 @@ const Chart = (props: IChartProps) => {
         </ChartHeaderItem>
 
         <ChartHeaderItem
-          title="Main List"
-          alt="Main List"
+          title="Main Panel"
+          alt="Main Panel"
           onClick={handleListItems}
           icon="list"
           active={showList}
         />
 
         <ChartHeaderItem
-          title="Comparison List"
-          alt="Comparison List"
+          title="Comparison Panel"
+          alt="Comparison Panel"
           onClick={handleListComparisonItems}
           icon="list-comparison"
           active={showListComparison}
@@ -735,6 +753,13 @@ const Chart = (props: IChartProps) => {
           icon="export-png"
           disabled={globalLoading.main}
           data-testid="export-png"
+        />
+        <ChartHeaderItem
+          title="Copy Provenance"
+          alt="Copy Provenance"
+          onClick={() => handleCopyList(samples, notValidSamples)}
+          icon="copy"
+          disabled={globalLoading.main}
         />
         <ChartHeaderItem
           title="Series Summary"

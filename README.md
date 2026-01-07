@@ -113,6 +113,9 @@ All data is processed on-the-fly; no satellite imagery is redistributed or store
 - Aggressive cloud masking or high coverage thresholds may remove many scenes.
 - Outlier detection assumes reasonable temporal continuity and may misclassify abrupt but real changes.
 - Client-side processing performance depends on AOI size and number of scenes.
+- Smoothing reduces spikes but may hide abrupt changes.
+- Time gaps in valid scenes may affect interpretation.
+- The results are not absolute measurements; they are relative vegetation indicators.
 
 ---
 ## Masking Details

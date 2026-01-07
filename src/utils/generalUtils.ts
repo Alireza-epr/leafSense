@@ -149,6 +149,46 @@ export const downloadCSV = (
   URL.revokeObjectURL(url);
 };
 
+export const handleCopyProvenance = (
+  a_AllMainSamples: INDVISample[],
+  a_AllComparisonSamples: INDVISample[]
+) => {
+  const sections: string[] = [];
+
+  // --- Main samples section ---
+  if (a_AllMainSamples.length > 0) {
+    sections.push("=== Main Samples ===");
+    const mainHeader = ["ItemID", "Date"];
+    const mainRows = a_AllMainSamples.map(i => [
+      i.featureId,
+      i.datetime,
+    ]);
+    const mainCsv = [mainHeader, ...mainRows].map(r => r.join(",")).join("\n");
+    sections.push(mainCsv);
+  }
+
+  // --- Comparison samples section ---
+  if (a_AllComparisonSamples.length > 0) {
+    sections.push("=== Comparison Samples ===");
+    const compHeader = ["ItemID", "Date"];
+    const compRows = a_AllComparisonSamples.map(i => [
+      i.featureId,
+      i.datetime,
+    ]);
+    const compCsv = [compHeader, ...compRows].map(r => r.join(",")).join("\n");
+    sections.push(compCsv);
+  }
+
+  // Join sections with double newlines for readability
+  const finalText = sections.join("\n\n");
+
+  // Copy to clipboard
+  navigator.clipboard.writeText(finalText);
+
+  alert("Copied scene list to clipboard!"); // optional toast/tooltip
+};
+
+
 export const isROIValid = (a_ROI: string, a_Marker: EMarkerType) => {
   let roi: any;
 
