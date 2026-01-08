@@ -381,6 +381,13 @@ const Chart = (props: IChartProps) => {
         setShowComparisonOptions(false);
         setShowMethods(false)
         break;
+      case EChartHeaderOptions.none:
+        setShowSmoothingOptions(false);
+        setShowDetectionOptions(false);
+        setShowComparisonOptions(false);
+        setShowMethods(false)
+        setShowCaveats(false)
+        break;
     }
   };
 
@@ -397,6 +404,11 @@ const Chart = (props: IChartProps) => {
       case EChartHeaderWindows.comparisonList:
         setShowSummary(false);
         setShowList(false);
+        break;
+      case EChartHeaderWindows.none:
+        setShowSummary(false);
+        setShowList(false);
+        setShowListComparison(false);
         break;
     }
   };
@@ -658,19 +670,34 @@ const Chart = (props: IChartProps) => {
     }
   },[])
 
+  const handleFocusOut = (e) => {
+    if (e.target.role === "slider" && !nextPage) {
+      chartRef.current?.focus();
+    }
+    if (e.target.ariaLabel === "Next page" ) {
+      chartRef.current?.focus();
+    }
+    if (e.target.ariaLabel === "Previous page" && !nextPage && samples.main.length === 0 ) {
+      chartRef.current?.focus();
+    }
+  };
+  const handleFocusIn = (e) => {
+    if (Object.keys(EChartHeaderOptions).includes(e.target.id)) {
+      disappearOptionsExcept(e.target.id)
+    }
+    if(e.target.id === "seriesSummary" || e.target.id === "closeChart"){
+      disappearOptionsExcept(EChartHeaderOptions.none)
+      disappearWindowExcept(EChartHeaderWindows.none)
+    }
+  };
+
   useEffect(() => {
-
-    const handleFocusOut = (e) => {
-      if (e.target.role === "slider" ) {
-        console.log("role slider")
-          chartRef.current?.focus();
-      }
-    };
-
     document.addEventListener("focusout", handleFocusOut);
+    document.addEventListener("focusin", handleFocusIn);
 
     return () => {
       document.removeEventListener("focusout", handleFocusOut);
+      document.removeEventListener("focusin", handleFocusIn);
     };
   }, []);
 
@@ -695,6 +722,7 @@ const Chart = (props: IChartProps) => {
           icon="book"
           active={showMethods}
           isClose
+          id={EChartHeaderOptions.methods}
         >
           {showMethods ? (
             <ChartHeaderItemOptions
@@ -714,6 +742,7 @@ const Chart = (props: IChartProps) => {
           icon="caveat"
           active={showCaveats}
           isClose
+          id={EChartHeaderOptions.caveats}
         >
           {showCaveats ? (
             <ChartHeaderItemOptions
@@ -731,6 +760,7 @@ const Chart = (props: IChartProps) => {
           alt="Close"
           onClick={props.onClose}
           isClose
+          id="closeChart"
         >
           X
         </ChartHeaderItem>
@@ -758,6 +788,7 @@ const Chart = (props: IChartProps) => {
               .length === 0
           }
           active={fetchFeatures.comparison !== null}
+          id={EChartHeaderOptions.comparison}
         >
           {showComparisonOptions ? (
             <ChartHeaderItemOptions
@@ -797,6 +828,7 @@ const Chart = (props: IChartProps) => {
           disabled={!enableHeaderOption}
           active={changeDetection[0].value !== "1"}
           data-testid="change-point"
+          id={EChartHeaderOptions.detection}
         >
           {showDetectionOptions ? (
             <ChartHeaderItemOptions
@@ -816,6 +848,7 @@ const Chart = (props: IChartProps) => {
           icon="smoothing"
           disabled={!enableHeaderOption}
           active={smoothingWindow[0].value !== "1"}
+          id={EChartHeaderOptions.smoothing}
         >
           {showSmoothingOptions ? (
             <ChartHeaderItemOptions
@@ -863,6 +896,7 @@ const Chart = (props: IChartProps) => {
           icon="info"
           disabled={globalLoading.main}
           active={showSummary}
+          id="seriesSummary"
         />
       </div>
       {showList ? (
@@ -926,6 +960,7 @@ const Chart = (props: IChartProps) => {
             aria-disabled={globalLoading.main ? true : false}
           >
             <img
+              tabIndex={0}
               src="/images/prev-page.svg"
               alt="previous-page"
               title="Previous Page"
@@ -952,6 +987,7 @@ const Chart = (props: IChartProps) => {
             aria-disabled={globalLoading.main ? true : false}
           >
             <img
+              tabIndex={0}
               src="/images/next-page.svg"
               alt="next-page"
               title="Next Page"

@@ -100,12 +100,14 @@ export enum EChartHeaderOptions {
   comparison = "comparison",
   methods = "methods",
   caveats = "caveats",
+  none = "none"
 }
 
 export enum EChartHeaderWindows {
   summary = "summary",
   mainList = "mainList",
   comparisonList = "comparisonList",
+  none = "none"
 }
 
 export interface IFetchItem {

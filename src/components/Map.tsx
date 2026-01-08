@@ -115,6 +115,7 @@ const Home = () => {
   // Avoiding BarChart to reset after adding annotation
   const [showBarChart, setShowBarChart] = useState(true);
 
+  const setResetFocus = useMapStore((state) => state.setResetFocus);
   const setChartIndex = useMapStore((state) => state.setChartIndex);
   const setNearestPoint = useMapStore((state) => state.setNearestPoint);
   const setAnnotations = useMapStore((state) => state.setAnnotations);
@@ -608,10 +609,10 @@ const Home = () => {
         ...prev,
         [a_RequestContext]: null,
       }));
-      setErrorFeatures((prev) => ({
+      /* setErrorFeatures((prev) => ({
         ...prev,
         [a_RequestContext]: null,
-      }));
+      })); */
     },
     [
       setLatency,
@@ -642,8 +643,9 @@ const Home = () => {
       start: undefined,
       end: undefined,
     });
+    setResetFocus(true)
     showMap();
-  }, [setFetchFeatures, setResponseFeatures, setNearestPoint, setChartIndex, showMap]);
+  }, [setResetFocus, setFetchFeatures, setResponseFeatures, setNearestPoint, setChartIndex, showMap]);
 
   const handleNextPageChart = useCallback(async () => {
     if (nextPage?.body) {
@@ -827,6 +829,14 @@ const Home = () => {
     }
   };
 
+  const handleFocusIn = (e) => {
+    if (e.target.ariaLabel == "Map") {
+      setResetFocus(true)
+    } else {
+      setResetFocus(false)
+    }
+  };
+
   // Follow Annotation Note
   useEffect(() => {
     if (nearestPoint.featureId === "") return;
@@ -901,10 +911,12 @@ const Home = () => {
     window.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
     });
+    document.addEventListener( "focusin" , handleFocusIn )
 
     return () => {
       // By component unmounting
       setMap(null);
+      document.removeEventListener( "focusin" , handleFocusIn )
     };
   }, []);
 
@@ -1687,11 +1699,13 @@ const Home = () => {
         >
           <div className={` ${mapStyle.errorWrapper}`}>
             <div className={` ${mapStyle.error}`}>
-              {responseFeatures[ERequestContext.main] &&
-              responseFeatures[ERequestContext.main].features &&
-              responseFeatures[ERequestContext.main]?.features.length == 0
-                ? "No STAC Item found!"
-                : "No Valid Scene found! Check the list for more information."}
+              {errorFeatures[ERequestContext.main] && errorFeatures[ERequestContext.main].message !== null
+              ? "Failed to get STAC Item"
+              : responseFeatures[ERequestContext.main] &&
+                responseFeatures[ERequestContext.main].features &&
+                responseFeatures[ERequestContext.main]?.features.length == 0
+                ? "No STAC Item found!" 
+                :"No Valid Scene found! Check the list for more information."}
             </div>
           </div>
         </Chart>

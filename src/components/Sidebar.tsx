@@ -61,6 +61,8 @@ const Sidebar = () => {
   const polygons = useMapStore((state) => state.polygons);
   const setPolygons = useMapStore((state) => state.setPolygons);
 
+  const resetFocus = useMapStore((state) => state.resetFocus);
+  
   const handlePointClick = () => {
     setMarker((prev) => {
       if (prev.point) {
@@ -216,7 +218,7 @@ const Sidebar = () => {
               onButtonClick={handlePolygonClick}
               disable={isSidebarDisabled}
               icon="polygon"
-              isFocused={!isSidebarDisabled}
+              isFocused={resetFocus}
             />
             <CButton
               title={

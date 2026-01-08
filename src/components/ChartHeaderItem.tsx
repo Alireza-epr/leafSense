@@ -10,11 +10,13 @@ export interface IChartHeaderItemProps {
   disabled?: boolean;
   isClose?: boolean;
   "data-testid"?: string
+  id?: string
 }
 
 const ChartHeaderItem = (props: IChartHeaderItemProps) => {
   return (
     <div
+      id={props.id}
       className={` ${chartHeaderItem.wrapper}`}
       title={props.title}
       style={{

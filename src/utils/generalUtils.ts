@@ -423,10 +423,10 @@ export const getChartPoints = (
       "comparison_medianNDVI_gap",
     );
   }
-  log(
+  /* log(
     "Chart Points",
     points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined),
-  );
+  ); */
   return points.slice(a_StartIndex, a_EndIndex ? a_EndIndex + 1 : undefined);
 };
 

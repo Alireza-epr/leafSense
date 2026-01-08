@@ -80,6 +80,7 @@ export interface IMapStoreStates {
   nearestPoint: INearestPoint;
   annotations: IAnnotationItem[];
   chartIndex: IChartIndex;
+  resetFocus: boolean
 }
 
 export interface IMapStoreActions {
@@ -184,6 +185,9 @@ export interface IMapStoreActions {
   setChartIndex: (
     a_Value: IChartIndex | ((prev: IChartIndex) => IChartIndex),
   ) => void;
+  setResetFocus: (
+    a_Value: boolean | ((prev: boolean) => boolean),
+  ) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
@@ -197,6 +201,7 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
       } as TMarker,
       markers: [] as IMarker[],
       polygons: [] as IPolygon[],
+      resetFocus: false,
       //filter
       startDate: getLocaleISOString(new Date(), {
         unit: EPastTime.months,
@@ -593,6 +598,12 @@ export const useMapStore = create<IMapStoreStates & IMapStoreActions>(
         set((state) => ({
           chartIndex:
             typeof a_Value === "function" ? a_Value(state.chartIndex) : a_Value,
+        })),
+
+      setResetFocus: (a_Value) =>
+        set((state) => ({
+          resetFocus:
+            typeof a_Value === "function" ? a_Value(state.resetFocus) : a_Value,
         })),
     }),
   ),
