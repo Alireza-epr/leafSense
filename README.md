@@ -128,12 +128,14 @@ See: [`docs/data/masking.md`](docs/data/masking.md)
 ---
 ## Roadmap
 
-Planned improvements and extensions:
+Upcoming improvements and extensions:
 
-- Use Copernicus `/process` endpoint for server-side computation
-- Improved mobile UX and accessibility
-- Improve Core Web Vitals (LCP, INP, CLS)
-- History of server-side requests and computations
+- Enhanced API Handling – Optimize server-side processing and improve integration with Copernicus endpoints.
+- Improved UI/UX & Accessibility – Localization for UI strings in additional languages (e.g., German), theme toggling, improved keyboard navigation on the map, and other usability enhancements.
+- Performance Optimization – Boost Core Web Vitals (LCP, INP, CLS) for faster, smoother user experiences.
+- Request History & Reuse – Display and enable reuse of previous server-side requests and computations.
+- Data Visualization Enhancements – Add monthly aggregation view with whiskers (p10–p90) and a small comparison delta panel.
+- Testing & Reliability – Expand end-to-end (E2E) test coverage for greater stability.
 
 ---
 ## Folder Structure
