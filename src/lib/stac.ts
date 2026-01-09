@@ -77,6 +77,15 @@ export const useFilterSTAC = () => {
     const retry = 5;
     let delay = 200;
     for (let i = 0; i <= retry; i++) {
+      const { globalLoading } = useMapStore.getState();
+
+      if (!globalLoading[a_RequestContext]) {
+        setResponseFeatures((prev) => ({
+          ...prev,
+          [a_RequestContext]: null,
+        }));
+        throw new Error("[getFeatures] aborted due to navigation");
+      }
       try {
         //console.log(new Date(Date.now()).toISOString()+" Get STAC Items: try"+ (i+1))
         const resp = await fetch(ESTACURLS.searchURL, {
@@ -165,6 +174,18 @@ export const useNDVI = () => {
       [a_RequestContext]: [],
     }));
     for (const feature of a_Features) {
+      const { globalLoading } = useMapStore.getState();
+      if (!globalLoading[a_RequestContext]) {
+        setSamples((prev) => ({
+          ...prev,
+          [a_RequestContext]: [],
+        }));
+        setNotValidSamples((prev) => ({
+          ...prev,
+          [a_RequestContext]: [],
+        }));
+        throw new Error("[getNDVI] aborted due to navigation");
+      }
       const cacheKey = `${JSON.stringify(a_Coordinates)}_${feature.id}_${JSON.stringify(a_NDVIPanel)}`;
       try {
         //console.log(new Date(Date.now()).toISOString()+" Start Calculating NDVI for STAC Item id "+ feature.id)

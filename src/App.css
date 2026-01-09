@@ -41,3 +41,7 @@ body {
   padding: 0 1.5vh;
 }
 
+:focus-visible {
+  outline: 3px solid #1ec927;
+  outline-offset: 2px;
+}

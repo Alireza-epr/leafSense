@@ -20,6 +20,7 @@ import {
   getMainItem,
   getSummaryInfo,
   getValidity,
+  handleCopyProvenance,
   mapPolygonOptions,
   toFirstLetterUppercase,
 } from "../utils/generalUtils";
@@ -71,7 +72,7 @@ const Chart = (props: IChartProps) => {
   const changePoints = useMapStore((state) => state.changePoints);
   const setChangePoints = useMapStore((state) => state.setChangePoints);
 
-  const yAxis = useMapStore((state) => state.yAxis);
+  const nearestPoint = useMapStore((state) => state.nearestPoint);
   const setYAxis = useMapStore((state) => state.setYAxis);
 
   const polygons = useMapStore((state) => state.polygons);
@@ -94,6 +95,7 @@ const Chart = (props: IChartProps) => {
 
   const [showList, setShowList] = useState(false);
   const [showMethods, setShowMethods] = useState(false);
+  const [showCaveats, setShowCaveats] = useState(false);
   const [showListComparison, setShowListComparison] = useState(false);
   const [showToggleChart, setShowToggleChart] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
@@ -353,21 +355,38 @@ const Chart = (props: IChartProps) => {
         setShowMethods(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.detection:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.comparison:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.methods:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
+        setShowCaveats(false);
+        break;
+      case EChartHeaderOptions.caveats:
+        setShowSmoothingOptions(false);
+        setShowDetectionOptions(false);
+        setShowComparisonOptions(false);
+        setShowMethods(false);
+        break;
+      case EChartHeaderOptions.none:
+        setShowSmoothingOptions(false);
+        setShowDetectionOptions(false);
+        setShowComparisonOptions(false);
+        setShowMethods(false);
+        setShowCaveats(false);
         break;
     }
   };
@@ -385,6 +404,11 @@ const Chart = (props: IChartProps) => {
       case EChartHeaderWindows.comparisonList:
         setShowSummary(false);
         setShowList(false);
+        break;
+      case EChartHeaderWindows.none:
+        setShowSummary(false);
+        setShowList(false);
+        setShowListComparison(false);
         break;
     }
   };
@@ -483,6 +507,23 @@ const Chart = (props: IChartProps) => {
     [changePoints, annotations],
   );
 
+  const handleCopyList = useCallback(
+    (a_Samples: TSample, a_NotValidSamples: TSample) => {
+      const mainSamples = getAllSamples(
+        a_Samples[ERequestContext.main],
+        a_NotValidSamples[ERequestContext.main],
+      );
+
+      const comparisonSamples = getAllSamples(
+        a_Samples[ERequestContext.comparison],
+        a_NotValidSamples[ERequestContext.comparison],
+      );
+
+      handleCopyProvenance(mainSamples, comparisonSamples);
+    },
+    [changePoints, annotations],
+  );
+
   const handleExportPNG = useCallback(() => {
     if (props.onExportPNG) {
       props.onExportPNG();
@@ -552,13 +593,129 @@ const Chart = (props: IChartProps) => {
     },
   ];
 
+  const caveatsOptions: IChartHeaderItemOption[] = [
+    {
+      id: 1,
+      title: "",
+      subtitle:
+        "GeoTIFFs may use projected coordinate systems (e.g. UTM); map coordinates must be reprojected before pixel sampling.",
+      value: ``,
+    },
+    {
+      id: 2,
+      title: "",
+      subtitle:
+        "Zonal results depend on raster resolution (10 m vs 20 m); up/down-sampling can affect precision.",
+      value: ``,
+    },
+    {
+      id: 3,
+      title: "",
+      subtitle:
+        "Aggressive cloud masking or high coverage thresholds may remove many scenes.",
+      value: ``,
+    },
+    {
+      id: 4,
+      title: "",
+      subtitle:
+        "Outlier detection assumes reasonable temporal continuity and may misclassify abrupt but real changes.",
+      value: ``,
+    },
+    {
+      id: 5,
+      title: "",
+      subtitle:
+        "Client-side processing performance depends on AOI size and number of scenes.",
+      value: ``,
+    },
+    {
+      id: 6,
+      title: "",
+      subtitle: "Smoothing reduces spikes but may hide abrupt changes.",
+      value: ``,
+    },
+    {
+      id: 7,
+      title: "",
+      subtitle: "Time gaps in valid scenes may affect interpretation.",
+      value: ``,
+    },
+    {
+      id: 8,
+      title: "",
+      subtitle:
+        "The results are not absolute measurements; they are relative vegetation indicators.",
+      value: ``,
+    },
+  ];
+
+  const onCaveats = () => {
+    disappearOptionsExcept(EChartHeaderOptions.caveats);
+    setShowCaveats(!showCaveats);
+  };
+
   const onMethods = () => {
     disappearOptionsExcept(EChartHeaderOptions.methods);
     setShowMethods(!showMethods);
   };
 
+  const chartRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.focus();
+    }
+  }, []);
+
+  const handleFocusOut = (e) => {
+    if (e.target.role === "slider" && !nextPage) {
+      chartRef.current?.focus();
+    }
+    if (e.target.ariaLabel === "Next page") {
+      chartRef.current?.focus();
+    }
+    if (
+      e.target.ariaLabel === "Previous page" &&
+      !nextPage &&
+      samples.main.length === 0
+    ) {
+      chartRef.current?.focus();
+    }
+  };
+  const handleFocusIn = (e) => {
+    if (Object.keys(EChartHeaderOptions).includes(e.target.id)) {
+      disappearOptionsExcept(e.target.id);
+    }
+    if (e.target.id === "seriesSummary" || e.target.id === "closeChart") {
+      disappearOptionsExcept(EChartHeaderOptions.none);
+      disappearWindowExcept(EChartHeaderWindows.none);
+    }
+  };
+
+  useEffect(() => {
+    document.addEventListener("focusout", handleFocusOut);
+    document.addEventListener("focusin", handleFocusIn);
+
+    return () => {
+      document.removeEventListener("focusout", handleFocusOut);
+      document.removeEventListener("focusin", handleFocusIn);
+    };
+  }, []);
+
   return (
-    <div className={` ${chartStyles.wrapper}`}>
+    <div
+      className={` ${chartStyles.wrapper}`}
+      ref={chartRef}
+      tabIndex={-1}
+      onKeyDown={(e) => {
+        if (e.key === "Escape") {
+          if (nearestPoint.x === 0 && nearestPoint.y === 0) props.onClose();
+        }
+      }}
+      role="application"
+      aria-label="Chart showing data trends"
+    >
       <div className={` ${chartStyles.closeWrapper}`}>
         <ChartHeaderItem
           title="Methods"
@@ -567,6 +724,7 @@ const Chart = (props: IChartProps) => {
           icon="book"
           active={showMethods}
           isClose
+          id={EChartHeaderOptions.methods}
         >
           {showMethods ? (
             <ChartHeaderItemOptions
@@ -580,10 +738,31 @@ const Chart = (props: IChartProps) => {
         </ChartHeaderItem>
 
         <ChartHeaderItem
+          title="Caveat"
+          alt="Caveat"
+          onClick={onCaveats}
+          icon="caveat"
+          active={showCaveats}
+          isClose
+          id={EChartHeaderOptions.caveats}
+        >
+          {showCaveats ? (
+            <ChartHeaderItemOptions
+              options={caveatsOptions}
+              onOption={() => undefined}
+              isList={true}
+            />
+          ) : (
+            <></>
+          )}
+        </ChartHeaderItem>
+
+        <ChartHeaderItem
           title="Close Chart"
           alt="Close"
           onClick={props.onClose}
           isClose
+          id="closeChart"
         >
           X
         </ChartHeaderItem>
@@ -611,6 +790,7 @@ const Chart = (props: IChartProps) => {
               .length === 0
           }
           active={fetchFeatures.comparison !== null}
+          id={EChartHeaderOptions.comparison}
         >
           {showComparisonOptions ? (
             <ChartHeaderItemOptions
@@ -627,16 +807,16 @@ const Chart = (props: IChartProps) => {
         </ChartHeaderItem>
 
         <ChartHeaderItem
-          title="Main List"
-          alt="Main List"
+          title="Main Panel"
+          alt="Main Panel"
           onClick={handleListItems}
           icon="list"
           active={showList}
         />
 
         <ChartHeaderItem
-          title="Comparison List"
-          alt="Comparison List"
+          title="Comparison Panel"
+          alt="Comparison Panel"
           onClick={handleListComparisonItems}
           icon="list-comparison"
           active={showListComparison}
@@ -650,6 +830,7 @@ const Chart = (props: IChartProps) => {
           disabled={!enableHeaderOption}
           active={changeDetection[0].value !== "1"}
           data-testid="change-point"
+          id={EChartHeaderOptions.detection}
         >
           {showDetectionOptions ? (
             <ChartHeaderItemOptions
@@ -669,6 +850,7 @@ const Chart = (props: IChartProps) => {
           icon="smoothing"
           disabled={!enableHeaderOption}
           active={smoothingWindow[0].value !== "1"}
+          id={EChartHeaderOptions.smoothing}
         >
           {showSmoothingOptions ? (
             <ChartHeaderItemOptions
@@ -703,12 +885,20 @@ const Chart = (props: IChartProps) => {
           data-testid="export-png"
         />
         <ChartHeaderItem
+          title="Copy Provenance"
+          alt="Copy Provenance"
+          onClick={() => handleCopyList(samples, notValidSamples)}
+          icon="copy"
+          disabled={globalLoading.main}
+        />
+        <ChartHeaderItem
           title="Series Summary"
           alt="Series Summary"
           onClick={() => handleToggleSummary(samples, notValidSamples)}
           icon="info"
           disabled={globalLoading.main}
           active={showSummary}
+          id="seriesSummary"
         />
       </div>
       {showList ? (
@@ -761,11 +951,22 @@ const Chart = (props: IChartProps) => {
             style={{
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                handlePrevious();
+              }
+            }}
+            tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled
+            role="button" // announce as button
+            aria-label="Previous page" // screen reader label
+            aria-disabled={globalLoading.main ? true : false}
           >
             <img
+              tabIndex={0}
               src="/images/prev-page.svg"
               alt="previous-page"
               title="Previous Page"
+              aria-hidden="true"
             />
           </div>
         )}
@@ -777,11 +978,22 @@ const Chart = (props: IChartProps) => {
             style={{
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" || e.key === " ") {
+                handleNext();
+              }
+            }}
+            tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled
+            role="button" // announce as button
+            aria-label="Next page" // screen reader label
+            aria-disabled={globalLoading.main ? true : false}
           >
             <img
+              tabIndex={0}
               src="/images/next-page.svg"
               alt="next-page"
               title="Next Page"
+              aria-hidden="true" // hide image from screen readers
             />
           </div>
         )}

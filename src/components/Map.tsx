@@ -115,6 +115,7 @@ const Home = () => {
   // Avoiding BarChart to reset after adding annotation
   const [showBarChart, setShowBarChart] = useState(true);
 
+  const setResetFocus = useMapStore((state) => state.setResetFocus);
   const setChartIndex = useMapStore((state) => state.setChartIndex);
   const setNearestPoint = useMapStore((state) => state.setNearestPoint);
   const setAnnotations = useMapStore((state) => state.setAnnotations);
@@ -296,10 +297,16 @@ const Home = () => {
           (m) => m.type == EMarkerType.polygon,
         );
         if (polygonMarkers.length >= 3) {
-          setPolygons((prev) => [
-            ...prev,
-            { id: prev.length + 1, markers: polygonMarkers },
-          ]);
+          setPolygons((prev) => {
+            let lastId = 0;
+            for (const p of prev) {
+              if (p.id > lastId) {
+                lastId = p.id;
+              }
+            }
+
+            return [...prev, { id: lastId + 1, markers: polygonMarkers }];
+          });
           setMarker((prev) => {
             return {
               ...prev,
@@ -546,7 +553,7 @@ const Home = () => {
       main: false,
       comparison: false,
     });
-  }, [setShowError, setShowChart, setFetchFeatures, setGlobalLoading]);
+  }, [setShowError, setShowChart, setGlobalLoading]);
 
   const showLoadingModal = useCallback(() => {
     setShowError(false);
@@ -598,10 +605,10 @@ const Home = () => {
         ...prev,
         [a_RequestContext]: null,
       }));
-      setErrorFeatures((prev) => ({
+      /* setErrorFeatures((prev) => ({
         ...prev,
         [a_RequestContext]: null,
-      }));
+      })); */
     },
     [
       setLatency,
@@ -632,8 +639,16 @@ const Home = () => {
       start: undefined,
       end: undefined,
     });
+    setResetFocus(true);
     showMap();
-  }, [setFetchFeatures, showMap]);
+  }, [
+    setResetFocus,
+    setFetchFeatures,
+    setResponseFeatures,
+    setNearestPoint,
+    setChartIndex,
+    showMap,
+  ]);
 
   const handleNextPageChart = useCallback(async () => {
     if (nextPage?.body) {
@@ -783,12 +798,45 @@ const Home = () => {
   const handleExportPNG = async () => {
     const png = await getPng();
     if (png) {
-      const link = document.createElement("a");
-      link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
-      link.href = png;
-      link.click();
+      const img = new Image();
+      img.src = png;
+
+      img.onload = () => {
+        // Create a canvas
+        const canvas = document.createElement("canvas");
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+
+        if (!ctx) return;
+        // Draw the chart image
+        ctx.drawImage(img, 0, 0);
+
+        // Add watermark
+        const date = getLocaleISOString(new Date(Date.now()));
+        const watermarkText = `LeafSense – ${date}`;
+        ctx.font = "16px Arial";
+        ctx.fillStyle = "rgba(0, 0, 0, 0.4)";
+        ctx.textAlign = "right";
+        ctx.textBaseline = "bottom";
+        ctx.fillText(watermarkText, canvas.width - 10, canvas.height - 2);
+
+        // Download the result
+        const link = document.createElement("a");
+        link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
+        link.href = canvas.toDataURL("image/png");
+        link.click();
+      };
     } else {
       log("Failed to export PNG", png, ELogLevel.error);
+    }
+  };
+
+  const handleFocusIn = (e) => {
+    if (e.target.ariaLabel == "Map") {
+      setResetFocus(true);
+    } else {
+      setResetFocus(false);
     }
   };
 
@@ -854,8 +902,8 @@ const Home = () => {
           },
         ],
       },
-      center: [7.4711617988066905, 51.36223529413988], // [lng, lat]
-      zoom: 15,
+      center: [13.405, 52.52], // Berlin
+      zoom: 12,
       maxZoom: 18,
       dragRotate: false,
     });
@@ -866,10 +914,12 @@ const Home = () => {
     window.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
     });
+    document.addEventListener("focusin", handleFocusIn);
 
     return () => {
       // By component unmounting
       setMap(null);
+      document.removeEventListener("focusin", handleFocusIn);
     };
   }, []);
 
@@ -932,13 +982,11 @@ const Home = () => {
 
     // point or zonal
     const pointROI = params.get(EURLParams.pointROI);
-    let zonalROIs: string[] = [];
-    let i = 1;
-    while (params.get(EURLParams.zonalROI + "-" + i) !== null) {
-      let zonalROI = params.get(EURLParams.zonalROI + "-" + i);
-      if (!zonalROI) continue;
-      zonalROIs.push(zonalROI);
-      i++;
+    let zonalROIs = new Map<string, string>();
+    for (const [key, value] of params.entries()) {
+      if (key.startsWith(EURLParams.zonalROI + "-") && value) {
+        zonalROIs.set(key, value);
+      }
     }
 
     if (pointROI) {
@@ -969,9 +1017,10 @@ const Home = () => {
         );
       }
     }
-    if (zonalROIs.length > 0) {
+    if (zonalROIs.size > 0) {
       setPolygons([]);
-      zonalROIs.forEach((zonalROI, index) => {
+
+      zonalROIs.forEach((zonalROI, key) => {
         if (isROIValid(zonalROI, EMarkerType.polygon)) {
           removeMarker(EMarkerType.polygon);
           setTimeout(() => {
@@ -1000,15 +1049,16 @@ const Home = () => {
             });
             setPolygons((prev) => [
               ...prev,
-              { id: prev.length + 1, markers: thisPolygonMarkers },
+              {
+                id: +key.substring(key.lastIndexOf("-") + 1),
+                markers: thisPolygonMarkers,
+              },
             ]);
           }, 100);
         } else {
           log(
             "Read URLParams",
-            "Failed to use URLParam: zonalROI-" +
-              (index + 1) +
-              " does not match",
+            "Failed to use URLParam: " + key + " does not match",
             ELogLevel.warning,
           );
         }
@@ -1418,11 +1468,21 @@ const Home = () => {
   }, [globalLoading.comparison]);
 
   return (
-    <div className={` ${mapStyle.wrapper}`}>
+    <div
+      className={` ${mapStyle.wrapper}`}
+      role="application" // interactive widget
+      aria-label="Interactive map showing locations and markers"
+    >
       {polygons.length !== 0 ? (
         <div
           className={` ${mapStyle.flyTo}`}
           onClick={() => handleFlyToROI(EMarkerType.polygon, map!.getZoom())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleFlyToROI(EMarkerType.polygon, map!.getZoom());
+            }
+          }}
+          tabIndex={0}
         >
           <img
             src="/images/go_polygon.svg"
@@ -1437,6 +1497,12 @@ const Home = () => {
         <div
           className={` ${mapStyle.flyTo} ${mapStyle.flyToPoint}`}
           onClick={() => handleFlyToROI(EMarkerType.point, map!.getZoom())}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              handleFlyToROI(EMarkerType.point, map!.getZoom());
+            }
+          }}
+          tabIndex={0}
         >
           <img
             src="/images/go_point.svg"
@@ -1449,7 +1515,14 @@ const Home = () => {
       )}
       <div
         className={` ${mapStyle.mapWrapper}`}
-        style={{ width: "100%", height: "100%" }}
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents:
+            fetchFeatures.comparison !== null || fetchFeatures.main !== null
+              ? "none"
+              : "auto",
+        }}
         ref={mapContainer}
         data-testid="map-container"
       />
@@ -1638,11 +1711,14 @@ const Home = () => {
         >
           <div className={` ${mapStyle.errorWrapper}`}>
             <div className={` ${mapStyle.error}`}>
-              {responseFeatures[ERequestContext.main] &&
-              responseFeatures[ERequestContext.main].features &&
-              responseFeatures[ERequestContext.main]?.features.length == 0
-                ? "No STAC Item found!"
-                : "No Valid Scene found! Check the list for more information."}
+              {errorFeatures[ERequestContext.main] &&
+              errorFeatures[ERequestContext.main].message !== null
+                ? "Failed to get STAC Item"
+                : responseFeatures[ERequestContext.main] &&
+                    responseFeatures[ERequestContext.main].features &&
+                    responseFeatures[ERequestContext.main]?.features.length == 0
+                  ? "No STAC Item found!"
+                  : "No Valid Scene found! Check the list for more information."}
             </div>
           </div>
         </Chart>

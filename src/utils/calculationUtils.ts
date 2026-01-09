@@ -1,9 +1,9 @@
 import {
   ELogLevel,
   IChangePoint,
-  INDVISample, 
-  ESTACURLS, 
-  ITokenCollection
+  INDVISample,
+  ESTACURLS,
+  ITokenCollection,
 } from "../types";
 import { log } from "./generalUtils";
 
@@ -131,38 +131,74 @@ export const getMean = (a_Array: (number | null)[]) => {
 };
 
 export const validateImportedROI = (a_JSON: any) => {
-  // 1. Must contain "coordinates"
-  if (!a_JSON || !a_JSON.coordinates) {
-    return { valid: false, message: "Missing 'coordinates' key" };
+  if (!Array.isArray(a_JSON)) {
+    return {
+      valid: false,
+      message: "Data must be an array of zones or points",
+    };
   }
 
-  const coords = a_JSON.coordinates;
+  for (let idx = 0; idx < a_JSON.length; idx++) {
+    const item = a_JSON[idx];
+    const key = Object.keys(item)[0]; // e.g., "zonal-1" or "point"
+    const value = item[key];
 
-  // 2. coordinates must be an array
-  if (!Array.isArray(coords)) {
-    return { valid: false, message: "'coordinates' must be an array" };
-  }
+    if (!value || !value.coordinates) {
+      return { valid: false, message: `Missing 'coordinates' for '${key}'` };
+    }
 
-  // 3. Validate each coordinate pair
-  for (let i = 0; i < coords.length; i++) {
-    const pair = coords[i];
+    const coords = value.coordinates;
+
+    if (!Array.isArray(coords)) {
+      return {
+        valid: false,
+        message: `'coordinates' for '${key}' must be an array`,
+      };
+    }
+
+    // Validate each coordinate pair
+    for (let i = 0; i < coords.length; i++) {
+      const pair = coords[i];
+
+      if (
+        !Array.isArray(pair) ||
+        pair.length !== 2 ||
+        typeof pair[0] !== "number" ||
+        typeof pair[1] !== "number"
+      ) {
+        return {
+          valid: false,
+          message: `Invalid coordinate at index ${i} for '${key}'. Expected [number, number].`,
+        };
+      }
+    }
+
+    // Zones must have at least 3 coordinates
+    if (key.startsWith("zonal") && coords.length < 3) {
+      return {
+        valid: false,
+        message: `'${key}' must have at least 3 coordinates`,
+      };
+    }
+
+    // Points must have exactly 1 coordinate; radius is optional
+    if (key === "point" && coords.length !== 1) {
+      return {
+        valid: false,
+        message: `'point' must have exactly 1 coordinate`,
+      };
+    }
 
     if (
-      !Array.isArray(pair) ||
-      pair.length !== 2 ||
-      typeof pair[0] !== "number" ||
-      typeof pair[1] !== "number"
+      key === "point" &&
+      value.radius !== undefined &&
+      typeof value.radius !== "number"
     ) {
       return {
         valid: false,
-        message: `Invalid coordinate at index ${i}. Expected [number, number].`,
+        message: `'radius' for 'point' must be a number if provided`,
       };
     }
-  }
-
-  // 4. Ensure at least 4 coordinate points
-  if (coords.length < 4) {
-    return { valid: false, message: "Minimum 4 coordinates required" };
   }
 
   return { valid: true };
