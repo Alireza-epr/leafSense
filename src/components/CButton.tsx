@@ -8,8 +8,8 @@ export interface ICButtonProps {
   onButtonClick: () => void;
   disable?: boolean;
   icon?: string;
-  "data-testid"?: string
-  isFocused?: boolean
+  "data-testid"?: string;
+  isFocused?: boolean;
 }
 const CButton = (props: ICButtonProps) => {
   const handleButtonClick = () => {
@@ -20,13 +20,13 @@ const CButton = (props: ICButtonProps) => {
     }
   };
 
-  const buttonRef = useRef<HTMLDivElement>(null)
+  const buttonRef = useRef<HTMLDivElement>(null);
 
-  useEffect(()=>{
-    if(props.isFocused && buttonRef.current){
-      buttonRef.current.focus()
+  useEffect(() => {
+    if (props.isFocused && buttonRef.current) {
+      buttonRef.current.focus();
     }
-  },[props.isFocused])
+  }, [props.isFocused]);
 
   return (
     <div

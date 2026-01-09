@@ -9,8 +9,8 @@ export interface IChartHeaderItemProps {
   active?: boolean;
   disabled?: boolean;
   isClose?: boolean;
-  "data-testid"?: string
-  id?: string
+  "data-testid"?: string;
+  id?: string;
 }
 
 const ChartHeaderItem = (props: IChartHeaderItemProps) => {
@@ -34,8 +34,8 @@ const ChartHeaderItem = (props: IChartHeaderItemProps) => {
       tabIndex={props.disabled ? -1 : 0}
       onKeyDown={(e) => {
         if (e.key === "Enter" || e.key === " ") {
-          if(!props.disabled){
-            props.onClick()
+          if (!props.disabled) {
+            props.onClick();
           }
         }
       }}

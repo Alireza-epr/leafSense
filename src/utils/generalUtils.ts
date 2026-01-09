@@ -151,7 +151,7 @@ export const downloadCSV = (
 
 export const handleCopyProvenance = (
   a_AllMainSamples: INDVISample[],
-  a_AllComparisonSamples: INDVISample[]
+  a_AllComparisonSamples: INDVISample[],
 ) => {
   const sections: string[] = [];
 
@@ -159,11 +159,10 @@ export const handleCopyProvenance = (
   if (a_AllMainSamples.length > 0) {
     sections.push("=== Main Samples ===");
     const mainHeader = ["ItemID", "Date"];
-    const mainRows = a_AllMainSamples.map(i => [
-      i.featureId,
-      i.datetime,
-    ]);
-    const mainCsv = [mainHeader, ...mainRows].map(r => r.join(",")).join("\n");
+    const mainRows = a_AllMainSamples.map((i) => [i.featureId, i.datetime]);
+    const mainCsv = [mainHeader, ...mainRows]
+      .map((r) => r.join(","))
+      .join("\n");
     sections.push(mainCsv);
   }
 
@@ -171,11 +170,13 @@ export const handleCopyProvenance = (
   if (a_AllComparisonSamples.length > 0) {
     sections.push("=== Comparison Samples ===");
     const compHeader = ["ItemID", "Date"];
-    const compRows = a_AllComparisonSamples.map(i => [
+    const compRows = a_AllComparisonSamples.map((i) => [
       i.featureId,
       i.datetime,
     ]);
-    const compCsv = [compHeader, ...compRows].map(r => r.join(",")).join("\n");
+    const compCsv = [compHeader, ...compRows]
+      .map((r) => r.join(","))
+      .join("\n");
     sections.push(compCsv);
   }
 
@@ -187,7 +188,6 @@ export const handleCopyProvenance = (
 
   alert("Copied scene list to clipboard!"); // optional toast/tooltip
 };
-
 
 export const isROIValid = (a_ROI: string, a_Marker: EMarkerType) => {
   let roi: any;

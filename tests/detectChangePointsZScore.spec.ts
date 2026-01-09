@@ -1,6 +1,6 @@
-import { detectChangePointsZScore } from "../src/utils/calculationUtils"
-import { makeSamples } from "./fixtures"
-import { series } from './fixtures';
+import { detectChangePointsZScore } from "../src/utils/calculationUtils";
+import { makeSamples } from "./fixtures";
+import { series } from "./fixtures";
 
 describe("Detect Change Points", () => {
   it("returns empty array for empty input", () => {
@@ -21,7 +21,7 @@ describe("Detect Change Points", () => {
   });
 
   it("detects a single change point", () => {
-    const samples = makeSamples([0.1, 0.11, 0.12, 0.09, 1.00, 1.51, 1.52]);
+    const samples = makeSamples([0.1, 0.11, 0.12, 0.09, 1.0, 1.51, 1.52]);
     const result = detectChangePointsZScore(samples, 3, 2.0);
     expect(result.length).toBe(1);
     expect(result[0]).toMatchObject({
@@ -34,7 +34,8 @@ describe("Detect Change Points", () => {
 
   it("detects multiple change points respecting min separation", () => {
     const samples = makeSamples([
-      0.10, 0.12, 0.11, 0.12, 0.15, 0.14, 0.09, 0.10, 0.5, 0.52, 0.53, 0.2, 0.22, 0.25,
+      0.1, 0.12, 0.11, 0.12, 0.15, 0.14, 0.09, 0.1, 0.5, 0.52, 0.53, 0.2, 0.22,
+      0.25,
     ]);
     const result = detectChangePointsZScore(samples, 3, 2.0, 2);
     // Should detect first change at index 6 and second at index 8
@@ -62,8 +63,7 @@ describe("Detect Change Points", () => {
     expect(Math.abs(result[0].z)).toBeGreaterThanOrEqual(3);
   });
 
-  it('detects correct number of markers for small fixture', () => {
-
+  it("detects correct number of markers for small fixture", () => {
     const changes = detectChangePointsZScore(series, 3, 2.0);
 
     expect(changes.length).toBe(3);

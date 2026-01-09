@@ -1,9 +1,9 @@
 import {
   ELogLevel,
   IChangePoint,
-  INDVISample, 
-  ESTACURLS, 
-  ITokenCollection
+  INDVISample,
+  ESTACURLS,
+  ITokenCollection,
 } from "../types";
 import { log } from "./generalUtils";
 
@@ -131,9 +131,11 @@ export const getMean = (a_Array: (number | null)[]) => {
 };
 
 export const validateImportedROI = (a_JSON: any) => {
-
   if (!Array.isArray(a_JSON)) {
-    return { valid: false, message: "Data must be an array of zones or points" };
+    return {
+      valid: false,
+      message: "Data must be an array of zones or points",
+    };
   }
 
   for (let idx = 0; idx < a_JSON.length; idx++) {
@@ -148,7 +150,10 @@ export const validateImportedROI = (a_JSON: any) => {
     const coords = value.coordinates;
 
     if (!Array.isArray(coords)) {
-      return { valid: false, message: `'coordinates' for '${key}' must be an array` };
+      return {
+        valid: false,
+        message: `'coordinates' for '${key}' must be an array`,
+      };
     }
 
     // Validate each coordinate pair
@@ -170,16 +175,29 @@ export const validateImportedROI = (a_JSON: any) => {
 
     // Zones must have at least 3 coordinates
     if (key.startsWith("zonal") && coords.length < 3) {
-      return { valid: false, message: `'${key}' must have at least 3 coordinates` };
+      return {
+        valid: false,
+        message: `'${key}' must have at least 3 coordinates`,
+      };
     }
 
     // Points must have exactly 1 coordinate; radius is optional
     if (key === "point" && coords.length !== 1) {
-      return { valid: false, message: `'point' must have exactly 1 coordinate` };
+      return {
+        valid: false,
+        message: `'point' must have exactly 1 coordinate`,
+      };
     }
 
-    if (key === "point" && value.radius !== undefined && typeof value.radius !== "number") {
-      return { valid: false, message: `'radius' for 'point' must be a number if provided` };
+    if (
+      key === "point" &&
+      value.radius !== undefined &&
+      typeof value.radius !== "number"
+    ) {
+      return {
+        valid: false,
+        message: `'radius' for 'point' must be a number if provided`,
+      };
     }
   }
 

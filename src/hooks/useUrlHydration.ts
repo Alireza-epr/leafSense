@@ -5,7 +5,7 @@ import { TURLState } from "../types";
 
 export const useUrlHydration = (
   a_Ready: boolean,
-  a_Hydrate: (state: TURLState) => void
+  a_Hydrate: (state: TURLState) => void,
 ) => {
   const hydrated = useRef(false);
 
@@ -19,4 +19,4 @@ export const useUrlHydration = (
   }, [a_Ready]);
 
   return hydrated;
-}
+};

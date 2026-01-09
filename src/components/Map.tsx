@@ -298,18 +298,14 @@ const Home = () => {
         );
         if (polygonMarkers.length >= 3) {
           setPolygons((prev) => {
-
-            let lastId = 0
-            for(const p of prev){
-              if(p.id > lastId){
-                lastId= p.id
+            let lastId = 0;
+            for (const p of prev) {
+              if (p.id > lastId) {
+                lastId = p.id;
               }
             }
 
-            return [
-              ...prev,
-              { id: lastId+1, markers: polygonMarkers },
-            ]
+            return [...prev, { id: lastId + 1, markers: polygonMarkers }];
           });
           setMarker((prev) => {
             return {
@@ -643,9 +639,16 @@ const Home = () => {
       start: undefined,
       end: undefined,
     });
-    setResetFocus(true)
+    setResetFocus(true);
     showMap();
-  }, [setResetFocus, setFetchFeatures, setResponseFeatures, setNearestPoint, setChartIndex, showMap]);
+  }, [
+    setResetFocus,
+    setFetchFeatures,
+    setResponseFeatures,
+    setNearestPoint,
+    setChartIndex,
+    showMap,
+  ]);
 
   const handleNextPageChart = useCallback(async () => {
     if (nextPage?.body) {
@@ -805,7 +808,7 @@ const Home = () => {
         canvas.height = img.height;
         const ctx = canvas.getContext("2d");
 
-        if(!ctx) return
+        if (!ctx) return;
         // Draw the chart image
         ctx.drawImage(img, 0, 0);
 
@@ -821,7 +824,7 @@ const Home = () => {
         // Download the result
         const link = document.createElement("a");
         link.download = `exportedPNG_${getLocaleISOString(new Date(Date.now()))}.png`;
-        link.href = canvas.toDataURL("image/png");;
+        link.href = canvas.toDataURL("image/png");
         link.click();
       };
     } else {
@@ -831,9 +834,9 @@ const Home = () => {
 
   const handleFocusIn = (e) => {
     if (e.target.ariaLabel == "Map") {
-      setResetFocus(true)
+      setResetFocus(true);
     } else {
-      setResetFocus(false)
+      setResetFocus(false);
     }
   };
 
@@ -899,7 +902,7 @@ const Home = () => {
           },
         ],
       },
-      center: [13.4050, 52.5200], // Berlin
+      center: [13.405, 52.52], // Berlin
       zoom: 12,
       maxZoom: 18,
       dragRotate: false,
@@ -911,12 +914,12 @@ const Home = () => {
     window.addEventListener("contextmenu", (ev) => {
       ev.preventDefault();
     });
-    document.addEventListener( "focusin" , handleFocusIn )
+    document.addEventListener("focusin", handleFocusIn);
 
     return () => {
       // By component unmounting
       setMap(null);
-      document.removeEventListener( "focusin" , handleFocusIn )
+      document.removeEventListener("focusin", handleFocusIn);
     };
   }, []);
 
@@ -1016,7 +1019,7 @@ const Home = () => {
     }
     if (zonalROIs.size > 0) {
       setPolygons([]);
-       
+
       zonalROIs.forEach((zonalROI, key) => {
         if (isROIValid(zonalROI, EMarkerType.polygon)) {
           removeMarker(EMarkerType.polygon);
@@ -1046,15 +1049,16 @@ const Home = () => {
             });
             setPolygons((prev) => [
               ...prev,
-              { id: +key.substring( key.lastIndexOf("-")+1 ), markers: thisPolygonMarkers },
+              {
+                id: +key.substring(key.lastIndexOf("-") + 1),
+                markers: thisPolygonMarkers,
+              },
             ]);
           }, 100);
         } else {
           log(
             "Read URLParams",
-            "Failed to use URLParam: "+
-              (key) +
-              " does not match",
+            "Failed to use URLParam: " + key + " does not match",
             ELogLevel.warning,
           );
         }
@@ -1464,7 +1468,8 @@ const Home = () => {
   }, [globalLoading.comparison]);
 
   return (
-    <div className={` ${mapStyle.wrapper}`} 
+    <div
+      className={` ${mapStyle.wrapper}`}
       role="application" // interactive widget
       aria-label="Interactive map showing locations and markers"
     >
@@ -1474,7 +1479,7 @@ const Home = () => {
           onClick={() => handleFlyToROI(EMarkerType.polygon, map!.getZoom())}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              handleFlyToROI(EMarkerType.polygon, map!.getZoom())
+              handleFlyToROI(EMarkerType.polygon, map!.getZoom());
             }
           }}
           tabIndex={0}
@@ -1494,7 +1499,7 @@ const Home = () => {
           onClick={() => handleFlyToROI(EMarkerType.point, map!.getZoom())}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
-              handleFlyToROI(EMarkerType.point, map!.getZoom())
+              handleFlyToROI(EMarkerType.point, map!.getZoom());
             }
           }}
           tabIndex={0}
@@ -1510,7 +1515,14 @@ const Home = () => {
       )}
       <div
         className={` ${mapStyle.mapWrapper}`}
-        style={{ width: "100%", height: "100%", pointerEvents: fetchFeatures.comparison !== null || fetchFeatures.main !== null ? 'none' : 'auto' }}
+        style={{
+          width: "100%",
+          height: "100%",
+          pointerEvents:
+            fetchFeatures.comparison !== null || fetchFeatures.main !== null
+              ? "none"
+              : "auto",
+        }}
         ref={mapContainer}
         data-testid="map-container"
       />
@@ -1699,13 +1711,14 @@ const Home = () => {
         >
           <div className={` ${mapStyle.errorWrapper}`}>
             <div className={` ${mapStyle.error}`}>
-              {errorFeatures[ERequestContext.main] && errorFeatures[ERequestContext.main].message !== null
-              ? "Failed to get STAC Item"
-              : responseFeatures[ERequestContext.main] &&
-                responseFeatures[ERequestContext.main].features &&
-                responseFeatures[ERequestContext.main]?.features.length == 0
-                ? "No STAC Item found!" 
-                :"No Valid Scene found! Check the list for more information."}
+              {errorFeatures[ERequestContext.main] &&
+              errorFeatures[ERequestContext.main].message !== null
+                ? "Failed to get STAC Item"
+                : responseFeatures[ERequestContext.main] &&
+                    responseFeatures[ERequestContext.main].features &&
+                    responseFeatures[ERequestContext.main]?.features.length == 0
+                  ? "No STAC Item found!"
+                  : "No Valid Scene found! Check the list for more information."}
             </div>
           </div>
         </Chart>

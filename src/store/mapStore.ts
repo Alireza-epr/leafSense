@@ -80,7 +80,7 @@ export interface IMapStoreStates {
   nearestPoint: INearestPoint;
   annotations: IAnnotationItem[];
   chartIndex: IChartIndex;
-  resetFocus: boolean
+  resetFocus: boolean;
 }
 
 export interface IMapStoreActions {
@@ -185,9 +185,7 @@ export interface IMapStoreActions {
   setChartIndex: (
     a_Value: IChartIndex | ((prev: IChartIndex) => IChartIndex),
   ) => void;
-  setResetFocus: (
-    a_Value: boolean | ((prev: boolean) => boolean),
-  ) => void;
+  setResetFocus: (a_Value: boolean | ((prev: boolean) => boolean)) => void;
 }
 
 export const useMapStore = create<IMapStoreStates & IMapStoreActions>(

@@ -7,9 +7,15 @@ import {
   spatialItems,
   temporalItems,
 } from "../types";
-import { isDateValid, isOperatorValid, isROIValid, isValidAnnotation, isValidFilter, isValidRange, log } from "./generalUtils";
-
-
+import {
+  isDateValid,
+  isOperatorValid,
+  isROIValid,
+  isValidAnnotation,
+  isValidFilter,
+  isValidRange,
+  log,
+} from "./generalUtils";
 
 export const parseUrl = (search: string): any => {
   const params = new URLSearchParams(search);
@@ -18,7 +24,7 @@ export const parseUrl = (search: string): any => {
   // point and zonal
   const pointROI = params.get(EURLParams.pointROI);
   if (pointROI) {
-    if (isROIValid(pointROI, EMarkerType.point)){
+    if (isROIValid(pointROI, EMarkerType.point)) {
       const parsed = JSON.parse(pointROI) as [[number, number], string];
       state.pointROI = {
         center: parsed[0],
@@ -29,14 +35,14 @@ export const parseUrl = (search: string): any => {
         "Read URLParams",
         "Failed to use URLParam: pointROI does not match",
         ELogLevel.warning,
-      )   
+      );
     }
   }
 
   const zonalROIs: Record<number, [number, number][]> = {};
   for (const [key, value] of params.entries()) {
     if (key.startsWith(EURLParams.zonalROI + "-")) {
-      if (isROIValid(value, EMarkerType.polygon)){
+      if (isROIValid(value, EMarkerType.polygon)) {
         const id = Number(key.split("-").pop());
         zonalROIs[id] = JSON.parse(value);
       } else {
@@ -61,7 +67,7 @@ export const parseUrl = (search: string): any => {
 
   if (startDateParam) {
     if (isDateValid(startDateParam)) {
-      state.startDate = startDateParam
+      state.startDate = startDateParam;
       isStartValid = true;
     } else {
       log(
@@ -73,7 +79,7 @@ export const parseUrl = (search: string): any => {
   }
   if (endDateParam) {
     if (isDateValid(endDateParam)) {
-      state.endDate = endDateParam
+      state.endDate = endDateParam;
       isEndValid = true;
     } else {
       log(
@@ -91,9 +97,9 @@ export const parseUrl = (search: string): any => {
     if (isOperatorValid(temporalOpParam, temporalItems)) {
       const temporalOp = temporalItems.find(
         (i) => i.title.toLowerCase() == temporalOpParam.toLowerCase(),
-      )
-      if(temporalOp){
-        state.temporalOp = temporalOp.value
+      );
+      if (temporalOp) {
+        state.temporalOp = temporalOp.value;
       }
     } else {
       log(
@@ -115,16 +121,15 @@ export const parseUrl = (search: string): any => {
     }
   }
 
-
   // Spatial Op
   const spatialOpParam = params.get(EURLParams.spatialOp);
   if (spatialOpParam) {
     if (isOperatorValid(spatialOpParam, spatialItems)) {
       const spatialItem = spatialItems.find(
         (i) => i.title.toLowerCase() == spatialOpParam.toLowerCase(),
-      )
-      if(spatialItem){
-        state.spatialOp = spatialItem.value
+      );
+      if (spatialItem) {
+        state.spatialOp = spatialItem.value;
       }
     } else {
       log(
@@ -139,7 +144,7 @@ export const parseUrl = (search: string): any => {
   const cloudParam = params.get(EURLParams.cloud);
   if (cloudParam) {
     if (isValidRange(cloudParam, 0, 100)) {
-      state.cloudCover = cloudParam
+      state.cloudCover = cloudParam;
     } else {
       log(
         "Read URLParams",
@@ -153,7 +158,7 @@ export const parseUrl = (search: string): any => {
   const snowParam = params.get(EURLParams.snow);
   if (snowParam) {
     if (isValidRange(snowParam, 0, 100)) {
-      state.snowCover = snowParam
+      state.snowCover = snowParam;
     } else {
       log(
         "Read URLParams",
@@ -167,7 +172,7 @@ export const parseUrl = (search: string): any => {
   const limitParam = params.get(EURLParams.limit);
   if (limitParam) {
     if (isValidRange(limitParam, 1, 50)) {
-      state.limit = limitParam
+      state.limit = limitParam;
     } else {
       log(
         "Read URLParams",
@@ -181,7 +186,7 @@ export const parseUrl = (search: string): any => {
   const coverageParam = params.get(EURLParams.coverage);
   if (coverageParam) {
     if (isValidRange(coverageParam, 0, 100)) {
-      state.coverageThreshold = coverageParam
+      state.coverageThreshold = coverageParam;
     } else {
       log(
         "Read URLParams",
@@ -197,11 +202,10 @@ export const parseUrl = (search: string): any => {
     if (isValidFilter(filterParam)) {
       const filter = ["none", "z-score", "IQR"].find(
         (i) => i.toLowerCase() == filterParam.toLowerCase(),
-      ) as ESampleFilter
-      if(filter){
-        state.sampleFilter = filter
+      ) as ESampleFilter;
+      if (filter) {
+        state.sampleFilter = filter;
       }
-      
     } else {
       log(
         "Read URLParams",
@@ -214,7 +218,7 @@ export const parseUrl = (search: string): any => {
   const annotationsParam = params.get(EURLParams.annotations);
   if (annotationsParam) {
     if (isValidAnnotation(annotationsParam)) {
-      state.annotations = JSON.parse(annotationsParam)
+      state.annotations = JSON.parse(annotationsParam);
     } else {
       log(
         "Read URLParams",
@@ -224,9 +228,9 @@ export const parseUrl = (search: string): any => {
     }
   }
 
-  log("Parsing URL", state)
+  log("Parsing URL", state);
   return state;
-}
+};
 
 export const buildUrl = (state: any): URLSearchParams => {
   const params = new URLSearchParams();
@@ -240,16 +244,13 @@ export const buildUrl = (state: any): URLSearchParams => {
   if (state.pointROI) {
     params.set(
       EURLParams.pointROI,
-      JSON.stringify([state.pointROI.center, state.pointROI.radius])
+      JSON.stringify([state.pointROI.center, state.pointROI.radius]),
     );
   }
 
   if (state.zonalROIs) {
     Object.entries(state.zonalROIs).forEach(([id, coords]) => {
-      params.set(
-        `${EURLParams.zonalROI}-${id}`,
-        JSON.stringify(coords)
-      );
+      params.set(`${EURLParams.zonalROI}-${id}`, JSON.stringify(coords));
     });
   }
 
@@ -260,7 +261,9 @@ export const buildUrl = (state: any): URLSearchParams => {
   setIf(EURLParams.endDate, state.endDate);
   params.set(
     EURLParams.temporalOp,
-    temporalItems.find((i) => i.value === state.temporalOp)!.title.toLowerCase(),
+    temporalItems
+      .find((i) => i.value === state.temporalOp)!
+      .title.toLowerCase(),
   );
   params.set(
     EURLParams.spatialOp,
@@ -276,6 +279,6 @@ export const buildUrl = (state: any): URLSearchParams => {
     params.set(EURLParams.annotations, JSON.stringify(state.annotations));
   }
 
-  log("Building URL", params)
+  log("Building URL", params);
   return params;
-}
+};

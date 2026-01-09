@@ -5,43 +5,32 @@ jest.mock("geotiff", () => ({
 
 import { getNDVISample } from "../src/utils/geoTiffUtils";
 
-
 describe("Get NDVI Sample", () => {
-    const red = new Float32Array([
-      0.2, 0.2,
-      0.2, 0.2,
-    ]);
+  const red = new Float32Array([0.2, 0.2, 0.2, 0.2]);
 
-    const nir = new Float32Array([
-      0.6, 0.6,
-      0.6, 0.6,
-    ]);
+  const nir = new Float32Array([0.6, 0.6, 0.6, 0.6]);
 
-    const scl = new Uint8Array([
-      0, // NO_DATA
-      9, // CLOUD_HIGH_PROBABILITY
-      4, // GOOD pixel
-      4, // GOOD pixel
-    ]);
+  const scl = new Uint8Array([
+    0, // NO_DATA
+    9, // CLOUD_HIGH_PROBABILITY
+    4, // GOOD pixel
+    4, // GOOD pixel
+  ]);
 
-    const redRaster = { width: 2, height: 2, 0: red } as any;
-    const nirRaster = { width: 2, height: 2, 0: nir } as any;
-    const sclRaster = { width: 2, height: 2, 0: scl } as any;
+  const redRaster = { width: 2, height: 2, 0: red } as any;
+  const nirRaster = { width: 2, height: 2, 0: nir } as any;
+  const sclRaster = { width: 2, height: 2, 0: scl } as any;
 
-    const feature = {
-      id: "test-feature",
-      properties: { datetime: "2024-01-01T00:00:00Z" },
-      assets: { rendered_preview: { href: "preview.png" } },
-    } as any;
+  const feature = {
+    id: "test-feature",
+    properties: { datetime: "2024-01-01T00:00:00Z" },
+    assets: { rendered_preview: { href: "preview.png" } },
+  } as any;
   it("calculates NDVI and excludes bad pixels correctly", () => {
-
-
     const panel = {
       coverageThreshold: 40,
       filter: "NONE",
     } as any;
-
-
 
     const result = getNDVISample(
       1,
@@ -52,7 +41,9 @@ describe("Get NDVI Sample", () => {
       feature,
     );
 
-    if(!result.ndviArray){ throw new Error("result.ndviArray not defined") }
+    if (!result.ndviArray) {
+      throw new Error("result.ndviArray not defined");
+    }
 
     // NDVI length
     expect(result.ndviArray.length).toBe(4);
@@ -68,26 +59,22 @@ describe("Get NDVI Sample", () => {
     // Coverage
     expect(result.n_valid).toBe(2);
     expect(result.valid_fraction).toBeCloseTo(50);
-
-    
-    
   });
-it("rejects scene when valid pixel coverage is below threshold", () =>{
+  it("rejects scene when valid pixel coverage is below threshold", () => {
     const panelHighCoverage = {
       coverageThreshold: 80,
       filter: "NONE",
     } as any;
 
     expect(() =>
-    getNDVISample(
+      getNDVISample(
         1,
         redRaster,
         nirRaster,
         sclRaster,
         panelHighCoverage,
         feature,
-    ),
+      ),
     ).toThrow("Scene rejected");
-})
-
+  });
 });

@@ -9,7 +9,8 @@ export interface IChartSummaryRowsProps {
 
 const ChartSummaryRows = (props: IChartSummaryRowsProps) => {
   return (
-    <div className={` ${chartSummaryRowsStyles.wrapper}`}
+    <div
+      className={` ${chartSummaryRowsStyles.wrapper}`}
       role="group" // groups related content for screen readers
       aria-label={props.title}
     >

@@ -355,38 +355,38 @@ const Chart = (props: IChartProps) => {
         setShowMethods(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
-        setShowCaveats(false)
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.detection:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowComparisonOptions(false);
-        setShowCaveats(false)
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.comparison:
         setShowMethods(false);
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
-        setShowCaveats(false)
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.methods:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
-        setShowCaveats(false)
+        setShowCaveats(false);
         break;
       case EChartHeaderOptions.caveats:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
-        setShowMethods(false)
+        setShowMethods(false);
         break;
       case EChartHeaderOptions.none:
         setShowSmoothingOptions(false);
         setShowDetectionOptions(false);
         setShowComparisonOptions(false);
-        setShowMethods(false)
-        setShowCaveats(false)
+        setShowMethods(false);
+        setShowCaveats(false);
         break;
     }
   };
@@ -604,7 +604,7 @@ const Chart = (props: IChartProps) => {
     {
       id: 2,
       title: "",
-      subtitle: 
+      subtitle:
         "Zonal results depend on raster resolution (10 m vs 20 m); up/down-sampling can affect precision.",
       value: ``,
     },
@@ -618,29 +618,27 @@ const Chart = (props: IChartProps) => {
     {
       id: 4,
       title: "",
-      subtitle: 
+      subtitle:
         "Outlier detection assumes reasonable temporal continuity and may misclassify abrupt but real changes.",
       value: ``,
     },
     {
       id: 5,
       title: "",
-      subtitle: 
+      subtitle:
         "Client-side processing performance depends on AOI size and number of scenes.",
       value: ``,
     },
     {
       id: 6,
       title: "",
-      subtitle:
-        "Smoothing reduces spikes but may hide abrupt changes.",
+      subtitle: "Smoothing reduces spikes but may hide abrupt changes.",
       value: ``,
     },
     {
       id: 7,
       title: "",
-      subtitle: 
-        "Time gaps in valid scenes may affect interpretation.",
+      subtitle: "Time gaps in valid scenes may affect interpretation.",
       value: ``,
     },
     {
@@ -662,32 +660,36 @@ const Chart = (props: IChartProps) => {
     setShowMethods(!showMethods);
   };
 
-  const chartRef = useRef<HTMLDivElement>(null)
+  const chartRef = useRef<HTMLDivElement>(null);
 
-  useEffect(()=>{
-    if(chartRef.current){
-      chartRef.current.focus()
+  useEffect(() => {
+    if (chartRef.current) {
+      chartRef.current.focus();
     }
-  },[])
+  }, []);
 
   const handleFocusOut = (e) => {
     if (e.target.role === "slider" && !nextPage) {
       chartRef.current?.focus();
     }
-    if (e.target.ariaLabel === "Next page" ) {
+    if (e.target.ariaLabel === "Next page") {
       chartRef.current?.focus();
     }
-    if (e.target.ariaLabel === "Previous page" && !nextPage && samples.main.length === 0 ) {
+    if (
+      e.target.ariaLabel === "Previous page" &&
+      !nextPage &&
+      samples.main.length === 0
+    ) {
       chartRef.current?.focus();
     }
   };
   const handleFocusIn = (e) => {
     if (Object.keys(EChartHeaderOptions).includes(e.target.id)) {
-      disappearOptionsExcept(e.target.id)
+      disappearOptionsExcept(e.target.id);
     }
-    if(e.target.id === "seriesSummary" || e.target.id === "closeChart"){
-      disappearOptionsExcept(EChartHeaderOptions.none)
-      disappearWindowExcept(EChartHeaderWindows.none)
+    if (e.target.id === "seriesSummary" || e.target.id === "closeChart") {
+      disappearOptionsExcept(EChartHeaderOptions.none);
+      disappearWindowExcept(EChartHeaderWindows.none);
     }
   };
 
@@ -702,18 +704,18 @@ const Chart = (props: IChartProps) => {
   }, []);
 
   return (
-    <div className={` ${chartStyles.wrapper}`} 
+    <div
+      className={` ${chartStyles.wrapper}`}
       ref={chartRef}
       tabIndex={-1}
       onKeyDown={(e) => {
         if (e.key === "Escape") {
-          if(nearestPoint.x === 0 && nearestPoint.y === 0)
-          props.onClose()
+          if (nearestPoint.x === 0 && nearestPoint.y === 0) props.onClose();
         }
       }}
       role="application"
       aria-label="Chart showing data trends"
-    > 
+    >
       <div className={` ${chartStyles.closeWrapper}`}>
         <ChartHeaderItem
           title="Methods"
@@ -950,8 +952,8 @@ const Chart = (props: IChartProps) => {
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " ) {
-                handlePrevious()
+              if (e.key === "Enter" || e.key === " ") {
+                handlePrevious();
               }
             }}
             tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled
@@ -977,8 +979,8 @@ const Chart = (props: IChartProps) => {
               backgroundColor: globalLoading.main ? "grey" : "",
             }}
             onKeyDown={(e) => {
-              if (e.key === "Enter" || e.key === " " ) {
-                handleNext()
+              if (e.key === "Enter" || e.key === " ") {
+                handleNext();
               }
             }}
             tabIndex={globalLoading.main ? -1 : 0} // skip focus when disabled

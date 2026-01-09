@@ -20,10 +20,10 @@ export interface ICoordinate {
 
 export interface IImportedCoors {
   coordinates: number[][];
-  radius?: number
+  radius?: number;
 }
 
-export type TImportedROI = Record<string, IImportedCoors>
+export type TImportedROI = Record<string, IImportedCoors>;
 
 export interface ICoordinatesProps {
   disable: boolean;
@@ -33,7 +33,7 @@ const Coordinates = (props: ICoordinatesProps) => {
   const markers = useMapStore((state) => state.markers);
   const setMarkers = useMapStore((state) => state.setMarkers);
   const map = useMapStore((state) => state.map);
-  
+
   const radius = useMapStore((state) => state.radius);
   const setRadius = useMapStore((state) => state.setRadius);
 
@@ -42,11 +42,14 @@ const Coordinates = (props: ICoordinatesProps) => {
 
   const handleDrawROI = (a_ImportedROI: TImportedROI[]) => {
     if (!map) return;
-    log("Imported ROI", a_ImportedROI)
-    const importedPoint = a_ImportedROI.find( i => i["point"] )
-    if(importedPoint){
+    log("Imported ROI", a_ImportedROI);
+    const importedPoint = a_ImportedROI.find((i) => i["point"]);
+    if (importedPoint) {
       const markerElement = new maplibregl.Marker({ color: "green" })
-        .setLngLat([ importedPoint.point.coordinates[0][0], importedPoint.point.coordinates[0][1] ])
+        .setLngLat([
+          importedPoint.point.coordinates[0][0],
+          importedPoint.point.coordinates[0][1],
+        ])
         .addTo(map);
 
       const newMarker = {
@@ -54,25 +57,34 @@ const Coordinates = (props: ICoordinatesProps) => {
         marker: markerElement,
       };
 
-      if(importedPoint.point.radius){
-        setRadius(prev=> prev === String(importedPoint.point.radius) ? String(+prev+1) : String(importedPoint.point.radius))
+      if (importedPoint.point.radius) {
+        setRadius((prev) =>
+          prev === String(importedPoint.point.radius)
+            ? String(+prev + 1)
+            : String(importedPoint.point.radius),
+        );
       } else {
-        setRadius(prev=> prev === "100" ? String(+prev-1) : String(+prev+1))
+        setRadius((prev) =>
+          prev === "100" ? String(+prev - 1) : String(+prev + 1),
+        );
       }
 
       setMarkers((prevMarkers) => {
-        const prevPoint = prevMarkers.filter( m => m.type == EMarkerType.point )
-        prevPoint.forEach( p => p.marker.remove() )
-        const prevPolygons = prevMarkers.filter( m => m.type !== EMarkerType.point )
-        return [...prevPolygons, newMarker]
+        const prevPoint = prevMarkers.filter(
+          (m) => m.type == EMarkerType.point,
+        );
+        prevPoint.forEach((p) => p.marker.remove());
+        const prevPolygons = prevMarkers.filter(
+          (m) => m.type !== EMarkerType.point,
+        );
+        return [...prevPolygons, newMarker];
       });
     }
 
     const importedPolygons: IPolygon[] = [];
 
-
     for (const polygon of polygons) {
-      polygon.markers.forEach( m => m.marker.remove() )
+      polygon.markers.forEach((m) => m.marker.remove());
     }
 
     for (const roi of a_ImportedROI) {
@@ -80,9 +92,7 @@ const Coordinates = (props: ICoordinatesProps) => {
       if (!key.startsWith("zonal")) continue;
 
       const markers: IMarker[] = roi[key].coordinates.map(([lng, lat]) => {
-        const marker = new maplibregl.Marker()
-          .setLngLat([lng, lat])
-          .addTo(map);
+        const marker = new maplibregl.Marker().setLngLat([lng, lat]).addTo(map);
 
         return {
           type: EMarkerType.polygon,
@@ -96,7 +106,7 @@ const Coordinates = (props: ICoordinatesProps) => {
       });
     }
 
-    setPolygons(importedPolygons)
+    setPolygons(importedPolygons);
   };
 
   const handleSelectFile = (a_JSON: TImportedROI[]) => {
@@ -115,34 +125,33 @@ const Coordinates = (props: ICoordinatesProps) => {
   };
 
   const handleDownloadCoordinates = () => {
-    let exportedROI: TImportedROI[] = []
+    let exportedROI: TImportedROI[] = [];
 
-    if(polygons.length >0){
-      const exportedPolygons = polygons.map( p => {
+    if (polygons.length > 0) {
+      const exportedPolygons = polygons.map((p) => {
         return {
-          [`zonal-${p.id}`] : {
+          [`zonal-${p.id}`]: {
             coordinates: p.markers.map((m) => [
-                m.marker.getLngLat().lng,
-                m.marker.getLngLat().lat,
-            ])
-          }
-        }
-      })
-      exportedROI= exportedPolygons
+              m.marker.getLngLat().lng,
+              m.marker.getLngLat().lat,
+            ]),
+          },
+        };
+      });
+      exportedROI = exportedPolygons;
     }
 
-    const pointROI = markers.find(m => m.type === EMarkerType.point)
-    if(pointROI){
+    const pointROI = markers.find((m) => m.type === EMarkerType.point);
+    if (pointROI) {
       const exportedPoint = {
         point: {
-          coordinates: markers.filter(m => m.type === EMarkerType.point).map((m) => [
-            m.marker.getLngLat().lng,
-            m.marker.getLngLat().lat,
-          ]),
-          radius: Number(radius)
-        }
-      }
-      exportedROI.push(exportedPoint)
+          coordinates: markers
+            .filter((m) => m.type === EMarkerType.point)
+            .map((m) => [m.marker.getLngLat().lng, m.marker.getLngLat().lat]),
+          radius: Number(radius),
+        },
+      };
+      exportedROI.push(exportedPoint);
     }
 
     const link = document.createElement("a");
@@ -160,8 +169,11 @@ const Coordinates = (props: ICoordinatesProps) => {
   };
 
   const isExportDisabled = () => {
-    return markers.find(m => m.type === EMarkerType.point) == undefined && polygons.length == 0
-  }
+    return (
+      markers.find((m) => m.type === EMarkerType.point) == undefined &&
+      polygons.length == 0
+    );
+  };
 
   const help = [
     "Zones or points model, e.g.:",
@@ -195,7 +207,7 @@ const Coordinates = (props: ICoordinatesProps) => {
     "Notes:",
     "- Each zone must have at least 3 coordinates.",
     "- A point must have a single coordinate; radius is optional.",
-  ]
+  ];
 
   return (
     <div className={` ${coordinatesStyles.wrapper}`}>

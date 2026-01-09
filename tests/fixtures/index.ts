@@ -1,1 +1,1 @@
-export * from "./ndvi.fixtures"
+export * from "./ndvi.fixtures";

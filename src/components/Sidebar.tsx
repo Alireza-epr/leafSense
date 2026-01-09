@@ -62,7 +62,7 @@ const Sidebar = () => {
   const setPolygons = useMapStore((state) => state.setPolygons);
 
   const resetFocus = useMapStore((state) => state.resetFocus);
-  
+
   const handlePointClick = () => {
     setMarker((prev) => {
       if (prev.point) {
@@ -204,7 +204,7 @@ const Sidebar = () => {
   }, [fetchFeatures]);
 
   return (
-    <div 
+    <div
       className={` ${sidebarStyles.wrapper}`}
       role="complementary" // landmark role for side content
       aria-label="Sidebar with navigation and filters"

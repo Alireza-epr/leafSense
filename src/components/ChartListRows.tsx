@@ -9,7 +9,7 @@ export interface IChartListItemsProps {
 
 const ChartListRows = (props: IChartListItemsProps) => {
   return (
-    <div 
+    <div
       className={` ${chartListItemsStyles.wrapper}`}
       role="list" // marks it as a list for screen readers
       aria-label="Chart items list"

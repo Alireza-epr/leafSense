@@ -35,7 +35,7 @@ const BrowseButton = (props: IBrowseButtonProps) => {
     try {
       const text = await file.text();
       const json = JSON.parse(text);
-      inputFileRef.current.value = ''
+      inputFileRef.current.value = "";
       props.onFileSelect(json);
     } catch (err) {
       log("Invalid JSON file", err, ELogLevel.error);
@@ -50,11 +50,11 @@ const BrowseButton = (props: IBrowseButtonProps) => {
     setShowHelp(true);
   };
 
-  const handleCancelInput = () =>{
-    setLoading(false)
-    if(!inputFileRef.current) return 
-    inputFileRef.current.value = ''
-  }
+  const handleCancelInput = () => {
+    setLoading(false);
+    if (!inputFileRef.current) return;
+    inputFileRef.current.value = "";
+  };
 
   useEffect(() => {
     const help = helpRef.current;
@@ -63,8 +63,8 @@ const BrowseButton = (props: IBrowseButtonProps) => {
       help.addEventListener("mouseleave", handleLeaveHelp);
     }
 
-    if(inputFileRef.current){
-      inputFileRef.current.addEventListener("cancel", handleCancelInput)
+    if (inputFileRef.current) {
+      inputFileRef.current.addEventListener("cancel", handleCancelInput);
     }
 
     return () => {
@@ -72,7 +72,8 @@ const BrowseButton = (props: IBrowseButtonProps) => {
         help.removeEventListener("cancel", handleOverHelp);
         help.removeEventListener("mouseleave", handleLeaveHelp);
       }
-      if(inputFileRef.current) inputFileRef.current.removeEventListener("cancel", handleCancelInput);
+      if (inputFileRef.current)
+        inputFileRef.current.removeEventListener("cancel", handleCancelInput);
     };
   }, []);
 
@@ -92,10 +93,10 @@ const BrowseButton = (props: IBrowseButtonProps) => {
       aria-disabled={props.disabled ?? false} // disabled state
       role="button"
     >
-      <div 
+      <div
         onClick={onSelectFile}
         onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
+          if (e.key === "Enter" || e.key === " ") {
             onSelectFile();
           }
         }}

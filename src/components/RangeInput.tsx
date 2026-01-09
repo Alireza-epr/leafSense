@@ -9,7 +9,7 @@ export interface IRangeInput {
   min?: number;
   max?: number;
   step?: number;
-  "data-testid"?: string
+  "data-testid"?: string;
 }
 
 const RangeInput = (props: IRangeInput) => {
@@ -31,7 +31,6 @@ const RangeInput = (props: IRangeInput) => {
         step={props.step ?? "1"}
         disabled={props.disabled}
         className={` ${rangeInputStyles.input}`}
-
         aria-label={props.title} // short descriptive label
         aria-valuemin={props.min ?? 0} // minimum value
         aria-valuemax={props.max ?? 100} // maximum value
