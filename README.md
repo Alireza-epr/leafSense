@@ -85,6 +85,9 @@ STAC items
 → Interactive chart, provenance, and export
 
 **Watch a short demo:** [docs/demo.mp4](docs/demo.mp4)
+<video src="docs/demo.mp4" controls width="600">
+  Your browser does not support the video tag.
+</video>
 
 ---
 ## Data Sources & Licenses
