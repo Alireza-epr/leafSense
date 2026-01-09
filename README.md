@@ -84,6 +84,8 @@ STAC items
 → Change-point detection  
 → Interactive chart, provenance, and export
 
+**Download and watch a short demo:** [docs/demo.mp4](docs/demo.mp4)
+
 ---
 ## Data Sources & Licenses
 
