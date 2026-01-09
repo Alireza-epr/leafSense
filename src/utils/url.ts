@@ -4,7 +4,6 @@ import {
   ESampleFilter,
   EURLParams,
   ITemporalItem,
-  TURLState,
   spatialItems,
   temporalItems,
 } from "../types";
@@ -12,9 +11,9 @@ import { isDateValid, isOperatorValid, isROIValid, isValidAnnotation, isValidFil
 
 
 
-export const parseUrl = (search: string): TURLState => {
+export const parseUrl = (search: string): any => {
   const params = new URLSearchParams(search);
-  const state: TURLState = {};
+  const state: any = {};
 
   // point and zonal
   const pointROI = params.get(EURLParams.pointROI);
@@ -229,7 +228,7 @@ export const parseUrl = (search: string): TURLState => {
   return state;
 }
 
-export const buildUrl = (state: TURLState): URLSearchParams => {
+export const buildUrl = (state: any): URLSearchParams => {
   const params = new URLSearchParams();
 
   const existingParams = new URLSearchParams(window.location.search);

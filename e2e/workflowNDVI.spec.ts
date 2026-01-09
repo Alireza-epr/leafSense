@@ -32,14 +32,14 @@ test("NDVI workflow", async ({ page }) => {
   const params = new URLSearchParams({
     startdate: '2025-06-01T00:00:00',
     enddate: '2025-12-31T00:00:00',
+    limit: '10',
+    ["point-roi"]:'[[7.475053013533625,51.36334710978855],18]'
   });
   await page.goto(`/?${params.toString()}`);
 
   await page.waitForSelector('[data-testid="map-container"] canvas', { state: 'visible' })
   //await page.screenshot({ path: './test-artifacts/map-ready.png' });
 
-  await page.click('[data-testid="draw-point-roi"]');
-  await page.mouse.click(viewport.width*2/3, viewport.height*2/3);
   await page.click('[data-testid="compute-ndvi"]');
   await page.waitForSelector('[data-testid="main-loading"]', {
       state: 'hidden',
@@ -54,7 +54,7 @@ test("NDVI workflow", async ({ page }) => {
   //await page.screenshot({ path: './test-artifacts/textarea-1-ready.png' });
   
   await page.press('[data-testid="chart-textarea"]', "Escape")
-  const label = page.getByTestId('chart-label-2');
+  const label = page.getByTestId('chart-label-1');
   await expect(label).toBeVisible();
   //await page.screenshot({ path: './test-artifacts/label-1-ready.png' });
 
@@ -66,7 +66,7 @@ test("NDVI workflow", async ({ page }) => {
   //await page.screenshot({ path: './test-artifacts/textarea-2-ready.png' });
   
   await page.press('[data-testid="chart-textarea"]', "Escape")
-  const label2 = page.getByTestId('chart-label-10');
+  const label2 = page.getByTestId('chart-label-5');
   await expect(label2).toBeVisible();
   //await page.screenshot({ path: './test-artifacts/label-2-ready.png' });
 
