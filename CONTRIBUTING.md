@@ -1,4 +1,4 @@
-# Contributing to Project1
+# Contributing
 Thanks for your interest in contributing! Please follow these steps.
 
 ## Reporting Bugs
